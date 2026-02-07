@@ -73,9 +73,16 @@ const { title, localizations } = item;
 const getLocaleLabel = (loc: string) => {
   return i18nConfig.localeLabels[loc as keyof typeof i18nConfig.localeLabels] || loc.toUpperCase();
 };
+
+// Determine content type based on item type
+const contentType = itemType === 'book' ? 'Book' : 'Article';
 ---
 
-<Layout title={title}>
+<Layout 
+  content={item}
+  locale={i18nConfig.defaultLocale}
+  contentType={contentType}
+>
   <main>
     <nav class="language-switcher">
       <a href={`/${parentPage.slug}/${item.slug}`} class="active">
