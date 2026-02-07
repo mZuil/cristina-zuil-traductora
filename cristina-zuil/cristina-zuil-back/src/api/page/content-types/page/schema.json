@@ -12,11 +12,6 @@
   "pluginOptions": {
     "i18n": {
       "localized": true
-    },
-    "content-manager": {
-      "preview": {
-        "url": "http://localhost:4321"
-      }
     }
   },
   "attributes": {
