@@ -65,16 +65,22 @@ export function getSEOData(
   const siteUrl = astro.site?.href || 'http://localhost:4321';
   const currentUrl = astro.url;
   
+  // Get SEO component (new structure) or individual fields (backward compatibility)
+  const seo = content.seo || {};
+  
   // Get SEO fields from Strapi (with fallbacks)
-  const seoTitle = content.seoMetaTitle || content.title || options?.defaultTitle || 'Cristina Zuil Traductora';
-  const seoDescription = content.seoMetaDescription || 
+  // Check SEO component first, then fallback to direct fields, then defaults
+  const seoTitle = seo.seoMetaTitle || content.seoMetaTitle || content.title || options?.defaultTitle || 'Cristina Zuil Traductora';
+  const seoDescription = seo.seoMetaDescription || content.seoMetaDescription || 
     extractTextContent(content.content, 160) ||
     options?.defaultDescription || 
     'Cristina Zuil - Traductora profesional';
   
   // Get image from SEO field, or fallback to cover/featured image
   let seoImage = null;
-  if (content.seoMetaImage?.url) {
+  if (seo.seoMetaImage?.url) {
+    seoImage = seo.seoMetaImage.url;
+  } else if (content.seoMetaImage?.url) {
     seoImage = content.seoMetaImage.url;
   } else if (content.coverPage?.url) {
     seoImage = content.coverPage.url;
@@ -116,7 +122,7 @@ export function getSEOData(
     locale,
     alternateLocales,
     canonicalUrl,
-    keywords: content.seoKeywords,
+    keywords: seo.seoKeywords || content.seoKeywords,
     publishedTime: content.publishedAt,
     modifiedTime: content.updatedAt,
     author: content.author || 'Cristina Zuil',
@@ -134,6 +140,9 @@ export function getStructuredData(
 ) {
   const siteUrl = astro.site?.href || 'http://localhost:4321';
   
+  // Get SEO component (new structure) or individual fields (backward compatibility)
+  const seo = content.seo || {};
+  
   const baseData: Record<string, any> = {
     '@context': 'https://schema.org',
     '@type': type,
@@ -148,8 +157,8 @@ export function getStructuredData(
       break;
       
     case 'WebPage':
-      baseData.name = content.seoMetaTitle || content.title;
-      baseData.description = content.seoMetaDescription || extractTextContent(content.content, 160);
+      baseData.name = seo.seoMetaTitle || content.seoMetaTitle || content.title;
+      baseData.description = seo.seoMetaDescription || content.seoMetaDescription || extractTextContent(content.content, 160);
       baseData.url = `${siteUrl}${astro.url.pathname}`;
       if (content.publishedAt) {
         baseData.datePublished = new Date(content.publishedAt).toISOString();
@@ -161,7 +170,7 @@ export function getStructuredData(
       
     case 'Book':
       baseData.name = content.title;
-      baseData.description = content.seoMetaDescription;
+      baseData.description = seo.seoMetaDescription || content.seoMetaDescription;
       if (content.author) {
         baseData.author = {
           '@type': 'Person',
@@ -184,7 +193,7 @@ export function getStructuredData(
       
     case 'Article':
       baseData.headline = content.title;
-      baseData.description = content.seoMetaDescription || extractTextContent(content.content, 160);
+      baseData.description = seo.seoMetaDescription || content.seoMetaDescription || extractTextContent(content.content, 160);
       if (content.publishedAt) {
         baseData.datePublished = new Date(content.publishedAt).toISOString();
       }
@@ -207,7 +216,7 @@ export function getStructuredData(
       
     case 'CollectionPage':
       baseData.name = content.title;
-      baseData.description = content.seoMetaDescription || extractTextContent(content.content, 160);
+      baseData.description = seo.seoMetaDescription || content.seoMetaDescription || extractTextContent(content.content, 160);
       baseData.url = `${siteUrl}${astro.url.pathname}`;
       break;
   }

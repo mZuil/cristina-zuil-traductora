@@ -68,39 +68,10 @@
         "links.link"
       ]
     },
-    "seoMetaTitle": {
-      "type": "string",
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
-      "required": false
-    },
-    "seoMetaDescription": {
-      "type": "text",
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
-      "required": false
-    },
-    "seoMetaImage": {
-      "type": "media",
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
-      "multiple": false,
-      "allowedTypes": [
-        "images"
-      ],
-      "required": false
-    },
-    "seoKeywords": {
-      "type": "string",
+    "seo": {
+      "type": "component",
+      "repeatable": false,
+      "component": "seo.seo",
       "pluginOptions": {
         "i18n": {
           "localized": true
