@@ -15,6 +15,10 @@ export default {
    *
    * This gives you an opportunity to set up your data model,
    * run jobs, or perform some special logic.
+   * 
+   * Note: Preview URLs are configured in the schema.json file
+   * and can also be set manually in the Strapi admin panel
+   * under Settings > Preview.
    */
   bootstrap(/* { strapi }: { strapi: Core.Strapi } */) {},
 };
