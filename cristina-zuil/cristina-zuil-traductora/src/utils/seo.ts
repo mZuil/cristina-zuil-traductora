@@ -2,6 +2,53 @@ import { i18nConfig, getLocalizedUrl } from '../config/i18n.js';
 import type { AstroGlobal } from 'astro';
 
 /**
+ * Safely extract text content from Strapi content field
+ * Handles strings, arrays (dynamic zones), and rich text
+ */
+function extractTextContent(content: any, maxLength: number = 160): string {
+  if (!content) return '';
+  
+  // If it's a string, return substring
+  if (typeof content === 'string') {
+    return content.substring(0, maxLength);
+  }
+  
+  // If it's an array (dynamic zone), extract text from blocks
+  if (Array.isArray(content)) {
+    const textParts: string[] = [];
+    for (const block of content) {
+      if (block.body && typeof block.body === 'string') {
+        textParts.push(block.body);
+      } else if (block.text && typeof block.text === 'string') {
+        textParts.push(block.text);
+      } else if (typeof block === 'string') {
+        textParts.push(block);
+      }
+    }
+    const combined = textParts.join(' ');
+    return combined.substring(0, maxLength);
+  }
+  
+  // If it's an object (rich text), try to extract text
+  if (typeof content === 'object') {
+    // Try common rich text fields
+    if (content.text && typeof content.text === 'string') {
+      return content.text.substring(0, maxLength);
+    }
+    if (content.body && typeof content.body === 'string') {
+      return content.body.substring(0, maxLength);
+    }
+    // If it's a rich text object, try to stringify and strip HTML
+    const stringified = JSON.stringify(content);
+    // Simple HTML tag removal
+    const textOnly = stringified.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, '');
+    return textOnly.substring(0, maxLength);
+  }
+  
+  return '';
+}
+
+/**
  * Extract SEO data from Strapi content
  */
 export function getSEOData(
@@ -21,7 +68,7 @@ export function getSEOData(
   // Get SEO fields from Strapi (with fallbacks)
   const seoTitle = content.seoMetaTitle || content.title || options?.defaultTitle || 'Cristina Zuil Traductora';
   const seoDescription = content.seoMetaDescription || 
-    (typeof content.content === 'string' ? content.content.substring(0, 160) : '') ||
+    extractTextContent(content.content, 160) ||
     options?.defaultDescription || 
     'Cristina Zuil - Traductora profesional';
   
@@ -102,7 +149,7 @@ export function getStructuredData(
       
     case 'WebPage':
       baseData.name = content.seoMetaTitle || content.title;
-      baseData.description = content.seoMetaDescription || content.content?.substring(0, 160);
+      baseData.description = content.seoMetaDescription || extractTextContent(content.content, 160);
       baseData.url = `${siteUrl}${astro.url.pathname}`;
       if (content.publishedAt) {
         baseData.datePublished = new Date(content.publishedAt).toISOString();
@@ -137,7 +184,7 @@ export function getStructuredData(
       
     case 'Article':
       baseData.headline = content.title;
-      baseData.description = content.seoMetaDescription || content.content?.substring(0, 160);
+      baseData.description = content.seoMetaDescription || extractTextContent(content.content, 160);
       if (content.publishedAt) {
         baseData.datePublished = new Date(content.publishedAt).toISOString();
       }
@@ -160,7 +207,7 @@ export function getStructuredData(
       
     case 'CollectionPage':
       baseData.name = content.title;
-      baseData.description = content.seoMetaDescription || content.content?.substring(0, 160);
+      baseData.description = content.seoMetaDescription || extractTextContent(content.content, 160);
       baseData.url = `${siteUrl}${astro.url.pathname}`;
       break;
   }
