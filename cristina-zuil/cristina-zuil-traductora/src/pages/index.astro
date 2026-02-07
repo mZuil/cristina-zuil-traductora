@@ -4,7 +4,7 @@ import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, isHomePage } from '../
 
 // Fetch pages and find the homepage (empty slug)
 const pages = await fetchPagesByLocale(i18nConfig.defaultLocale);
-const homePage = pages.find(page => isHomePage(page));
+const homePage = pages.find((page: any) => isHomePage(page));
 
 if (!homePage) {
   throw new Error(`Homepage not found! Create a page with an EMPTY slug in Strapi for locale "${i18nConfig.defaultLocale}"`);

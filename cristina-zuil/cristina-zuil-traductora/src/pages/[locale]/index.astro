@@ -11,7 +11,7 @@ export async function getStaticPaths() {
   
   for (const locale of nonDefaultLocales) {
     const pages = await fetchPagesByLocale(locale);
-    const homePage = pages.find(page => isHomePage(page));
+    const homePage = pages.find(( page: any ) => isHomePage(page));
     
     if (homePage) {
       paths.push({
