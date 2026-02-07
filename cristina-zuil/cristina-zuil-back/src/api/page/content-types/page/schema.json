@@ -32,11 +32,36 @@
       },
       "targetField": "title"
     },
+    "template": {
+      "type": "enumeration",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "enum": [
+        "default",
+        "archive-books",
+        "archive-articles",
+        "single-book",
+        "single-article"
+      ]
+    },
     "content": {
       "type": "dynamiczone",
       "pluginOptions": {
         "i18n": {
           "localized": true
+        }
+      },
+      "conditions": {
+        "visible": {
+          "==": [
+            {
+              "var": "template"
+            },
+            "default"
+          ]
         }
       },
       "components": [

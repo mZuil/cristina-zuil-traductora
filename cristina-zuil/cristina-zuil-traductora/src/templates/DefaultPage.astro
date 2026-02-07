@@ -1,0 +1,53 @@
+---
+import { i18nConfig } from '../config/i18n.js';
+
+interface Props {
+  page: {
+    title: string;
+    content: any;
+  };
+}
+
+const { page } = Astro.props;
+const { title, content } = page;
+---
+
+<div class="page-content">
+  <h1>{title}</h1>
+  
+  <div class="content">
+    {Array.isArray(content) ? (
+      content.map((block: any) => (
+        <div set:html={block.body || ''} />
+      ))
+    ) : (
+      <div set:html={content} />
+    )}
+  </div>
+</div>
+
+<style>
+  .page-content {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .page-content h1 {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .content {
+    line-height: 1.8;
+    font-size: 1.1rem;
+  }
+  
+  .content :global(p) {
+    margin-bottom: 1.5rem;
+  }
+  
+  .content :global(h2) {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
+</style>

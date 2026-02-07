@@ -1,0 +1,122 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import { 
+  i18nConfig, 
+  getLocalizedUrl, 
+  fetchPagesByLocale,
+  fetchBooksByLocale,
+  fetchArticlesByLocale,
+  getNonDefaultLocales,
+  isHomePage 
+} from '../../../config/i18n.js';
+
+import SingleBook from '../../../templates/single/SingleBook.astro';
+import SingleArticle from '../../../templates/single/SingleArticle.astro';
+
+export async function getStaticPaths() {
+  const nonDefaultLocales = getNonDefaultLocales();
+  const allPaths: Array<{
+    params: { locale: string; parent: string; slug: string };
+    props: { item: any; parentPage: any; itemType: string; locale: string };
+  }> = [];
+  
+  for (const locale of nonDefaultLocales) {
+    const pages = await fetchPagesByLocale(locale);
+    
+    const archivePages = pages.filter((page: any) => 
+      page?.slug && 
+      !isHomePage(page) && 
+      (page.template === 'archive-books' || page.template === 'archive-articles')
+    );
+    
+    for (const parentPage of archivePages) {
+      let items: any[] = [];
+      let itemType = '';
+      
+      if (parentPage.template === 'archive-books') {
+        const category = parentPage.bookCategory || null;
+        items = await fetchBooksByLocale(locale, category);
+        itemType = 'book';
+      } else if (parentPage.template === 'archive-articles') {
+        items = await fetchArticlesByLocale(locale);
+        itemType = 'article';
+      }
+      
+      items.forEach((item: any) => {
+        if (item?.slug) {
+          allPaths.push({
+            params: { 
+              locale,
+              parent: parentPage.slug,
+              slug: item.slug
+            },
+            props: { 
+              item,
+              parentPage,
+              itemType,
+              locale
+            },
+          });
+        }
+      });
+    }
+  }
+  
+  return allPaths;
+}
+
+interface Props {
+  item: any;
+  parentPage: any;
+  itemType: string;
+  locale: string;
+}
+
+const { item, parentPage, itemType, locale } = Astro.props as Props;
+const { title, localizations } = item;
+
+const getLocaleLabel = (loc: string) => {
+  return i18nConfig.localeLabels[loc as keyof typeof i18nConfig.localeLabels] || loc.toUpperCase();
+};
+---
+
+<Layout title={title}>
+  <main>
+    <nav class="language-switcher">
+      {localizations?.map((localization: any) => {
+        const loc = localization.locale;
+        const localizedSlug = localization.slug;
+        
+        const localizedParent = parentPage.localizations?.find((l: any) => l.locale === loc);
+        const parentSlug = localizedParent?.slug || parentPage.slug;
+        
+        const url = loc === i18nConfig.defaultLocale 
+          ? `/${parentSlug}/${localizedSlug}`
+          : `/${loc}/${parentSlug}/${localizedSlug}`;
+        
+        return (
+          <a href={url}>
+            {getLocaleLabel(loc)}
+          </a>
+        );
+      })}
+      <a href={`/${locale}/${parentPage.slug}/${item.slug}`} class="active">
+        {getLocaleLabel(locale)}
+      </a>
+    </nav>
+    
+    {itemType === 'book' ? (
+      <SingleBook 
+        item={item}
+        archiveSlug={parentPage.slug}
+        locale={locale}
+      />
+    ) : itemType === 'article' ? (
+      <SingleArticle 
+        item={item}
+        archiveSlug={parentPage.slug}
+        locale={locale}
+      />
+    ) : null}
+  </main>
+</Layout>

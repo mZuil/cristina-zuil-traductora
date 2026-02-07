@@ -522,7 +522,7 @@ export interface ApiBookBook extends Struct.CollectionTypeSchema {
           localized: true;
         };
       }>;
-    bookCategory: Schema.Attribute.Enumeration<['translation', 'writing']> &
+    bookCategory: Schema.Attribute.Enumeration<['traduccion', 'escrito']> &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: true;
@@ -648,6 +648,20 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::page.page'>;
     publishedAt: Schema.Attribute.DateTime;
     slug: Schema.Attribute.UID<'title'> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    template: Schema.Attribute.Enumeration<
+      [
+        'default',
+        'archive-books',
+        'archive-articles',
+        'single-book',
+        'single-article',
+      ]
+    > &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: true;

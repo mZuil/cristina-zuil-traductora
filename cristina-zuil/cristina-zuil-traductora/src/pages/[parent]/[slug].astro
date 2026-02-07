@@ -1,0 +1,113 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { 
+  i18nConfig, 
+  getLocalizedUrl, 
+  fetchPagesByLocale,
+  fetchBooksByLocale,
+  fetchArticlesByLocale,
+  isHomePage 
+} from '../../config/i18n.js';
+
+// Import single templates
+import SingleBook from '../../templates/single/SingleBook.astro';
+import SingleArticle from '../../templates/single/SingleArticle.astro';
+
+export async function getStaticPaths() {
+  const pages = await fetchPagesByLocale(i18nConfig.defaultLocale);
+  const paths: Array<{
+    params: { parent: string; slug: string };
+    props: { item: any; parentPage: any; itemType: string };
+  }> = [];
+  
+  // Find archive pages that need single posts
+  const archivePages = pages.filter((page: any) => 
+    page?.slug && 
+    !isHomePage(page) && 
+    (page.template === 'archive-books' || page.template === 'archive-articles')
+  );
+  
+  for (const parentPage of archivePages) {
+    let items: any[] = [];
+    let itemType = '';
+    
+    if (parentPage.template === 'archive-books') {
+      const category = parentPage.bookCategory || null;
+      items = await fetchBooksByLocale(i18nConfig.defaultLocale, category);
+      itemType = 'book';
+    } else if (parentPage.template === 'archive-articles') {
+      items = await fetchArticlesByLocale(i18nConfig.defaultLocale);
+      itemType = 'article';
+    }
+    
+    // Create paths for each item
+    items.forEach((item: any) => {
+      if (item?.slug) {
+        paths.push({
+          params: { 
+            parent: parentPage.slug,
+            slug: item.slug
+          },
+          props: { 
+            item,
+            parentPage,
+            itemType
+          },
+        });
+      }
+    });
+  }
+  
+  return paths;
+}
+
+interface Props {
+  item: any;
+  parentPage: any;
+  itemType: string;
+}
+
+const { item, parentPage, itemType } = Astro.props as Props;
+const { title, localizations } = item;
+
+const getLocaleLabel = (loc: string) => {
+  return i18nConfig.localeLabels[loc as keyof typeof i18nConfig.localeLabels] || loc.toUpperCase();
+};
+---
+
+<Layout title={title}>
+  <main>
+    <nav class="language-switcher">
+      <a href={`/${parentPage.slug}/${item.slug}`} class="active">
+        {getLocaleLabel(i18nConfig.defaultLocale)}
+      </a>
+      {localizations?.map((localization: any) => {
+        const locale = localization.locale;
+        const localizedSlug = localization.slug;
+        
+        // Find the localized parent page slug
+        const localizedParent = parentPage.localizations?.find((l: any) => l.locale === locale);
+        const parentSlug = localizedParent?.slug || parentPage.slug;
+        
+        return (
+          <a href={`/${locale}/${parentSlug}/${localizedSlug}`}>
+            {getLocaleLabel(locale)}
+          </a>
+        );
+      })}
+    </nav>
+    
+    {/* Render based on item type */}
+    {itemType === 'book' ? (
+      <SingleBook 
+        item={item}
+        archiveSlug={parentPage.slug}
+      />
+    ) : itemType === 'article' ? (
+      <SingleArticle 
+        item={item}
+        archiveSlug={parentPage.slug}
+      />
+    ) : null}
+  </main>
+</Layout>

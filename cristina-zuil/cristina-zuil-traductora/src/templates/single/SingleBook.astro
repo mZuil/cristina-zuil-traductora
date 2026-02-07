@@ -1,0 +1,100 @@
+---
+import { i18nConfig } from '../../config/i18n.js';
+
+interface Props {
+  item: any;
+  archiveSlug: string;
+  locale?: string;
+}
+
+const { item, archiveSlug, locale } = Astro.props;
+const { title, description, author, publishedYear, cover, genre, publisher } = item;
+
+const isDefaultLocale = !locale || locale === i18nConfig.defaultLocale;
+const backPath = isDefaultLocale ? `/${archiveSlug}` : `/${locale}/${archiveSlug}`;
+---
+
+<a href={backPath} class="back-link">
+  ← {isDefaultLocale ? 'Volver' : 'Back'}
+</a>
+
+<article class="book-detail">
+  {cover?.url && (
+    <img 
+      src={`${i18nConfig.strapi.url}${cover.url}`} 
+      alt={title}
+      class="book-cover"
+    />
+  )}
+  
+  <div class="book-info">
+    <h1>{title}</h1>
+    
+    {author && <p class="author">{isDefaultLocale ? 'Por' : 'By'} {author}</p>}
+    {publishedYear && <p class="year">{isDefaultLocale ? 'Año' : 'Year'}: {publishedYear}</p>}
+    {publisher?.name && <p class="publisher">{isDefaultLocale ? 'Editorial' : 'Publisher'}: {publisher.name}</p>}
+    {genre?.name && <p class="genre">{isDefaultLocale ? 'Género' : 'Genre'}: {genre.name}</p>}
+    
+    <div class="description">
+      {Array.isArray(description) ? (
+        description.map((block: any) => (
+          <div set:html={block.body || ''} />
+        ))
+      ) : (
+        <div set:html={description} />
+      )}
+    </div>
+  </div>
+</article>
+
+<style>
+  .back-link {
+    display: inline-block;
+    margin-bottom: 2rem;
+    color: #0066cc;
+    text-decoration: none;
+  }
+  
+  .back-link:hover {
+    text-decoration: underline;
+  }
+  
+  .book-detail {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 3rem;
+    margin-top: 2rem;
+  }
+  
+  .book-cover {
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  .book-info h1 {
+    margin-top: 0;
+  }
+  
+  .author {
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0.5rem 0;
+  }
+  
+  .year, .publisher, .genre {
+    color: #999;
+    margin: 0.5rem 0;
+  }
+  
+  .description {
+    line-height: 1.6;
+    margin-top: 2rem;
+  }
+  
+  @media (max-width: 768px) {
+    .book-detail {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

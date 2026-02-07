@@ -95,8 +95,8 @@
         }
       },
       "enum": [
-        "translation",
-        "writing"
+        "traduccion",
+        "escrito"
       ]
     }
   }

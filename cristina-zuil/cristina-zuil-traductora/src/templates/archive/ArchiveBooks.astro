@@ -1,0 +1,102 @@
+---
+import { i18nConfig } from '../../config/i18n.js';
+
+interface Props {
+  items: any[];
+  title: string;
+  description?: string;
+  locale?: string;
+  archiveSlug: string;
+  category: string;
+}
+
+const { items, title, description, locale, archiveSlug, category } = Astro.props;
+
+const isDefaultLocale = !locale || locale === i18nConfig.defaultLocale;
+const basePath = isDefaultLocale ? `/${archiveSlug}` : `/${locale}/${archiveSlug}`;
+---
+
+<div class="archive-header">
+  <h1>{title}</h1>
+  {description && (
+    <div class="description" set:html={description} />
+  )}
+</div>
+
+<div class="books-grid">
+  {items.map((book: any) => (
+    <article class="book-card">
+      {book.cover?.url && (
+        <img 
+          src={`${i18nConfig.strapi.url}${book.cover.url}`} 
+          alt={book.title}
+        />
+      )}
+      <h2>{book.title}</h2>
+      {book.author && <p class="author">{isDefaultLocale ? 'Por' : 'By'} {book.author}</p>}
+      {book.publishedYear && <p class="year">{book.publishedYear}</p>}
+      <a href={`${basePath}/${book.slug}`} class="read-more">
+        {isDefaultLocale ? 'Ver detalles' : 'View details'} →
+      </a>
+    </article>
+  ))}
+</div>
+
+<style>
+  .archive-header {
+    margin-bottom: 3rem;
+  }
+  
+  .description {
+    margin: 2rem 0;
+    line-height: 1.6;
+  }
+  
+  .books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 2rem;
+  }
+  
+  .book-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
+    transition: transform 0.2s;
+  }
+  
+  .book-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  
+  .book-card img {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+  
+  .book-card h2 {
+    font-size: 1.25rem;
+    margin: 0.5rem 0;
+  }
+  
+  .author, .year {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+  }
+  
+  .read-more {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #0066cc;
+    text-decoration: none;
+  }
+  
+  .read-more:hover {
+    text-decoration: underline;
+  }
+</style>

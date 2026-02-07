@@ -1,22 +1,31 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, isHomePage } from '../config/i18n.js';
+import { 
+  i18nConfig, 
+  getLocalizedUrl, 
+  fetchPagesByLocale,
+  fetchBooksByLocale,
+  fetchArticlesByLocale,
+  isHomePage 
+} from '../config/i18n.js';
+
+// Import templates
+import DefaultPage from '../templates/DefaultPage.astro';
+import ArchiveBooks from '../templates/archive/ArchiveBooks.astro';
+import ArchiveArticles from '../templates/archive/ArchiveArticles.astro';
 
 export async function getStaticPaths() {
   const pages = await fetchPagesByLocale(i18nConfig.defaultLocale);
-  
-  console.log('Total pages fetched:', pages.length);
   
   if (pages.length === 0) {
     console.warn(`No pages found for default locale: ${i18nConfig.defaultLocale}`);
     return [];
   }
   
-  const validPages = pages.filter(page => {
-    // Exclude homepage (empty slug) and invalid pages
+  const validPages = pages.filter((page: any) => {
     if (!page?.slug || isHomePage(page)) {
       if (isHomePage(page)) {
-        console.log('Excluding homepage (empty slug) from [slug] routes');
+        console.log('Excluding homepage from [slug] routes');
       }
       return false;
     }
@@ -25,18 +34,40 @@ export async function getStaticPaths() {
   
   console.log('Valid pages (excluding home):', validPages.length);
   
-  return validPages.map((page) => ({
-    params: { slug: page.slug },
-    props: { page },
-  }));
+  // Fetch template data for each page
+  const paths: Array<{
+    params: { slug: string };
+    props: { page: any; templateData?: any };
+  }> = [];
+  
+  for (const page of validPages) {
+    let templateData = null;
+    
+    // Fetch data based on template type
+    if (page.template === 'archive-books') {
+      // Check if page has a category field, otherwise fetch all
+      const category = page.bookCategory || null;
+      templateData = await fetchBooksByLocale(i18nConfig.defaultLocale, category);
+    } else if (page.template === 'archive-articles') {
+      templateData = await fetchArticlesByLocale(i18nConfig.defaultLocale);
+    }
+    
+    paths.push({
+      params: { slug: page.slug },
+      props: { page, templateData },
+    });
+  }
+  
+  return paths;
 }
 
 interface Props {
   page: any;
+  templateData?: any;
 }
 
-const { page } = Astro.props as Props;
-const { title, content, slug, localizations } = page;
+const { page, templateData } = Astro.props as Props;
+const { title, content, slug, localizations, template } = page;
 
 const getLocaleLabel = (loc: string) => {
   return i18nConfig.localeLabels[loc as keyof typeof i18nConfig.localeLabels] || loc.toUpperCase();
@@ -45,8 +76,6 @@ const getLocaleLabel = (loc: string) => {
 
 <Layout title={title}>
   <main>
-    <h1>{title}</h1>
-    
     <nav class="language-switcher">
       <a href={`/${slug}`} class="active">
         {getLocaleLabel(i18nConfig.defaultLocale)}
@@ -62,14 +91,24 @@ const getLocaleLabel = (loc: string) => {
       })}
     </nav>
     
-    {Array.isArray(content) ? (
-      <div>
-        {content.map((block: any) => (
-          <div set:html={block.body || ''} />
-        ))}
-      </div>
+    {/* Render based on template type */}
+    {template === 'archive-books' && templateData ? (
+      <ArchiveBooks 
+        items={templateData}
+        title={title}
+        description={content}
+        archiveSlug={slug}
+        category={page.bookCategory || ''}
+      />
+    ) : template === 'archive-articles' && templateData ? (
+      <ArchiveArticles 
+        items={templateData}
+        title={title}
+        description={content}
+        archiveSlug={slug}
+      />
     ) : (
-      <div set:html={content} />
+      <DefaultPage page={page} />
     )}
   </main>
 </Layout>

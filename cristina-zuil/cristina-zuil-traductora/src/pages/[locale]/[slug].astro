@@ -1,41 +1,67 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, getNonDefaultLocales, isHomePage } from '../../config/i18n.js';
+import { 
+  i18nConfig, 
+  getLocalizedUrl, 
+  fetchPagesByLocale,
+  fetchBooksByLocale,
+  fetchArticlesByLocale,
+  getNonDefaultLocales,
+  isHomePage 
+} from '../../config/i18n.js';
+
+import DefaultPage from '../../templates/DefaultPage.astro';
+import ArchiveBooks from '../../templates/archive/ArchiveBooks.astro';
+import ArchiveArticles from '../../templates/archive/ArchiveArticles.astro';
 
 export async function getStaticPaths() {
   const nonDefaultLocales = getNonDefaultLocales();
-  const paths: Array<{
+  const allPaths: Array<{
     params: { locale: string; slug: string };
-    props: { page: any; locale: string };
+    props: { page: any; locale: string; templateData?: any };
   }> = [];
   
   for (const locale of nonDefaultLocales) {
     const pages = await fetchPagesByLocale(locale);
     
-    pages.forEach((page) => {
-      // Exclude homepage (empty slug) from [slug] routes
-      if (page?.slug && !isHomePage(page)) {
-        paths.push({
-          params: { 
-            locale,
-            slug: page.slug
-          },
-          props: { page, locale },
-        });
+    const validPages = pages.filter((page: any) => {
+      if (!page?.slug || isHomePage(page)) {
+        return false;
       }
+      return true;
     });
+    
+    for (const page of validPages) {
+      let templateData = null;
+      
+      if (page.template === 'archive-books') {
+        const category = page.bookCategory || null;
+        templateData = await fetchBooksByLocale(locale, category);
+      } else if (page.template === 'archive-articles') {
+        templateData = await fetchArticlesByLocale(locale);
+      }
+      
+      allPaths.push({
+        params: { 
+          locale,
+          slug: page.slug 
+        },
+        props: { page, locale, templateData },
+      });
+    }
   }
   
-  return paths;
+  return allPaths;
 }
 
 interface Props {
   page: any;
   locale: string;
+  templateData?: any;
 }
 
-const { page, locale } = Astro.props as Props;
-const { title, content, slug, localizations } = page;
+const { page, locale, templateData } = Astro.props as Props;
+const { title, content, slug, localizations, template } = page;
 
 const getLocaleLabel = (loc: string) => {
   return i18nConfig.localeLabels[loc as keyof typeof i18nConfig.localeLabels] || loc.toUpperCase();
@@ -44,8 +70,6 @@ const getLocaleLabel = (loc: string) => {
 
 <Layout title={title}>
   <main>
-    <h1>{title}</h1>
-    
     <nav class="language-switcher">
       {localizations?.map((localization: any) => {
         const loc = localization.locale;
@@ -62,14 +86,25 @@ const getLocaleLabel = (loc: string) => {
       </a>
     </nav>
     
-    {Array.isArray(content) ? (
-      <div>
-        {content.map((block: any) => (
-          <div set:html={block.body || ''} />
-        ))}
-      </div>
+    {template === 'archive-books' && templateData ? (
+      <ArchiveBooks 
+        items={templateData}
+        title={title}
+        description={content}
+        locale={locale}
+        archiveSlug={slug}
+        category={page.bookCategory || ''}
+      />
+    ) : template === 'archive-articles' && templateData ? (
+      <ArchiveArticles 
+        items={templateData}
+        title={title}
+        description={content}
+        locale={locale}
+        archiveSlug={slug}
+      />
     ) : (
-      <div set:html={content} />
+      <DefaultPage page={page} />
     )}
   </main>
 </Layout>
