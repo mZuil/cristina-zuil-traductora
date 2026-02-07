@@ -118,8 +118,13 @@ export default ({ env }) => {
           // @ts-ignore - strapi is available in the handler context
           const strapiInstance = strapi;
           
-          // Fetch the document
-          const document = await strapiInstance.documents(uid).findOne({ documentId });
+          // Convert documentId to string as required by Strapi
+          const documentIdString = String(documentId);
+          
+          // Fetch the document - using type assertion for uid
+          const document = await (strapiInstance.documents(uid as any) as any).findOne({ 
+            documentId: documentIdString 
+          });
           
           if (!document) {
             return null;
