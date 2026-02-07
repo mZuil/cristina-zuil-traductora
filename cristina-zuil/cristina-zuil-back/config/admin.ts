@@ -137,11 +137,17 @@ export default ({ env }) => {
             return null;
           }
 
+          // Normalize clientUrl - remove trailing slash if present
+          const normalizedClientUrl = clientUrl.replace(/\/+$/, '');
+          
+          // Ensure pathname starts with / (it should, but just to be safe)
+          const normalizedPathname = pathname.startsWith('/') ? pathname : `/${pathname}`;
+
           // Build the preview URL
           // For draft content, you might want to add a query parameter
           const previewUrl = status === 'draft' 
-            ? `${clientUrl}${pathname}?preview=true&draft=true`
-            : `${clientUrl}${pathname}`;
+            ? `${normalizedClientUrl}${normalizedPathname}?preview=true&draft=true`
+            : `${normalizedClientUrl}${normalizedPathname}`;
 
           return previewUrl;
         },
