@@ -32,6 +32,26 @@
         "videos",
         "audios"
       ]
+    },
+    "seoMetaTitle": {
+      "type": "string",
+      "required": false
+    },
+    "seoMetaDescription": {
+      "type": "text",
+      "required": false
+    },
+    "seoMetaImage": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": [
+        "images"
+      ],
+      "required": false
+    },
+    "seoKeywords": {
+      "type": "string",
+      "required": false
     }
   }
 }

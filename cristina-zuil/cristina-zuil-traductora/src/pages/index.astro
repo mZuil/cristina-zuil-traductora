@@ -17,7 +17,11 @@ const getLocaleLabel = (loc: string) => {
 };
 ---
 
-<Layout title={title}>
+<Layout 
+  content={homePage}
+  locale={i18nConfig.defaultLocale}
+  contentType="WebSite"
+>
   <main>
     <h1>{title}</h1>
     

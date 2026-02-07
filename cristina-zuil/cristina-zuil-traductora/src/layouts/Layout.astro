@@ -1,17 +1,47 @@
 ---
 import { ClientRouter } from 'astro:transitions';
+import SEOHead from '../components/seo/SEOHead.astro';
+import { i18nConfig } from '../config/i18n.js';
+import { getSEOData, getStructuredData } from '../utils/seo.js';
 
 //CSS Styles
 import '../styles/global.css';
+
+interface Props {
+  content: any; // Strapi content (page, book, article, etc.)
+  locale?: string;
+  contentType?: 'WebSite' | 'WebPage' | 'Article' | 'Book' | 'CollectionPage';
+  defaultTitle?: string;
+  defaultDescription?: string;
+  defaultImage?: string;
+}
+
+const {
+  content,
+  locale = i18nConfig.defaultLocale,
+  contentType = 'WebPage',
+  defaultTitle,
+  defaultDescription,
+  defaultImage,
+} = Astro.props;
+
+// Get SEO data from Strapi content
+const seoData = getSEOData(content, locale, Astro, {
+  defaultTitle,
+  defaultDescription,
+  defaultImage,
+});
+
+// Get structured data
+const structuredData = getStructuredData(content, contentType, locale, Astro);
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang={locale}>
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Your Site</title>
+    <SEOHead seoData={seoData} />
     <ClientRouter />
+    <script type="application/ld+json" set:html={JSON.stringify(structuredData, null, 2)} />
   </head>
   <body>
     <slot />

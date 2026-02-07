@@ -1,0 +1,82 @@
+---
+import { i18nConfig } from '../../config/i18n.js';
+
+interface Props {
+  seoData: {
+    title?: string;
+    description?: string;
+    image?: string;
+    url?: string;
+    locale?: string;
+    alternateLocales?: Array<{ locale: string; url: string }>;
+    canonicalUrl?: string;
+    noindex?: boolean;
+    publishedTime?: string;
+    modifiedTime?: string;
+    author?: string;
+    keywords?: string;
+  };
+  siteName?: string;
+  twitterHandle?: string;
+}
+
+const {
+  seoData,
+  siteName = 'Cristina Zuil Traductora',
+  twitterHandle,
+} = Astro.props;
+
+const siteUrl = Astro.site?.href || 'http://localhost:4321';
+const fullUrl = seoData.canonicalUrl || seoData.url || Astro.url.href;
+const fullImage = seoData.image 
+  ? (seoData.image.startsWith('http') ? seoData.image : `${i18nConfig.strapi.url}${seoData.image}`)
+  : `${siteUrl}/og-image.jpg`;
+const fullTitle = seoData.title || siteName;
+const locale = seoData.locale || i18nConfig.defaultLocale;
+---
+
+<!-- Primary Meta Tags -->
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{fullTitle}</title>
+{seoData.description && <meta name="description" content={seoData.description} />}
+{seoData.keywords && <meta name="keywords" content={seoData.keywords} />}
+{seoData.noindex && <meta name="robots" content="noindex, nofollow" />}
+
+<!-- Canonical URL -->
+{fullUrl && <link rel="canonical" href={fullUrl} />}
+
+<!-- Alternate Languages (hreflang) -->
+{locale && <link rel="alternate" hreflang={locale} href={fullUrl} />}
+{seoData.alternateLocales?.map((alt) => (
+  <link rel="alternate" hreflang={alt.locale} href={alt.url} />
+))}
+<link rel="alternate" hreflang="x-default" href={fullUrl} />
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content={fullUrl} />
+<meta property="og:title" content={fullTitle} />
+{seoData.description && <meta property="og:description" content={seoData.description} />}
+{fullImage && <meta property="og:image" content={fullImage} />}
+<meta property="og:site_name" content={siteName} />
+{locale && <meta property="og:locale" content={locale} />}
+{seoData.alternateLocales?.map((alt) => (
+  <meta property="og:locale:alternate" content={alt.locale} />
+))}
+{seoData.publishedTime && <meta property="article:published_time" content={seoData.publishedTime} />}
+{seoData.modifiedTime && <meta property="article:modified_time" content={seoData.modifiedTime} />}
+{seoData.author && <meta property="article:author" content={seoData.author} />}
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image" />
+{twitterHandle && <meta name="twitter:site" content={`@${twitterHandle}`} />}
+{twitterHandle && <meta name="twitter:creator" content={`@${twitterHandle}`} />}
+<meta name="twitter:title" content={fullTitle} />
+{seoData.description && <meta name="twitter:description" content={seoData.description} />}
+{fullImage && <meta name="twitter:image" content={fullImage} />}
+
+<!-- Additional SEO -->
+<meta name="theme-color" content="#ffffff" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
