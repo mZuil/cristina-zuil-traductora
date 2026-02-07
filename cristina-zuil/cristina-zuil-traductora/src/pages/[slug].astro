@@ -2,15 +2,41 @@
 import Layout from '../layouts/Layout.astro';
 import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, isHomePage } from '../config/i18n.js';
 
-// Fetch pages and find the homepage (empty slug)
-const pages = await fetchPagesByLocale(i18nConfig.defaultLocale);
-const homePage = pages.find(page => isHomePage(page));
-
-if (!homePage) {
-  throw new Error(`Homepage not found! Create a page with an EMPTY slug in Strapi for locale "${i18nConfig.defaultLocale}"`);
+export async function getStaticPaths() {
+  const pages = await fetchPagesByLocale(i18nConfig.defaultLocale);
+  
+  console.log('Total pages fetched:', pages.length);
+  
+  if (pages.length === 0) {
+    console.warn(`No pages found for default locale: ${i18nConfig.defaultLocale}`);
+    return [];
+  }
+  
+  const validPages = pages.filter(page => {
+    // Exclude homepage (empty slug) and invalid pages
+    if (!page?.slug || isHomePage(page)) {
+      if (isHomePage(page)) {
+        console.log('Excluding homepage (empty slug) from [slug] routes');
+      }
+      return false;
+    }
+    return true;
+  });
+  
+  console.log('Valid pages (excluding home):', validPages.length);
+  
+  return validPages.map((page) => ({
+    params: { slug: page.slug },
+    props: { page },
+  }));
 }
 
-const { title, content, slug, localizations } = homePage;
+interface Props {
+  page: any;
+}
+
+const { page } = Astro.props as Props;
+const { title, content, slug, localizations } = page;
 
 const getLocaleLabel = (loc: string) => {
   return i18nConfig.localeLabels[loc as keyof typeof i18nConfig.localeLabels] || loc.toUpperCase();
@@ -22,7 +48,7 @@ const getLocaleLabel = (loc: string) => {
     <h1>{title}</h1>
     
     <nav class="language-switcher">
-      <a href="/" class="active">
+      <a href={`/${slug}`} class="active">
         {getLocaleLabel(i18nConfig.defaultLocale)}
       </a>
       {localizations?.map((localization: any) => {

@@ -1,0 +1,71 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, getNonDefaultLocales, isHomePage } from '../../config/i18n.js';
+
+export async function getStaticPaths() {
+  const nonDefaultLocales = getNonDefaultLocales();
+  const paths: Array<{
+    params: { locale: string };
+    props: { page: any; locale: string };
+  }> = [];
+  
+  for (const locale of nonDefaultLocales) {
+    const pages = await fetchPagesByLocale(locale);
+    const homePage = pages.find(page => isHomePage(page));
+    
+    if (homePage) {
+      paths.push({
+        params: { locale },
+        props: { page: homePage, locale },
+      });
+    } else {
+      console.warn(`Homepage not found for locale ${locale}. Create a page with an EMPTY slug`);
+    }
+  }
+  
+  return paths;
+}
+
+interface Props {
+  page: any;
+  locale: string;
+}
+
+const { page, locale } = Astro.props as Props;
+const { title, content, slug, localizations } = page;
+
+const getLocaleLabel = (loc: string) => {
+  return i18nConfig.localeLabels[loc as keyof typeof i18nConfig.localeLabels] || loc.toUpperCase();
+};
+---
+
+<Layout title={title}>
+  <main>
+    <h1>{title}</h1>
+    
+    <nav class="language-switcher">
+      {localizations?.map((localization: any) => {
+        const loc = localization.locale;
+        const localizedSlug = localization.slug;
+        return (
+          <a href={getLocalizedUrl(localizedSlug, loc)}>
+            {getLocaleLabel(loc)}
+          </a>
+        );
+      })}
+      <a href={`/${locale}`} class="active">
+        {getLocaleLabel(locale)}
+      </a>
+    </nav>
+    
+    {Array.isArray(content) ? (
+      <div>
+        {content.map((block: any) => (
+          <div set:html={block.body || ''} />
+        ))}
+      </div>
+    ) : (
+      <div set:html={content} />
+    )}
+  </main>
+</Layout>

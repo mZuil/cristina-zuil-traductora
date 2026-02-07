@@ -1,0 +1,33 @@
+{
+  "kind": "collectionType",
+  "collectionName": "genres",
+  "info": {
+    "singularName": "genre",
+    "pluralName": "genres",
+    "displayName": "Genre"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": true
+    }
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "book": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::book.book",
+      "inversedBy": "genres"
+    }
+  }
+}
