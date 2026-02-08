@@ -81,19 +81,85 @@ ComponentName/
 └── ComponentName.js       # Scripts (if separated)
 ```
 
-## When to Separate Files?
+## Astro Best Practices
 
-**Keep together (recommended for most cases):**
-- Small to medium components
-- Styles and scripts are component-specific
-- Easier to maintain related code together
-- Astro's scoped styles work better
+### Keep Everything Together (Recommended)
 
-**Separate files:**
-- Very large components (>200 lines)
-- Shared logic across multiple components
-- Complex calculations or utilities
-- Reusable functions
+**For most components, keep HTML, CSS, and JS in one `.astro` file:**
+
+```astro
+---
+// Frontmatter: TypeScript/JavaScript logic
+---
+
+<!-- HTML template -->
+<div class="my-component">...</div>
+
+<style>
+  /* Scoped CSS - automatically scoped to this component */
+  .my-component { ... }
+</style>
+
+<script>
+  // Client-side JavaScript - only runs in browser
+  // Has access to document, window, etc.
+</script>
+```
+
+**Benefits:**
+- ✅ **Scoped styles** - Astro automatically scopes CSS to the component
+- ✅ **Better performance** - Astro optimizes and bundles everything
+- ✅ **Easier maintenance** - Related code stays together
+- ✅ **No SSR issues** - Scripts in `<script>` tags only run on client
+- ✅ **Type safety** - TypeScript in frontmatter works seamlessly
+
+### When to Separate Files
+
+**Separate CSS files:**
+- ✅ **Shared styles** - Styles used by multiple components
+- ✅ **Very large stylesheets** - 200+ lines of CSS
+- ✅ **Third-party CSS** - External libraries
+- ✅ **Global styles** - Already in `styles/global.css`
+
+**Separate JavaScript files:**
+- ✅ **Shared utilities** - Functions used by multiple components
+- ✅ **Complex logic** - Heavy calculations or data processing
+- ✅ **Reusable modules** - Imported by many components
+- ⚠️ **Important**: Import JS in `<script>` tags, NOT in frontmatter
+
+**Example of proper JS separation:**
+```astro
+---
+// Frontmatter - server-side only
+---
+
+<div>...</div>
+
+<script>
+  // Import shared utilities here (runs on client)
+  import { someUtility } from '../../utils/helpers.js';
+  
+  // Component-specific client code
+  document.addEventListener('click', ...);
+</script>
+```
+
+### Anti-Patterns to Avoid
+
+❌ **Don't import JS in frontmatter for DOM manipulation:**
+```astro
+---
+import './component.js'; // ❌ Can run during SSR, document not available
+---
+```
+
+✅ **Do use script tags:**
+```astro
+<script>
+  // ✅ Only runs on client, document available
+  document.getElementById('...');
+</script>
+```
 
 ## Import Examples
 
