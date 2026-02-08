@@ -90,6 +90,7 @@ import './GridOverlay.css';
           overlayHTML += `<div class="grid-column-number" style="left: ${numberLeft}px;">${i + 1}</div>`;
           
           // Gap visualization (between columns, except after last column)
+          // The gap starts at the right edge of the current column
           if (i < columns - 1 && gapValue > 0) {
             overlayHTML += `<div class="grid-gap" style="left: ${columnRight}px; width: ${gapValue}px; top: 0; height: ${viewportHeight}px;"></div>`;
           }
