@@ -80,26 +80,18 @@ import './GridOverlay.css';
         for (let i = 0; i < columns; i++) {
           // Calculate column position
           const columnLeft = containerLeft + paddingValue + (i * (columnWidth + gapValue));
-          const columnRight = columnLeft + columnWidth;
           
-          // Column line (left edge)
-          overlayHTML += `<div class="grid-line" style="left: ${columnLeft}px; top: 0; height: ${viewportHeight}px;"></div>`;
-          
-          // Column number (centered in column, both horizontally and vertically)
-          const numberLeft = columnLeft + columnWidth / 2;
-          overlayHTML += `<div class="grid-column-number" style="left: ${numberLeft}px;">${i + 1}</div>`;
+          // Create a div for each column with outline and number inside
+          overlayHTML += `<div class="grid-column" style="left: ${columnLeft}px; width: ${columnWidth}px; top: 0; height: ${viewportHeight}px;">
+            <span class="grid-column-number">${i + 1}</span>
+          </div>`;
           
           // Gap visualization (between columns, except after last column)
-          // The gap starts at the right edge of the current column
           if (i < columns - 1 && gapValue > 0) {
-            overlayHTML += `<div class="grid-gap" style="left: ${columnRight}px; width: ${gapValue}px; top: 0; height: ${viewportHeight}px;"></div>`;
+            const gapLeft = columnLeft + columnWidth;
+            overlayHTML += `<div class="grid-gap" style="left: ${gapLeft}px; width: ${gapValue}px; top: 0; height: ${viewportHeight}px;"></div>`;
           }
         }
-        
-        // Right edge line (last column)
-        const lastColumnLeft = containerLeft + paddingValue + ((columns - 1) * (columnWidth + gapValue));
-        const lastColumnRight = lastColumnLeft + columnWidth;
-        overlayHTML += `<div class="grid-line" style="left: ${lastColumnRight}px; top: 0; height: ${viewportHeight}px;"></div>`;
         
         overlay.innerHTML = overlayHTML;
       }

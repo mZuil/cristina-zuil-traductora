@@ -19,11 +19,14 @@
   display: none;
 }
 
-.grid-line {
+.grid-column {
   position: absolute;
-  width: 2px;
-  background: rgba(255, 0, 0, 0.6);
   pointer-events: none;
+  border-left: 2px solid rgba(255, 0, 0, 0.6);
+  border-right: 2px solid rgba(255, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .grid-gap {
@@ -43,7 +46,6 @@
 }
 
 .grid-column-number {
-  position: absolute;
   background: rgba(0, 0, 0, 0.9);
   color: white;
   padding: 8px 12px;
@@ -52,8 +54,5 @@
   font-weight: bold;
   font-family: monospace;
   pointer-events: none;
-  transform: translate(-50%, -50%);
-  z-index: 10000;
-  top: 50%;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
