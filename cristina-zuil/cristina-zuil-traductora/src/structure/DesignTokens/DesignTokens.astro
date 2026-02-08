@@ -40,4 +40,4 @@ ${cssVars.join('\n')}
 }`;
 ---
 
-<Fragment set:html={`<style>${cssVariables}</style>`} />
+<style is:global set:html={cssVariables}></style>

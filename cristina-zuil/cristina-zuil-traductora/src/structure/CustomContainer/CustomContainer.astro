@@ -49,11 +49,11 @@ const { class: className = '' } = Astro.props;
         return parseFloat(remStr);
       }
       
-      // Determine current breakpoint
+      // Determine current breakpoint - get from CSS variables (from design tokens)
       const width = rect.width;
-      const smBreakpoint = 640;
-      const mdBreakpoint = 768;
-      const lgBreakpoint = 1024;
+      const smBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-sm').trim()) || 640;
+      const mdBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-md').trim()) || 768;
+      const lgBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-lg').trim()) || 1024;
       
       let currentColumns = smColumns;
       let currentGap = smGapStr;
@@ -76,11 +76,11 @@ const { class: className = '' } = Astro.props;
       const availableWidth = width - (paddingValue * 2);
       const columnWidth = (availableWidth - totalGaps) / currentColumns;
       
-      // Calculate margin (when exceeding max-width on lg)
-      let margin = 0;
-      if (width >= lgBreakpoint && maxWidthValue > 0 && width > maxWidthValue) {
-        margin = (width - maxWidthValue) / 2;
-      }
+        // Calculate margin (when exceeding max-width on lg) - equal margins on both sides
+        let margin = 0;
+        if (width >= lgBreakpoint && maxWidthValue > 0 && width > maxWidthValue) {
+          margin = (width - maxWidthValue) / 2;
+        }
       
       // Set CSS variables on the container
       el.style.setProperty('--container-width', `${width}px`);

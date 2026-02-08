@@ -29,7 +29,7 @@ export const designTokens = {
       columns: 12,
       gap: '2rem',
       padding: '3rem',
-      maxWidth: '1024px',
+      maxWidth: '1440px',
     },
   },
 

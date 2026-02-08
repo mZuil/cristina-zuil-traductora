@@ -4,29 +4,9 @@
 
 /* ============================================
    DESIGN TOKENS CSS VARIABLES
-   Auto-generated from design-tokens.ts
-   Run: node scripts/generate-design-tokens-css.js to update
+   Auto-generated from design-tokens.ts via DesignTokens.astro component
+   Do not hardcode values here - they come from src/config/design-tokens.ts
    ============================================ */
-
-:root {
-  --color-black: #000000;
-  --color-white: #ffffff;
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1024px;
-  --grid-columns-sm: 4;
-  --grid-columns-md: 8;
-  --grid-columns-lg: 12;
-  --grid-gap-sm: 1rem;
-  --grid-gap-md: 1.5rem;
-  --grid-gap-lg: 2rem;
-  --container-padding-sm: 1rem;
-  --container-padding-md: 2rem;
-  --container-padding-lg: 3rem;
-  --container-max-width-lg: 1024px;
-  --font-family-primary: YourFontName, sans-serif;
-  --font-family-secondary: YourSecondaryFont, serif;
-}
 
 /* ============================================
    BASE STYLES

@@ -24,16 +24,25 @@ import './GridOverlay.css';
         const rootStyle = getComputedStyle(document.documentElement);
         const viewportWidth = window.innerWidth;
         
+        // Get breakpoints from CSS variables (from design tokens)
+        const smBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-sm').trim()) || 640;
+        const mdBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-md').trim()) || 768;
+        const lgBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-lg').trim()) || 1024;
+        
+        // Get max width from CSS variables (from design tokens)
+        const maxWidthStr = rootStyle.getPropertyValue('--container-max-width-lg').trim();
+        const maxWidth = parseFloat(maxWidthStr) || 1440;
+        
         // Determine columns based on viewport width
         let columns = parseInt(rootStyle.getPropertyValue('--grid-columns-sm').trim()) || 4;
         let gap = rootStyle.getPropertyValue('--grid-gap-sm').trim() || '1rem';
         let padding = rootStyle.getPropertyValue('--container-padding-sm').trim() || '1rem';
         
-        if (viewportWidth >= 1024) {
+        if (viewportWidth >= lgBreakpoint) {
           columns = parseInt(rootStyle.getPropertyValue('--grid-columns-lg').trim()) || 12;
           gap = rootStyle.getPropertyValue('--grid-gap-lg').trim() || '2rem';
           padding = rootStyle.getPropertyValue('--container-padding-lg').trim() || '3rem';
-        } else if (viewportWidth >= 768) {
+        } else if (viewportWidth >= mdBreakpoint) {
           columns = parseInt(rootStyle.getPropertyValue('--grid-columns-md').trim()) || 8;
           gap = rootStyle.getPropertyValue('--grid-gap-md').trim() || '1.5rem';
           padding = rootStyle.getPropertyValue('--container-padding-md').trim() || '2rem';
@@ -50,12 +59,51 @@ import './GridOverlay.css';
         
         const gapValue = remToPx(gap);
         const paddingValue = remToPx(padding);
+        
+        // Calculate container width (max from design tokens, centered if viewport is larger)
+        let containerWidth = viewportWidth;
+        let containerLeft = 0;
+        
+        if (viewportWidth >= lgBreakpoint) {
+          // For large screens, use max-width from design tokens
+          containerWidth = Math.min(viewportWidth, maxWidth);
+          // Center the container if viewport is larger than max-width
+          if (viewportWidth > maxWidth) {
+            containerLeft = (viewportWidth - maxWidth) / 2;
+          }
+        }
+        
         const totalGaps = (columns - 1) * gapValue;
-        const availableWidth = viewportWidth - (paddingValue * 2);
+        const availableWidth = containerWidth - (paddingValue * 2);
         const columnWidth = (availableWidth - totalGaps) / columns;
         
         // Create grid lines for the entire viewport
         let overlayHTML = '';
+        
+        // Add viewport-wide grid overlay (centered if needed)
+        overlayHTML += `<div class="grid-viewport-overlay" style="left: ${containerLeft}px; width: ${containerWidth}px;">`;
+        
+        // Draw column lines and gaps
+        for (let i = 0; i <= columns; i++) {
+          const left = containerLeft + paddingValue + (i * (columnWidth + gapValue));
+          
+          // Column line
+          overlayHTML += `<div class="grid-line grid-line-viewport" style="left: ${left}px;"></div>`;
+          
+          // Column number (except for the last line)
+          if (i < columns) {
+            const numberLeft = left + columnWidth / 2;
+            overlayHTML += `<div class="grid-column-number" style="left: ${numberLeft}px; top: 10px;">${i + 1}</div>`;
+          }
+          
+          // Gap visualization (between columns, not after the last one)
+          if (i < columns && gapValue > 0) {
+            const gapLeft = left + columnWidth;
+            overlayHTML += `<div class="grid-gap" style="left: ${gapLeft}px; width: ${gapValue}px;"></div>`;
+          }
+        }
+        
+        overlayHTML += '</div>';
         
         // Also overlay any CustomContainer components if they exist
         const containers = document.querySelectorAll('.custom-container');
@@ -66,18 +114,33 @@ import './GridOverlay.css';
             const rect = el.getBoundingClientRect();
             const style = window.getComputedStyle(el);
             
+            // Get breakpoints from CSS variables (from design tokens)
+            const smBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-sm').trim()) || 640;
+            const mdBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-md').trim()) || 768;
+            const lgBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-lg').trim()) || 1024;
+            
             let containerColumns = parseInt(rootStyle.getPropertyValue('--grid-columns-sm').trim()) || 4;
-            if (rect.width >= 1024) {
+            if (rect.width >= lgBreakpoint) {
               containerColumns = parseInt(rootStyle.getPropertyValue('--grid-columns-lg').trim()) || 12;
-            } else if (rect.width >= 768) {
+            } else if (rect.width >= mdBreakpoint) {
               containerColumns = parseInt(rootStyle.getPropertyValue('--grid-columns-md').trim()) || 8;
             }
             
             const containerGap = style.gap || '0';
-            const containerPadding = style.paddingLeft || '0';
+            // Get padding - use paddingLeft (should be same as paddingRight due to CSS)
+            const containerPaddingStr = style.paddingLeft || style.padding || '0';
             
-            const containerGapValue = parseFloat(containerGap);
-            const containerPaddingValue = parseFloat(containerPadding);
+            // Convert rem to px for container padding
+            function remToPxContainer(remStr) {
+              if (remStr.includes('rem')) {
+                const remValue = parseFloat(remStr);
+                return remValue * parseFloat(getComputedStyle(document.documentElement).fontSize);
+              }
+              return parseFloat(remStr);
+            }
+            
+            const containerGapValue = remToPxContainer(containerGap);
+            const containerPaddingValue = remToPxContainer(containerPaddingStr);
             const containerTotalGaps = (containerColumns - 1) * containerGapValue;
             const containerAvailableWidth = rect.width - (containerPaddingValue * 2);
             const containerColumnWidth = (containerAvailableWidth - containerTotalGaps) / containerColumns;
@@ -85,22 +148,30 @@ import './GridOverlay.css';
             const containerId = `grid-container-${Math.random().toString(36).substr(2, 9)}`;
             overlayHTML += `<div class="grid-container-overlay" data-container-id="${containerId}" style="top: ${rect.top + window.scrollY}px; left: ${rect.left}px; width: ${rect.width}px; height: ${rect.height}px;">`;
             
+            // Calculate starting position relative to container's left edge
+            const containerStartX = rect.left;
+            
             for (let i = 0; i <= containerColumns; i++) {
-              const left = containerPaddingValue + (i * (containerColumnWidth + containerGapValue));
+              // Calculate position relative to viewport, accounting for container's position
+              const left = containerStartX + containerPaddingValue + (i * (containerColumnWidth + containerGapValue));
               overlayHTML += `<div class="grid-line grid-line-container" style="left: ${left}px;"></div>`;
+              
+              // Column number for containers
+              if (i < containerColumns) {
+                const numberLeft = left + containerColumnWidth / 2;
+                overlayHTML += `<div class="grid-column-number grid-column-number-container" style="left: ${numberLeft}px; top: ${rect.top + window.scrollY + 10}px;">${i + 1}</div>`;
+              }
+              
+              // Gap visualization
+              if (i < containerColumns && containerGapValue > 0) {
+                const gapLeft = left + containerColumnWidth;
+                overlayHTML += `<div class="grid-gap grid-gap-container" style="left: ${gapLeft}px; width: ${containerGapValue}px; top: ${rect.top + window.scrollY}px; height: ${rect.height}px;"></div>`;
+              }
             }
             
             overlayHTML += '</div>';
           });
         }
-        
-        // Add viewport-wide grid overlay
-        overlayHTML += `<div class="grid-viewport-overlay">`;
-        for (let i = 0; i <= columns; i++) {
-          const left = paddingValue + (i * (columnWidth + gapValue));
-          overlayHTML += `<div class="grid-line grid-line-viewport" style="left: ${left}px;"></div>`;
-        }
-        overlayHTML += '</div>';
         
         overlay.innerHTML = overlayHTML;
       }

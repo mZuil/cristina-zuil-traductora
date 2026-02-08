@@ -15,7 +15,7 @@
   --max-container-width: var(--container-max-width-lg);
 }
 
-@media (min-width: 768px) {
+@media (min-width: var(--breakpoint-md)) {
   .custom-container {
     padding: var(--container-padding-md);
     grid-template-columns: repeat(var(--grid-columns-md), 1fr);
@@ -26,7 +26,7 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: var(--breakpoint-lg)) {
   .custom-container {
     max-width: var(--container-max-width-lg);
     padding: var(--container-padding-lg);
@@ -35,5 +35,13 @@
     --column-width: calc((var(--max-container-width) - (var(--grid-columns-lg) - 1) * var(--grid-gap-lg) - var(--container-padding) * 2) / var(--grid-columns-lg));
     --grid-gutter: var(--grid-gap-lg);
     --container-padding: var(--container-padding-lg);
+  }
+}
+
+/* When viewport exceeds max-width, center container with equal margins */
+@media (min-width: var(--container-max-width-lg)) {
+  .custom-container {
+    margin-left: auto;
+    margin-right: auto;
   }
 }
