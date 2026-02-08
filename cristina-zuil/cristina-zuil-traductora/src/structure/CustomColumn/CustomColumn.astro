@@ -23,49 +23,66 @@ const {
 
 const { sm: smBreakpoint, md: mdBreakpoint, lg: lgBreakpoint } = designTokens.breakpoints;
 
-// Generate CSS strings
-let smCss = '';
-let mdCss = '';
-let lgCss = '';
+// Generate CSS strings for flexbox width calculations
+let completeCss = '';
 
-// Small screen
+// Small screen (default, up to md breakpoint)
 if (sm !== undefined) {
-  if (smPush !== undefined) {
-    smCss = `grid-column: ${smPush + 1} / span ${sm};`;
-  } else {
-    smCss = `grid-column: span ${sm};`;
+  const smColumns = designTokens.breakpoints.sm.columns;
+  completeCss += `.custom-column {
+  --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));
+  width: calc(var(--w) * ${sm} + var(--grid-gutter) * (${sm} - 1));
+}`;
+  
+  if (smPush !== undefined && smPush > 0) {
+    completeCss += `\n.custom-column {
+  margin-left: calc(var(--w) * ${smPush} + var(--grid-gutter) * ${smPush});
+}`;
   }
 } else {
-  smCss = 'grid-column: 1 / -1;'; // Full width by default
+  // Full width by default
+  completeCss += `.custom-column {
+  width: 100%;
+}`;
 }
 
 // Medium screen
 if (md !== undefined) {
-  if (mdPush !== undefined) {
-    mdCss = `grid-column: ${mdPush + 1} / span ${md};`;
-  } else {
-    mdCss = `grid-column: span ${md};`;
+  const mdStart = mdBreakpoint.breakpoint;
+  const lgStart = lgBreakpoint.breakpoint;
+  // Parse the lg breakpoint to get the max-width for md (lg - 1px)
+  const lgStartValue = parseInt(lgStart);
+  const mdEnd = lgStartValue > 0 ? `${lgStartValue - 1}px` : '1023px';
+  completeCss += `\n\n@media (min-width: ${mdStart}) and (max-width: ${mdEnd}) {
+  .custom-column {
+    --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));
+    width: calc(var(--w) * ${md} + var(--grid-gutter) * (${md} - 1));
+  }`;
+  
+  if (mdPush !== undefined && mdPush > 0) {
+    completeCss += `\n  .custom-column {
+    margin-left: calc(var(--w) * ${mdPush} + var(--grid-gutter) * ${mdPush});
+  }`;
   }
+  
+  completeCss += `\n}`;
 }
 
 // Large screen
 if (lgSpan !== undefined) {
-  if (lgPush !== undefined) {
-    lgCss = `grid-column: ${lgPush + 1} / span ${lgSpan};`;
-  } else {
-    lgCss = `grid-column: span ${lgSpan};`;
+  completeCss += `\n\n@media (min-width: ${lgBreakpoint.breakpoint}) {
+  .custom-column {
+    --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));
+    width: calc(var(--w) * ${lgSpan} + var(--grid-gutter) * (${lgSpan} - 1));
+  }`;
+  
+  if (lgPush !== undefined && lgPush > 0) {
+    completeCss += `\n  .custom-column {
+    margin-left: calc(var(--w) * ${lgPush} + var(--grid-gutter) * ${lgPush});
+  }`;
   }
-}
-
-// Build complete CSS
-let completeCss = `.custom-column { ${smCss} }`;
-
-if (mdCss) {
-  completeCss += `\n\n@media (min-width: ${mdBreakpoint.breakpoint}) {\n  .custom-column { ${mdCss} }\n}`;
-}
-
-if (lgCss) {
-  completeCss += `\n\n@media (min-width: ${lgBreakpoint.breakpoint}) {\n  .custom-column { ${lgCss} }\n}`;
+  
+  completeCss += `\n}`;
 }
 ---
 

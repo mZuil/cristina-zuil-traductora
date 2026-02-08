@@ -1,6 +1,6 @@
 .custom-container {
   max-width: 100%;
-  width: calc(100% + var(--container-padding-sm) * 2);
+  width: calc(var(--container-max-width) + var(--container-padding-sm) * 2);
   padding-inline: var(--container-padding-sm);
   margin: 0 auto;
   display: flex;
@@ -9,16 +9,20 @@
   
   /* CSS Variables */
   --container-padding: var(--container-padding-sm);
+  --container-inner-width: 100%;
+  --container-margin: calc((100dvw - min(100dvw - 2 * var(--container-padding-sm), var(--container-max-width))) / 2);
   --grid-gutter: var(--grid-gap-sm);
   --total-columns: var(--grid-columns-sm);
 }
 
 @media (min-width: var(--breakpoint-md)) {
   .custom-container {
-    width: calc(100% + var(--container-padding-md) * 2);
+    width: calc(var(--container-max-width) + var(--container-padding-md) * 2);
     padding-inline: var(--container-padding-md);
     column-gap: var(--grid-gap-md);
     --container-padding: var(--container-padding-md);
+    --container-inner-width: 100%;
+    --container-margin: calc((100dvw - min(100dvw - 2 * var(--container-padding-md), var(--container-max-width))) / 2);
     --grid-gutter: var(--grid-gap-md);
     --total-columns: var(--grid-columns-md);
   }
@@ -26,11 +30,12 @@
 
 @media (min-width: var(--breakpoint-lg)) {
   .custom-container {
-    max-width: var(--container-max-width);
-    width: calc(100% + var(--container-padding-lg) * 2);
+    width: calc(var(--container-max-width) + var(--container-padding-lg) * 2);
     padding-inline: var(--container-padding-lg);
     column-gap: var(--grid-gap-lg);
     --container-padding: var(--container-padding-lg);
+    --container-inner-width: 100%;
+    --container-margin: calc((100dvw - min(100dvw - 2 * var(--container-padding-lg), var(--container-max-width))) / 2);
     --grid-gutter: var(--grid-gap-lg);
     --total-columns: var(--grid-columns-lg);
   }
