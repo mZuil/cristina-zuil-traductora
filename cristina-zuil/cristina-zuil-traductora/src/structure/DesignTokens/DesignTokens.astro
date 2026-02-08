@@ -21,11 +21,11 @@ for (const key in breakpoints) {
     cssVars.push(`  --grid-columns-${key}: ${value.columns};`);
     cssVars.push(`  --grid-gap-${key}: ${value.gap};`);
     cssVars.push(`  --container-padding-${key}: ${value.padding};`);
-    if ('maxWidth' in value && value.maxWidth) {
-      cssVars.push(`  --container-max-width-${key}: ${value.maxWidth};`);
-    }
   }
 }
+
+// Container max-width (separate from breakpoints)
+cssVars.push(`  --container-max-width: ${designTokens.containerMaxWidth};`);
 
 // Font families
 const fontFamilies = designTokens.fonts.families as Record<string, string>;

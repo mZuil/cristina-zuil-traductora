@@ -1,39 +1,37 @@
 .custom-container {
-  width: 100%;
+  max-width: 100%;
+  width: calc(100% + var(--container-padding-sm) * 2);
+  padding-inline: var(--container-padding-sm);
   margin: 0 auto;
-  padding: var(--container-padding-sm);
-  display: grid;
-  grid-template-columns: repeat(var(--grid-columns-sm), 1fr);
-  gap: var(--grid-gap-sm);
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--grid-gap-sm);
   
-  /* CSS Variables (updated dynamically) */
-  --container-width: 100%;
-  --column-width: calc((100% - (var(--grid-columns-sm) - 1) * var(--grid-gap-sm)) / var(--grid-columns-sm));
-  --grid-gutter: var(--grid-gap-sm);
+  /* CSS Variables */
   --container-padding: var(--container-padding-sm);
-  --max-container-width: var(--container-max-width-lg);
+  --grid-gutter: var(--grid-gap-sm);
+  --total-columns: var(--grid-columns-sm);
 }
 
 @media (min-width: var(--breakpoint-md)) {
   .custom-container {
-    padding: var(--container-padding-md);
-    grid-template-columns: repeat(var(--grid-columns-md), 1fr);
-    gap: var(--grid-gap-md);
-    --column-width: calc((100% - (var(--grid-columns-md) - 1) * var(--grid-gap-md) - var(--container-padding) * 2) / var(--grid-columns-md));
-    --grid-gutter: var(--grid-gap-md);
+    width: calc(100% + var(--container-padding-md) * 2);
+    padding-inline: var(--container-padding-md);
+    column-gap: var(--grid-gap-md);
     --container-padding: var(--container-padding-md);
+    --grid-gutter: var(--grid-gap-md);
+    --total-columns: var(--grid-columns-md);
   }
 }
 
 @media (min-width: var(--breakpoint-lg)) {
   .custom-container {
-    max-width: var(--container-max-width-lg);
-    padding: var(--container-padding-lg);
-    grid-template-columns: repeat(var(--grid-columns-lg), 1fr);
-    gap: var(--grid-gap-lg);
-    --column-width: calc((var(--max-container-width) - (var(--grid-columns-lg) - 1) * var(--grid-gap-lg) - var(--container-padding) * 2) / var(--grid-columns-lg));
-    --grid-gutter: var(--grid-gap-lg);
+    max-width: var(--container-max-width);
+    width: calc(100% + var(--container-padding-lg) * 2);
+    padding-inline: var(--container-padding-lg);
+    column-gap: var(--grid-gap-lg);
     --container-padding: var(--container-padding-lg);
-    margin-inline: auto;
+    --grid-gutter: var(--grid-gap-lg);
+    --total-columns: var(--grid-columns-lg);
   }
 }

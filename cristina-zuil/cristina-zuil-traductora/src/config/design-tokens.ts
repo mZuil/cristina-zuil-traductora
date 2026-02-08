@@ -29,9 +29,11 @@ export const designTokens = {
       columns: 12,
       gap: '2rem',
       padding: '3rem',
-      maxWidth: '1440px',
     },
   },
+
+  // Container max-width (applies when viewport >= lg breakpoint)
+  containerMaxWidth: '1440px',
 
   // Typography - Responsive font styles
   fonts: {
