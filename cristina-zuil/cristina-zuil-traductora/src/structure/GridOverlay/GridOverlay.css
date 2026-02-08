@@ -17,6 +17,15 @@
   pointer-events: none;
 }
 
+.grid-viewport-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
 .grid-line {
   position: absolute;
   top: 0;
@@ -26,8 +35,23 @@
   pointer-events: none;
 }
 
-.grid-container-overlay .grid-line:first-child,
-.grid-container-overlay .grid-line:last-child {
-  background: rgba(255, 0, 0, 0.6);
+.grid-line-viewport {
+  background: rgba(0, 0, 255, 0.2);
+  height: 100vh;
+}
+
+.grid-line-container {
+  background: rgba(255, 0, 0, 0.4);
+}
+
+.grid-container-overlay .grid-line-container:first-child,
+.grid-container-overlay .grid-line-container:last-child {
+  background: rgba(255, 0, 0, 0.7);
+  width: 2px;
+}
+
+.grid-viewport-overlay .grid-line-viewport:first-child,
+.grid-viewport-overlay .grid-line-viewport:last-child {
+  background: rgba(0, 0, 255, 0.4);
   width: 2px;
 }
