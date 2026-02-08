@@ -9,93 +9,113 @@ import './GridOverlay.css';
   // Press Cmd+Shift+G (Mac) or Ctrl+Shift+G (Windows) to toggle
 
   (function() {
-    let isVisible = false;
-    const overlay = document.getElementById('grid-overlay');
-    
-    if (!overlay) return;
-
-    // Calculate grid overlay based on all containers
-    function updateGridOverlay() {
-      const containers = document.querySelectorAll('.custom-container');
-      if (containers.length === 0) {
-        overlay.innerHTML = '';
+    // Wait for DOM to be ready
+    function init() {
+      let isVisible = false;
+      const overlay = document.getElementById('grid-overlay');
+      
+      if (!overlay) {
+        console.warn('GridOverlay: overlay element not found');
         return;
       }
 
-      let overlayHTML = '';
-      
-      containers.forEach((container) => {
-        const el = container;
-        const rect = el.getBoundingClientRect();
-        const style = window.getComputedStyle(el);
+      // Calculate grid overlay based on all containers
+      function updateGridOverlay() {
+        const containers = document.querySelectorAll('.custom-container');
         
-        // Get current breakpoint values
-        const rootStyle = getComputedStyle(document.documentElement);
-        let columns = parseInt(rootStyle.getPropertyValue('--grid-columns-sm').trim()) || 4;
-        
-        if (rect.width >= 1024) {
-          columns = parseInt(rootStyle.getPropertyValue('--grid-columns-lg').trim()) || 12;
-        } else if (rect.width >= 768) {
-          columns = parseInt(rootStyle.getPropertyValue('--grid-columns-md').trim()) || 8;
+        if (containers.length === 0) {
+          overlay.innerHTML = '<div style="position: fixed; top: 20px; right: 20px; background: rgba(255,0,0,0.8); color: white; padding: 10px; border-radius: 4px; z-index: 10000;">No CustomContainer found on this page</div>';
+          return;
         }
+
+        let overlayHTML = '';
         
-        const gap = style.gap || '0';
-        const padding = style.paddingLeft || '0';
+        containers.forEach((container) => {
+          const el = container;
+          const rect = el.getBoundingClientRect();
+          const style = window.getComputedStyle(el);
+          
+          // Get current breakpoint values
+          const rootStyle = getComputedStyle(document.documentElement);
+          let columns = parseInt(rootStyle.getPropertyValue('--grid-columns-sm').trim()) || 4;
+          
+          if (rect.width >= 1024) {
+            columns = parseInt(rootStyle.getPropertyValue('--grid-columns-lg').trim()) || 12;
+          } else if (rect.width >= 768) {
+            columns = parseInt(rootStyle.getPropertyValue('--grid-columns-md').trim()) || 8;
+          }
+          
+          const gap = style.gap || '0';
+          const padding = style.paddingLeft || '0';
+          
+          // Calculate column width
+          const gapValue = parseFloat(gap);
+          const paddingValue = parseFloat(padding);
+          const totalGaps = (columns - 1) * gapValue;
+          const availableWidth = rect.width - (paddingValue * 2);
+          const columnWidth = (availableWidth - totalGaps) / columns;
+          
+          // Create grid lines for this container
+          const containerId = `grid-container-${Math.random().toString(36).substr(2, 9)}`;
+          overlayHTML += `<div class="grid-container-overlay" data-container-id="${containerId}" style="top: ${rect.top + window.scrollY}px; left: ${rect.left}px; width: ${rect.width}px; height: ${rect.height}px;">`;
+          
+          for (let i = 0; i <= columns; i++) {
+            const left = paddingValue + (i * (columnWidth + gapValue));
+            overlayHTML += `<div class="grid-line" style="left: ${left}px;"></div>`;
+          }
+          
+          overlayHTML += '</div>';
+        });
         
-        // Calculate column width
-        const gapValue = parseFloat(gap);
-        const paddingValue = parseFloat(padding);
-        const totalGaps = (columns - 1) * gapValue;
-        const availableWidth = rect.width - (paddingValue * 2);
-        const columnWidth = (availableWidth - totalGaps) / columns;
+        overlay.innerHTML = overlayHTML;
+      }
+
+      function toggleGrid() {
+        isVisible = !isVisible;
+        overlay.classList.toggle('hidden', !isVisible);
         
-        // Create grid lines for this container
-        const containerId = `grid-container-${Math.random().toString(36).substr(2, 9)}`;
-        overlayHTML += `<div class="grid-container-overlay" data-container-id="${containerId}" style="top: ${rect.top + window.scrollY}px; left: ${rect.left}px; width: ${rect.width}px; height: ${rect.height}px;">`;
+        console.log('Grid overlay toggled:', isVisible ? 'ON' : 'OFF');
         
-        for (let i = 0; i <= columns; i++) {
-          const left = paddingValue + (i * (columnWidth + gapValue));
-          overlayHTML += `<div class="grid-line" style="left: ${left}px;"></div>`;
+        if (isVisible) {
+          updateGridOverlay();
+          const updateHandler = () => {
+            requestAnimationFrame(updateGridOverlay);
+          };
+          window.addEventListener('resize', updateHandler);
+          window.addEventListener('scroll', updateHandler, true);
+          
+          // Store handlers for cleanup
+          overlay._resizeHandler = updateHandler;
+          overlay._scrollHandler = updateHandler;
+        } else {
+          const resizeHandler = overlay._resizeHandler;
+          const scrollHandler = overlay._scrollHandler;
+          if (resizeHandler) window.removeEventListener('resize', resizeHandler);
+          if (scrollHandler) window.removeEventListener('scroll', scrollHandler, true);
         }
+      }
+
+      // Keyboard shortcut: Cmd+Shift+G (Mac) or Ctrl+Shift+G (Windows)
+      document.addEventListener('keydown', (e) => {
+        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0 || 
+                      navigator.userAgent.toUpperCase().indexOf('MAC') >= 0;
+        const modifier = isMac ? e.metaKey : e.ctrlKey;
         
-        overlayHTML += '</div>';
+        if (modifier && e.shiftKey && (e.key === 'G' || e.key === 'g')) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleGrid();
+        }
       });
       
-      overlay.innerHTML = overlayHTML;
+      console.log('GridOverlay initialized. Press Ctrl+Shift+G (Windows) or Cmd+Shift+G (Mac) to toggle.');
     }
 
-    function toggleGrid() {
-      isVisible = !isVisible;
-      overlay.classList.toggle('hidden', !isVisible);
-      
-      if (isVisible) {
-        updateGridOverlay();
-        const updateHandler = () => {
-          requestAnimationFrame(updateGridOverlay);
-        };
-        window.addEventListener('resize', updateHandler);
-        window.addEventListener('scroll', updateHandler, true);
-        
-        // Store handlers for cleanup
-        overlay._resizeHandler = updateHandler;
-        overlay._scrollHandler = updateHandler;
-      } else {
-        const resizeHandler = overlay._resizeHandler;
-        const scrollHandler = overlay._scrollHandler;
-        if (resizeHandler) window.removeEventListener('resize', resizeHandler);
-        if (scrollHandler) window.removeEventListener('scroll', scrollHandler, true);
-      }
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
     }
-
-    // Keyboard shortcut: Cmd+Shift+G (Mac) or Ctrl+Shift+G (Windows)
-    document.addEventListener('keydown', (e) => {
-      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-      const modifier = isMac ? e.metaKey : e.ctrlKey;
-      
-      if (modifier && e.shiftKey && (e.key === 'G' || e.key === 'g')) {
-        e.preventDefault();
-        toggleGrid();
-      }
-    });
   })();
 </script>
