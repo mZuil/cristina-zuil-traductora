@@ -35,12 +35,6 @@
     --column-width: calc((var(--max-container-width) - (var(--grid-columns-lg) - 1) * var(--grid-gap-lg) - var(--container-padding) * 2) / var(--grid-columns-lg));
     --grid-gutter: var(--grid-gap-lg);
     --container-padding: var(--container-padding-lg);
-  }
-}
-
-/* When viewport exceeds max-width, center container with equal margins */
-@media (min-width: var(--container-max-width-lg)) {
-  .custom-container {
     margin-left: auto;
     margin-right: auto;
   }

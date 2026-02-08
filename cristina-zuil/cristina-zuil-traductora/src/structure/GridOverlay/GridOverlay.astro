@@ -85,20 +85,22 @@ import './GridOverlay.css';
         
         // Draw column lines and gaps
         for (let i = 0; i <= columns; i++) {
-          const left = containerLeft + paddingValue + (i * (columnWidth + gapValue));
+          // Calculate the left edge of each column line
+          const lineLeft = containerLeft + paddingValue + (i * (columnWidth + gapValue));
           
           // Column line
-          overlayHTML += `<div class="grid-line grid-line-viewport" style="left: ${left}px;"></div>`;
+          overlayHTML += `<div class="grid-line grid-line-viewport" style="left: ${lineLeft}px;"></div>`;
           
-          // Column number (except for the last line)
+          // Column number (centered in each column, except for the last line)
           if (i < columns) {
-            const numberLeft = left + columnWidth / 2;
+            // Center of the column: line position + half column width
+            const numberLeft = lineLeft + columnWidth / 2;
             overlayHTML += `<div class="grid-column-number" style="left: ${numberLeft}px; top: 10px;">${i + 1}</div>`;
           }
           
           // Gap visualization (between columns, not after the last one)
           if (i < columns && gapValue > 0) {
-            const gapLeft = left + columnWidth;
+            const gapLeft = lineLeft + columnWidth;
             overlayHTML += `<div class="grid-gap" style="left: ${gapLeft}px; width: ${gapValue}px;"></div>`;
           }
         }
@@ -153,18 +155,18 @@ import './GridOverlay.css';
             
             for (let i = 0; i <= containerColumns; i++) {
               // Calculate position relative to viewport, accounting for container's position
-              const left = containerStartX + containerPaddingValue + (i * (containerColumnWidth + containerGapValue));
-              overlayHTML += `<div class="grid-line grid-line-container" style="left: ${left}px;"></div>`;
+              const lineLeft = containerStartX + containerPaddingValue + (i * (containerColumnWidth + containerGapValue));
+              overlayHTML += `<div class="grid-line grid-line-container" style="left: ${lineLeft}px;"></div>`;
               
-              // Column number for containers
+              // Column number for containers (centered in each column)
               if (i < containerColumns) {
-                const numberLeft = left + containerColumnWidth / 2;
+                const numberLeft = lineLeft + containerColumnWidth / 2;
                 overlayHTML += `<div class="grid-column-number grid-column-number-container" style="left: ${numberLeft}px; top: ${rect.top + window.scrollY + 10}px;">${i + 1}</div>`;
               }
               
               // Gap visualization
               if (i < containerColumns && containerGapValue > 0) {
-                const gapLeft = left + containerColumnWidth;
+                const gapLeft = lineLeft + containerColumnWidth;
                 overlayHTML += `<div class="grid-gap grid-gap-container" style="left: ${gapLeft}px; width: ${containerGapValue}px; top: ${rect.top + window.scrollY}px; height: ${rect.height}px;"></div>`;
               }
             }
