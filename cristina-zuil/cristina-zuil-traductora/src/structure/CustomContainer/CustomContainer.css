@@ -11,7 +11,6 @@
   --column-width: calc((100% - (var(--grid-columns-sm) - 1) * var(--grid-gap-sm)) / var(--grid-columns-sm));
   --grid-gutter: var(--grid-gap-sm);
   --container-padding: var(--container-padding-sm);
-  --container-margin: 0;
   --max-container-width: var(--container-max-width-lg);
 }
 
@@ -35,7 +34,6 @@
     --column-width: calc((var(--max-container-width) - (var(--grid-columns-lg) - 1) * var(--grid-gap-lg) - var(--container-padding) * 2) / var(--grid-columns-lg));
     --grid-gutter: var(--grid-gap-lg);
     --container-padding: var(--container-padding-lg);
-    margin-left: auto;
-    margin-right: auto;
+    margin-inline: auto;
   }
 }

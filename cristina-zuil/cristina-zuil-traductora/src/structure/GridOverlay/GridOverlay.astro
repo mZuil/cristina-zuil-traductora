@@ -60,16 +60,26 @@ import './GridOverlay.css';
         const gapValue = remToPx(gap);
         const paddingValue = remToPx(padding);
         
-        // Calculate container width (max from design tokens, centered if viewport is larger)
+        // Calculate container width and position
+        // For large screens, container is centered with margin-inline: auto
+        // We need to find the actual container element to get its real position
         let containerWidth = viewportWidth;
         let containerLeft = 0;
         
-        if (viewportWidth >= lgBreakpoint) {
-          // For large screens, use max-width from design tokens
-          containerWidth = Math.min(viewportWidth, maxWidth);
-          // Center the container if viewport is larger than max-width
-          if (viewportWidth > maxWidth) {
-            containerLeft = (viewportWidth - maxWidth) / 2;
+        // Try to find an actual CustomContainer to get its real position
+        const actualContainer = document.querySelector('.custom-container') as HTMLElement;
+        if (actualContainer && viewportWidth >= lgBreakpoint) {
+          const containerRect = actualContainer.getBoundingClientRect();
+          containerWidth = containerRect.width;
+          containerLeft = containerRect.left;
+        } else {
+          // Fallback: calculate expected position
+          if (viewportWidth >= lgBreakpoint) {
+            containerWidth = Math.min(viewportWidth, maxWidth);
+            // Center the container if viewport is larger than max-width
+            if (viewportWidth > maxWidth) {
+              containerLeft = (viewportWidth - maxWidth) / 2;
+            }
           }
         }
         

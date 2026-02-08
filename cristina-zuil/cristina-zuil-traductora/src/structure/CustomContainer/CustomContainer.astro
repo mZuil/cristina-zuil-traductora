@@ -77,19 +77,12 @@ const { class: className = '' } = Astro.props;
       const availableWidth = width - (paddingValue * 2);
       const columnWidth = (availableWidth - totalGaps) / currentColumns;
       
-      // Calculate margin (when exceeding max-width on lg) - equal margins on both sides
-      // Use viewport width, not container width, to calculate proper centering
-      let margin = 0;
-      if (viewportWidth >= lgBreakpoint && maxWidthValue > 0 && viewportWidth > maxWidthValue) {
-        margin = (viewportWidth - maxWidthValue) / 2;
-      }
-      
       // Set CSS variables on the container
+      // Note: margin is handled by CSS (margin-inline: auto), so we don't set it here
       el.style.setProperty('--container-width', `${width}px`);
       el.style.setProperty('--column-width', `${columnWidth}px`);
       el.style.setProperty('--grid-gutter', currentGap);
       el.style.setProperty('--container-padding', currentPadding);
-      el.style.setProperty('--container-margin', `${margin}px`);
       el.style.setProperty('--max-container-width', maxWidthStr);
     });
   }
