@@ -39,6 +39,7 @@
           "localized": true
         }
       },
+      "default": "default",
       "enum": [
         "default",
         "archive-books",
@@ -70,13 +71,13 @@
     },
     "seo": {
       "type": "component",
-      "repeatable": false,
-      "component": "seo.seo",
       "pluginOptions": {
         "i18n": {
           "localized": true
         }
       },
+      "component": "seo.seo",
+      "repeatable": false,
       "required": false
     }
   }
