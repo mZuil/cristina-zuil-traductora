@@ -1,6 +1,7 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import SEOHead from '../components/seo/SEOHead.astro';
+import DesignTokens from '../components/DesignTokens.astro';
 import { i18nConfig } from '../config/i18n.js';
 import { getSEOData, getStructuredData } from '../utils/seo.js';
 
@@ -39,6 +40,7 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
 <!DOCTYPE html>
 <html lang={locale}>
   <head>
+    <DesignTokens />
     <SEOHead seoData={seoData} />
     <ClientRouter />
     <script type="application/ld+json" set:html={JSON.stringify(structuredData, null, 2)} />

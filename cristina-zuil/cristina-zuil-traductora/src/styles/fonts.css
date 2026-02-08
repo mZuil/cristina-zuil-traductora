@@ -1,0 +1,14 @@
+/**
+ * Fonts Import File
+ * Import all individual font definitions here
+ * 
+ * To add a new font:
+ * 1. Create a new file in src/styles/fonts/YourFontName.css
+ * 2. Add @import './fonts/YourFontName.css'; below
+ * 3. Place font files in /public/fonts/YourFontName/
+ */
+
+@import './fonts/YourFontName.css';
+
+/* Add more font imports here as you add fonts */
+/* @import './fonts/YourSecondaryFont.css'; */

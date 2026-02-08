@@ -1,0 +1,43 @@
+---
+import { designTokens } from '../config/design-tokens';
+
+// Generate CSS variables from design tokens
+const cssVars: string[] = [];
+
+// Colors
+const colors = designTokens.colors as Record<string, string>;
+for (const key in colors) {
+  if (colors.hasOwnProperty(key)) {
+    cssVars.push(`  --color-${key}: ${colors[key]};`);
+  }
+}
+
+// Breakpoints
+const breakpoints = designTokens.breakpoints;
+for (const key in breakpoints) {
+  if (breakpoints.hasOwnProperty(key)) {
+    const value = breakpoints[key as keyof typeof breakpoints];
+    cssVars.push(`  --breakpoint-${key}: ${value.breakpoint};`);
+    cssVars.push(`  --grid-columns-${key}: ${value.columns};`);
+    cssVars.push(`  --grid-gap-${key}: ${value.gap};`);
+    cssVars.push(`  --container-padding-${key}: ${value.padding};`);
+    if ('maxWidth' in value && value.maxWidth) {
+      cssVars.push(`  --container-max-width-${key}: ${value.maxWidth};`);
+    }
+  }
+}
+
+// Font families
+const fontFamilies = designTokens.fonts.families as Record<string, string>;
+for (const key in fontFamilies) {
+  if (fontFamilies.hasOwnProperty(key)) {
+    cssVars.push(`  --font-family-${key}: ${fontFamilies[key]};`);
+  }
+}
+
+const cssVariables = `:root {\n${cssVars.join('\n')}\n}`;
+---
+
+<style is:global>
+  {cssVariables}
+</style>
