@@ -15,20 +15,20 @@ export const designTokens = {
     sm: {
       breakpoint: '640px',
       columns: 4,
-      gap: '1rem',
-      padding: '1rem',
+      gap: '16px', // 1rem = 16px
+      padding: '16px', // 1rem = 16px
     },
     md: {
       breakpoint: '768px',
       columns: 8,
-      gap: '1.5rem',
-      padding: '2rem',
+      gap: '24px', // 1.5rem = 24px
+      padding: '32px', // 2rem = 32px
     },
     lg: {
       breakpoint: '1024px',
       columns: 12,
-      gap: '2rem',
-      padding: '3rem',
+      gap: '32px', // 2rem = 32px
+      padding: '48px', // 3rem = 48px
     },
   },
 

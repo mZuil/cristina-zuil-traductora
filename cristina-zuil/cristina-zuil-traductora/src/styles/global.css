@@ -9,6 +9,25 @@
    ============================================ */
 
 /* ============================================
+   CONTAINER VARIABLES (Global, responsive)
+   ============================================ */
+:root {
+  --container-margin: calc((100dvw - min(100dvw - 2 * var(--container-padding-sm), var(--container-max-width))) / 2);
+}
+
+@media (min-width: var(--breakpoint-md)) {
+  :root {
+    --container-margin: calc((100dvw - min(100dvw - 2 * var(--container-padding-md), var(--container-max-width))) / 2);
+  }
+}
+
+@media (min-width: var(--breakpoint-lg)) {
+  :root {
+    --container-margin: calc((100dvw - min(100dvw - 2 * var(--container-padding-lg), var(--container-max-width))) / 2);
+  }
+}
+
+/* ============================================
    BASE STYLES
    ============================================ */
 

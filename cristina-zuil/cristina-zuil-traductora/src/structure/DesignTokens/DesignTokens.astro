@@ -27,6 +27,9 @@ for (const key in breakpoints) {
 // Container max-width (separate from breakpoints)
 cssVars.push(`  --container-max-width: ${designTokens.containerMaxWidth};`);
 
+// Container variables (updated globally, responsive via media queries in global.css)
+cssVars.push(`  --container-inner-width: 100%;`);
+
 // Font families
 const fontFamilies = designTokens.fonts.families as Record<string, string>;
 for (const key in fontFamilies) {
