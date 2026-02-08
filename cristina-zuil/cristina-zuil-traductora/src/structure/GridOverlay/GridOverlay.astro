@@ -19,8 +19,13 @@ import './GridOverlay.css';
         return;
       }
 
+      // Store event handlers outside the element
+      let resizeHandler: (() => void) | null = null;
+      let scrollHandler: (() => void) | null = null;
+
       // Calculate grid overlay based on viewport and actual CustomContainer elements
       function updateGridOverlay() {
+        if (!overlay) return;
         const rootStyle = getComputedStyle(document.documentElement);
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
@@ -97,6 +102,8 @@ import './GridOverlay.css';
       }
 
       function toggleGrid() {
+        if (!overlay) return;
+        
         isVisible = !isVisible;
         overlay.classList.toggle('hidden', !isVisible);
         
@@ -111,13 +118,17 @@ import './GridOverlay.css';
           window.addEventListener('scroll', updateHandler, true);
           
           // Store handlers for cleanup
-          overlay._resizeHandler = updateHandler;
-          overlay._scrollHandler = updateHandler;
+          resizeHandler = updateHandler;
+          scrollHandler = updateHandler;
         } else {
-          const resizeHandler = overlay._resizeHandler;
-          const scrollHandler = overlay._scrollHandler;
-          if (resizeHandler) window.removeEventListener('resize', resizeHandler);
-          if (scrollHandler) window.removeEventListener('scroll', scrollHandler, true);
+          if (resizeHandler) {
+            window.removeEventListener('resize', resizeHandler);
+            resizeHandler = null;
+          }
+          if (scrollHandler) {
+            window.removeEventListener('scroll', scrollHandler, true);
+            scrollHandler = null;
+          }
         }
       }
 
