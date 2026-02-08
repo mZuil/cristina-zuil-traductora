@@ -1,7 +1,8 @@
 ---
 import { ClientRouter } from 'astro:transitions';
-import SEOHead from '../components/seo/SEOHead.astro';
-import DesignTokens from '../components/DesignTokens.astro';
+import SEOHead from '../features/seo/SEOHead.astro';
+import DesignTokens from '../structure/DesignTokens/DesignTokens.astro';
+import GridOverlay from '../structure/GridOverlay/GridOverlay.astro';
 import { i18nConfig } from '../config/i18n.js';
 import { getSEOData, getStructuredData } from '../utils/seo.js';
 
@@ -47,6 +48,7 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
   </head>
   <body>
     <slot />
+    <GridOverlay />
   </body>
 </html>
 

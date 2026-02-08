@@ -1,0 +1,33 @@
+.grid-overlay {
+  position: absolute;
+  pointer-events: none;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.grid-overlay.hidden {
+  display: none;
+}
+
+.grid-container-overlay {
+  position: absolute;
+  pointer-events: none;
+}
+
+.grid-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 0, 0, 0.3);
+  pointer-events: none;
+}
+
+.grid-container-overlay .grid-line:first-child,
+.grid-container-overlay .grid-line:last-child {
+  background: rgba(255, 0, 0, 0.6);
+  width: 2px;
+}

@@ -1,0 +1,76 @@
+---
+import { designTokens } from '../../../config/design-tokens';
+
+interface Props {
+  sm?: number;
+  md?: number;
+  lg?: number;
+  'sm-push'?: number;
+  'md-push'?: number;
+  'lg-push'?: number;
+  class?: string;
+}
+
+const {
+  sm,
+  md,
+  lg: lgSpan,
+  'sm-push': smPush,
+  'md-push': mdPush,
+  'lg-push': lgPush,
+  class: className = '',
+} = Astro.props;
+
+const { sm: smBreakpoint, md: mdBreakpoint, lg: lgBreakpoint } = designTokens.breakpoints;
+
+// Generate CSS strings
+let smCss = '';
+let mdCss = '';
+let lgCss = '';
+
+// Small screen
+if (sm !== undefined) {
+  if (smPush !== undefined) {
+    smCss = `grid-column: ${smPush + 1} / span ${sm};`;
+  } else {
+    smCss = `grid-column: span ${sm};`;
+  }
+} else {
+  smCss = 'grid-column: 1 / -1;'; // Full width by default
+}
+
+// Medium screen
+if (md !== undefined) {
+  if (mdPush !== undefined) {
+    mdCss = `grid-column: ${mdPush + 1} / span ${md};`;
+  } else {
+    mdCss = `grid-column: span ${md};`;
+  }
+}
+
+// Large screen
+if (lgSpan !== undefined) {
+  if (lgPush !== undefined) {
+    lgCss = `grid-column: ${lgPush + 1} / span ${lgSpan};`;
+  } else {
+    lgCss = `grid-column: span ${lgSpan};`;
+  }
+}
+
+// Build complete CSS
+let completeCss = `.custom-column { ${smCss} }`;
+
+if (mdCss) {
+  completeCss += `\n\n@media (min-width: ${mdBreakpoint.breakpoint}) {\n  .custom-column { ${mdCss} }\n}`;
+}
+
+if (lgCss) {
+  completeCss += `\n\n@media (min-width: ${lgBreakpoint.breakpoint}) {\n  .custom-column { ${lgCss} }\n}`;
+}
+---
+
+<div class={`custom-column ${className}`}>
+  <slot />
+</div>
+
+<style set:html={completeCss}></style>
