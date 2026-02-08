@@ -35,9 +35,9 @@ for (const key in fontFamilies) {
   }
 }
 
-const cssVariables = `:root {\n${cssVars.join('\n')}\n}`;
+const cssVariables = `:root {
+${cssVars.join('\n')}
+}`;
 ---
 
-<style is:global>
-  {cssVariables}
-</style>
+<Fragment set:html={`<style>${cssVariables}</style>`} />
