@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, isHomePage } from '../config/i18n.js';
 import CustomContainer from '../structure/CustomContainer/CustomContainer.astro';
+import CustomColumn from '../structure/CustomColumn/CustomColumn.astro';
 
 // Fetch pages and find the homepage (empty slug)
 const pages = await fetchPagesByLocale(i18nConfig.defaultLocale);
@@ -25,6 +26,18 @@ const getLocaleLabel = (loc: string) => {
 >
   <main>
     <CustomContainer>
+      <CustomColumn lg="6" md="8" sm="12">
+        <div>
+          <!-- Column 1 content -->
+          <p>Column 1 (lg: 6/12)</p>
+        </div>
+      </CustomColumn>
+      <CustomColumn lg="6" md="8" sm="12">
+        <div>
+          <!-- Column 2 content -->
+          <p>Column 2 (lg: 6/12)</p>
+        </div>
+      </CustomColumn>
       <h1>{title}</h1>
       
       <nav class="language-switcher">

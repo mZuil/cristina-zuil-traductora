@@ -13,22 +13,22 @@ export const designTokens = {
   // Responsive breakpoints with grid configuration
   breakpoints: {
     sm: {
-      breakpoint: '640px',
+      breakpoint: '610px',
       columns: 4,
-      gap: '16px', // 1rem = 16px
-      padding: '16px', // 1rem = 16px
+      gap: '20px',
+      padding: '40px',
     },
     md: {
-      breakpoint: '768px',
+      breakpoint: '1190px',
       columns: 8,
-      gap: '24px', // 1.5rem = 24px
-      padding: '32px', // 2rem = 32px
+      gap: '20px',
+      padding: '40px',
     },
     lg: {
-      breakpoint: '1024px',
+      breakpoint: '1440px',
       columns: 12,
-      gap: '32px', // 2rem = 32px
-      padding: '48px', // 3rem = 48px
+      gap: '20px',
+      padding: '40px',
     },
   },
 
