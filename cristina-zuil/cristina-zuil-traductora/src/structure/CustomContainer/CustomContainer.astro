@@ -37,7 +37,7 @@ const { class: className = '' } = Astro.props;
       const mdPaddingStr = rootStyle.getPropertyValue('--container-padding-md').trim();
       const lgPaddingStr = rootStyle.getPropertyValue('--container-padding-lg').trim();
       
-      const maxWidthStr = rootStyle.getPropertyValue('--container-max-width-lg').trim();
+      const maxWidthStr = rootStyle.getPropertyValue('--container-max-width').trim();
       const maxWidthValue = parseFloat(maxWidthStr);
       
       // Helper to convert rem to px
@@ -49,7 +49,7 @@ const { class: className = '' } = Astro.props;
         return parseFloat(remStr);
       }
       
-      // Determine current breakpoint - get from CSS variables (from design tokens)
+      // Determine current breakpoint - use viewport width, not container width
       const viewportWidth = window.innerWidth;
       const width = rect.width;
       const smBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-sm').trim()) || 640;
@@ -60,11 +60,12 @@ const { class: className = '' } = Astro.props;
       let currentGap = smGapStr;
       let currentPadding = smPaddingStr;
       
-      if (width >= lgBreakpoint) {
+      // Use viewport width to determine breakpoint, not container width
+      if (viewportWidth >= lgBreakpoint) {
         currentColumns = lgColumns;
         currentGap = lgGapStr;
         currentPadding = lgPaddingStr;
-      } else if (width >= mdBreakpoint) {
+      } else if (viewportWidth >= mdBreakpoint) {
         currentColumns = mdColumns;
         currentGap = mdGapStr;
         currentPadding = mdPaddingStr;

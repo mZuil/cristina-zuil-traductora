@@ -1,6 +1,6 @@
 .custom-container {
-  max-width: 100%;
-  width: calc(min(100%, var(--container-max-width)) + var(--container-padding-sm) * 2);
+  width: 100%;
+  max-width: calc(var(--container-max-width) + var(--container-padding-sm) * 2);
   padding-inline: var(--container-padding-sm);
   margin: 0 auto;
   display: flex;
@@ -16,7 +16,7 @@
 
 @media (min-width: var(--breakpoint-md)) {
   .custom-container {
-    width: calc(min(100%, var(--container-max-width)) + var(--container-padding-md) * 2);
+    max-width: calc(var(--container-max-width) + var(--container-padding-md) * 2);
     padding-inline: var(--container-padding-md);
     column-gap: var(--grid-gap-md);
     --container-padding: var(--container-padding-md);
@@ -27,7 +27,7 @@
 
 @media (min-width: var(--breakpoint-lg)) {
   .custom-container {
-    width: calc(min(100%, var(--container-max-width)) + var(--container-padding-lg) * 2);
+    max-width: calc(var(--container-max-width) + var(--container-padding-lg) * 2);
     padding-inline: var(--container-padding-lg);
     column-gap: var(--grid-gap-lg);
     --container-padding: var(--container-padding-lg);
