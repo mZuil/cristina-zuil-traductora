@@ -1,5 +1,5 @@
 ---
-import { designTokens } from '../../config/design-tokens';
+import './CustomColumn.css';
 
 interface Props {
   sm?: number;
@@ -14,80 +14,23 @@ interface Props {
 const {
   sm,
   md,
-  lg: lgSpan,
+  lg,
   'sm-push': smPush,
   'md-push': mdPush,
   'lg-push': lgPush,
   class: className = '',
 } = Astro.props;
 
-const { sm: smBreakpoint, md: mdBreakpoint, lg: lgBreakpoint } = designTokens.breakpoints;
-
-// Generate CSS strings for flexbox width calculations
-let completeCss = '';
-
-// Small screen (default, up to md breakpoint)
-if (sm !== undefined) {
-  const smColumns = designTokens.breakpoints.sm.columns;
-  completeCss += `.custom-column {
-  --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));
-  width: calc(var(--w) * ${sm} + var(--grid-gutter) * (${sm} - 1));
-}`;
-  
-  if (smPush !== undefined && smPush > 0) {
-    completeCss += `\n.custom-column {
-  margin-left: calc(var(--w) * ${smPush} + var(--grid-gutter) * ${smPush});
-}`;
-  }
-} else {
-  // Full width by default
-  completeCss += `.custom-column {
-  width: 100%;
-}`;
-}
-
-// Medium screen
-if (md !== undefined) {
-  const mdStart = mdBreakpoint.breakpoint;
-  const lgStart = lgBreakpoint.breakpoint;
-  // Parse the lg breakpoint to get the max-width for md (lg - 1px)
-  const lgStartValue = parseInt(lgStart);
-  const mdEnd = lgStartValue > 0 ? `${lgStartValue - 1}px` : '1023px';
-  completeCss += `\n\n@media (min-width: ${mdStart}) and (max-width: ${mdEnd}) {
-  .custom-column {
-    --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));
-    width: calc(var(--w) * ${md} + var(--grid-gutter) * (${md} - 1));
-  }`;
-  
-  if (mdPush !== undefined && mdPush > 0) {
-    completeCss += `\n  .custom-column {
-    margin-left: calc(var(--w) * ${mdPush} + var(--grid-gutter) * ${mdPush});
-  }`;
-  }
-  
-  completeCss += `\n}`;
-}
-
-// Large screen
-if (lgSpan !== undefined) {
-  completeCss += `\n\n@media (min-width: ${lgBreakpoint.breakpoint}) {
-  .custom-column {
-    --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));
-    width: calc(var(--w) * ${lgSpan} + var(--grid-gutter) * (${lgSpan} - 1));
-  }`;
-  
-  if (lgPush !== undefined && lgPush > 0) {
-    completeCss += `\n  .custom-column {
-    margin-left: calc(var(--w) * ${lgPush} + var(--grid-gutter) * ${lgPush});
-  }`;
-  }
-  
-  completeCss += `\n}`;
-}
+// Build attribute string
+let attrs = '';
+if (sm !== undefined) attrs += ` sm="${sm}"`;
+if (md !== undefined) attrs += ` md="${md}"`;
+if (lg !== undefined) attrs += ` lg="${lg}"`;
+if (smPush !== undefined) attrs += ` sm-push="${smPush}"`;
+if (mdPush !== undefined) attrs += ` md-push="${mdPush}"`;
+if (lgPush !== undefined) attrs += ` lg-push="${lgPush}"`;
 ---
 
-<div class={`custom-column ${className}`}>
+<div class={`custom-column ${className}`}{attrs}>
   <slot />
 </div>
-
-<style set:html={completeCss}></style>
