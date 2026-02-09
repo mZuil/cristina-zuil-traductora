@@ -39,24 +39,24 @@ for (const key in fontFamilies) {
 }
 
 // Responsive variables for each breakpoint
+// sm: < 610px, md: 610px - 1190px, lg: >= 1191px
 const { sm, md, lg } = designTokens.breakpoints;
-const smBreakpoint = sm.breakpoint;
-const mdBreakpoint = md.breakpoint;
-const lgBreakpoint = lg.breakpoint;
+const mdBreakpoint = md.breakpoint; // 610px
+const lgBreakpoint = lg.breakpoint; // 1191px
 
 const cssVariables = `:root {
 ${cssVars.join('\n')}
 }
 
-/* Small breakpoint (default, up to md) */
+/* Small breakpoint (default, < 610px) */
 :root {
   --total-columns: ${sm.columns};
   --grid-gutter: ${sm.gap};
   --container-padding: ${sm.padding};
 }
 
-/* Medium breakpoint */
-@media (min-width: ${mdBreakpoint}) and (max-width: calc(${lgBreakpoint} - 1px)) {
+/* Medium breakpoint (610px - 1190px) */
+@media (min-width: ${mdBreakpoint}) and (max-width: 1190px) {
   :root {
     --total-columns: ${md.columns};
     --grid-gutter: ${md.gap};
@@ -64,7 +64,7 @@ ${cssVars.join('\n')}
   }
 }
 
-/* Large breakpoint */
+/* Large breakpoint (>= 1191px) */
 @media (min-width: ${lgBreakpoint}) {
   :root {
     --total-columns: ${lg.columns};

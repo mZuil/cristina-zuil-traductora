@@ -11,24 +11,25 @@ export const designTokens = {
   },
 
   // Responsive breakpoints with grid configuration
+  // sm: < 610px, md: 610px - 1190px, lg: >= 1191px
   breakpoints: {
     sm: {
-      breakpoint: '610px',
+      breakpoint: '610px', // Used as md start point
       columns: 4,
-      gap: '20px',
-      padding: '40px',
+      gap: '16px',
+      padding: '16px',
     },
     md: {
-      breakpoint: '1190px',
+      breakpoint: '610px', // Start of md range
       columns: 8,
-      gap: '20px',
-      padding: '40px',
+      gap: '24px',
+      padding: '32px',
     },
     lg: {
-      breakpoint: '1440px',
+      breakpoint: '1191px', // Start of lg range
       columns: 12,
-      gap: '20px',
-      padding: '40px',
+      gap: '32px',
+      padding: '48px',
     },
   },
 
