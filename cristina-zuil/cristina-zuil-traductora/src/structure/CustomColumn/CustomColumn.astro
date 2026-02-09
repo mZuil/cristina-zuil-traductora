@@ -1,5 +1,6 @@
 ---
 import './CustomColumn.css';
+import { designTokens } from '../../config/design-tokens';
 
 interface Props {
   sm?: string;
@@ -22,6 +23,76 @@ const {
   class: className,
   id 
 } = Astro.props;
+
+// Generate CSS dynamically based on design tokens
+const { sm: smBreakpoint, md: mdBreakpoint, lg: lgBreakpoint } = designTokens.breakpoints;
+const smColumns = designTokens.breakpoints.sm.columns;
+const mdColumns = designTokens.breakpoints.md.columns;
+const lgColumns = designTokens.breakpoints.lg.columns;
+
+// Parse breakpoint values
+const mdStart = parseInt(mdBreakpoint.breakpoint) || 610;
+const lgStart = parseInt(lgBreakpoint.breakpoint) || 1191;
+const mdEnd = lgStart - 1;
+
+// Generate CSS for small breakpoint
+let cssRules = '';
+
+// Small breakpoint - Set --w for all sm columns
+const smSelectors: string[] = [];
+for (let i = 1; i <= smColumns; i++) {
+  smSelectors.push(`custom-column[sm="${i}"]`);
+  smSelectors.push(`custom-column[sm-push="${i}"]`);
+}
+cssRules += `${smSelectors.join(',\n')} {\n  --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));\n}\n\n`;
+
+// Small breakpoint - Set width
+for (let i = 1; i <= smColumns; i++) {
+  cssRules += `custom-column[sm="${i}"] {\n  width: calc(var(--w) * ${i} + var(--grid-gutter) * (${i} - 1));\n}\n\n`;
+}
+
+// Small breakpoint - Set push
+for (let i = 1; i <= smColumns; i++) {
+  cssRules += `custom-column[sm-push="${i}"] {\n  margin-left: calc(var(--w) * ${i} + var(--grid-gutter) * ${i});\n}\n\n`;
+}
+
+// Medium breakpoint - Set --w for all md columns
+const mdSelectors: string[] = [];
+for (let i = 1; i <= mdColumns; i++) {
+  mdSelectors.push(`custom-column[md="${i}"]`);
+  mdSelectors.push(`custom-column[md-push="${i}"]`);
+}
+cssRules += `@media (min-width: ${mdStart}px) and (max-width: ${mdEnd}px) {\n  ${mdSelectors.join(',\n  ')} {\n    --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));\n  }\n}\n\n`;
+
+// Medium breakpoint - Set width
+cssRules += `@media (min-width: ${mdStart}px) and (max-width: ${mdEnd}px) {\n`;
+for (let i = 1; i <= mdColumns; i++) {
+  cssRules += `  custom-column[md="${i}"] {\n    width: calc(var(--w) * ${i} + var(--grid-gutter) * (${i} - 1));\n  }\n\n`;
+}
+cssRules += `  /* Medium breakpoint - Set push */\n`;
+for (let i = 1; i <= mdColumns; i++) {
+  cssRules += `  custom-column[md-push="${i}"] {\n    margin-left: calc(var(--w) * ${i} + var(--grid-gutter) * ${i});\n  }\n\n`;
+}
+cssRules += `}\n\n`;
+
+// Large breakpoint - Set --w for all lg columns
+const lgSelectors: string[] = [];
+for (let i = 1; i <= lgColumns; i++) {
+  lgSelectors.push(`custom-column[lg="${i}"]`);
+  lgSelectors.push(`custom-column[lg-push="${i}"]`);
+}
+cssRules += `@media (min-width: ${lgStart}px) {\n  ${lgSelectors.join(',\n  ')} {\n    --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));\n  }\n}\n\n`;
+
+// Large breakpoint - Set width
+cssRules += `@media (min-width: ${lgStart}px) {\n`;
+for (let i = 1; i <= lgColumns; i++) {
+  cssRules += `  custom-column[lg="${i}"] {\n    width: calc(var(--w) * ${i} + var(--grid-gutter) * (${i} - 1));\n  }\n\n`;
+}
+cssRules += `  /* Large breakpoint - Set push */\n`;
+for (let i = 1; i <= lgColumns; i++) {
+  cssRules += `  custom-column[lg-push="${i}"] {\n    margin-left: calc(var(--w) * ${i} + var(--grid-gutter) * ${i});\n  }\n\n`;
+}
+cssRules += `}\n`;
 ---
 
 <custom-column 
@@ -36,3 +107,5 @@ const {
 >
   <slot />
 </custom-column>
+
+<style is:global set:html={cssRules}></style>
