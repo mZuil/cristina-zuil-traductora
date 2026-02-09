@@ -7,11 +7,11 @@ custom-column {
 }
 
 /* Default: full width on small screens */
-custom-column:not([data-sm]) {
+custom-column:not([data-sm]):not([data-md]):not([data-lg]) {
   width: 100%;
 }
 
-/* Small breakpoint */
+/* Small breakpoint (default, applies up to md breakpoint) */
 custom-column[data-sm] {
   --w: calc((var(--container-inner-width) - var(--current-gap) * (var(--current-columns) - 1)) / var(--current-columns));
   width: calc(var(--w) * var(--col-span, 1) + var(--current-gap) * (var(--col-span, 1) - 1));
@@ -41,12 +41,14 @@ custom-column[data-sm-push="2"] { --col-push: 2; }
 custom-column[data-sm-push="3"] { --col-push: 3; }
 custom-column[data-sm-push="4"] { --col-push: 4; }
 
-/* Medium breakpoint */
+/* Medium breakpoint - override sm styles */
 @media (min-width: var(--breakpoint-md)) {
+  /* Reset sm styles when md is specified */
   custom-column[data-md] {
     --w: calc((var(--container-inner-width) - var(--current-gap) * (var(--current-columns) - 1)) / var(--current-columns));
-    width: calc(var(--w) * var(--col-span-md, 1) + var(--current-gap) * (var(--col-span-md, 1) - 1));
-    max-width: calc(var(--w) * var(--col-span-md, 1) + var(--current-gap) * (var(--col-span-md, 1) - 1));
+    width: calc(var(--w) * var(--col-span-md, var(--col-span, 1)) + var(--current-gap) * (var(--col-span-md, var(--col-span, 1)) - 1)) !important;
+    max-width: calc(var(--w) * var(--col-span-md, var(--col-span, 1)) + var(--current-gap) * (var(--col-span-md, var(--col-span, 1)) - 1)) !important;
+    margin-left: 0; /* Reset push from sm */
   }
   
   custom-column[data-md="1"] { --col-span-md: 1; }
@@ -63,7 +65,7 @@ custom-column[data-sm-push="4"] { --col-push: 4; }
   custom-column[data-md="12"] { --col-span-md: 12; }
   
   custom-column[data-md-push] {
-    margin-left: calc(var(--w) * var(--col-push-md, 0) + var(--current-gap) * var(--col-push-md, 0));
+    margin-left: calc(var(--w) * var(--col-push-md, 0) + var(--current-gap) * var(--col-push-md, 0)) !important;
   }
   
   custom-column[data-md-push="1"] { --col-push-md: 1; }
@@ -76,12 +78,14 @@ custom-column[data-sm-push="4"] { --col-push: 4; }
   custom-column[data-md-push="8"] { --col-push-md: 8; }
 }
 
-/* Large breakpoint */
+/* Large breakpoint - override md and sm styles */
 @media (min-width: var(--breakpoint-lg)) {
+  /* Reset md/sm styles when lg is specified */
   custom-column[data-lg] {
     --w: calc((var(--container-inner-width) - var(--current-gap) * (var(--current-columns) - 1)) / var(--current-columns));
-    width: calc(var(--w) * var(--col-span-lg, 1) + var(--current-gap) * (var(--col-span-lg, 1) - 1));
-    max-width: calc(var(--w) * var(--col-span-lg, 1) + var(--current-gap) * (var(--col-span-lg, 1) - 1));
+    width: calc(var(--w) * var(--col-span-lg, var(--col-span-md, var(--col-span, 1))) + var(--current-gap) * (var(--col-span-lg, var(--col-span-md, var(--col-span, 1))) - 1)) !important;
+    max-width: calc(var(--w) * var(--col-span-lg, var(--col-span-md, var(--col-span, 1))) + var(--current-gap) * (var(--col-span-lg, var(--col-span-md, var(--col-span, 1))) - 1)) !important;
+    margin-left: 0; /* Reset push from sm/md */
   }
   
   custom-column[data-lg="1"] { --col-span-lg: 1; }

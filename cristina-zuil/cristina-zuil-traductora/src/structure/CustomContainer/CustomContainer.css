@@ -27,20 +27,26 @@ custom-container {
 /* md breakpoint */
 @media (min-width: var(--breakpoint-md)) {
   custom-container {
-    --current-padding: var(--container-padding-md);
-    --current-gap: var(--grid-gap-md);
-    --current-columns: var(--grid-columns-md);
+    --current-padding: var(--container-padding-md) !important;
+    --current-gap: var(--grid-gap-md) !important;
+    --current-columns: var(--grid-columns-md) !important;
     --container-inner-width: calc(100% - var(--current-padding) * 2);
+    padding-left: var(--current-padding);
+    padding-right: var(--current-padding);
+    column-gap: var(--current-gap);
   }
 }
 
 /* lg breakpoint */
 @media (min-width: var(--breakpoint-lg)) {
   custom-container {
-    --current-padding: var(--container-padding-lg);
-    --current-gap: var(--grid-gap-lg);
-    --current-columns: var(--grid-columns-lg);
+    --current-padding: var(--container-padding-lg) !important;
+    --current-gap: var(--grid-gap-lg) !important;
+    --current-columns: var(--grid-columns-lg) !important;
     --container-inner-width: calc(100% - var(--current-padding) * 2);
+    padding-left: var(--current-padding);
+    padding-right: var(--current-padding);
+    column-gap: var(--current-gap);
   }
 }
 
