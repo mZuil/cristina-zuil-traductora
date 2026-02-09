@@ -2,68 +2,63 @@
 import './GridOverlay.css';
 import CustomContainer from '../CustomContainer/CustomContainer.astro';
 import CustomColumn from '../CustomColumn/CustomColumn.astro';
-import { designTokens } from '../../config/design-tokens';
-
-const { sm, md, lg } = designTokens.breakpoints;
 ---
 
-<div id="grid-overlay" class="grid-overlay hidden">
-  <CustomContainer class="grid-debug-container">
-    <!-- Create columns for all breakpoints: lg=1 md=1 sm=1 -->
-    <!-- On small: shows 4 columns, on medium: 8 columns, on large: 12 columns -->
-    {Array.from({ length: lg.columns }, (_, i) => (
-      <CustomColumn lg={1} md={1} sm={1} class="grid-debug-column">
-        <div class="grid-debug-inner">{i + 1}</div>
+<grid-overlay id="grid-overlay" aria-hidden="true">
+  <CustomContainer>
+    {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+      <CustomColumn lg="1" md="1" sm="1" class={`grid-column js-col-${num}`}>
+        <div class="grid-column-inner">
+          {num}
+        </div>
       </CustomColumn>
     ))}
   </CustomContainer>
-</div>
+</grid-overlay>
 
 <script>
-  // Grid overlay toggle component with keyboard shortcut
-  // Press Cmd+Shift+G (Mac) or Ctrl+Shift+G (Windows) to toggle
-
-  (function() {
-    // Wait for DOM to be ready
-    function init() {
-      let isVisible = false;
+  // Toggle grid overlay with Ctrl+Shift+G or Cmd+Shift+G
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'G') {
+      e.preventDefault();
       const overlay = document.getElementById('grid-overlay');
-      
-      if (!overlay) {
-        console.warn('GridOverlay: overlay element not found');
-        return;
+      if (overlay) {
+        overlay.classList.toggle('active');
       }
+    }
+  });
 
-      function toggleGrid() {
-        if (!overlay) return;
-        
-        isVisible = !isVisible;
-        overlay.classList.toggle('hidden', !isVisible);
-        
-        console.log('Grid overlay toggled:', isVisible ? 'ON' : 'OFF');
-      }
-
-      // Keyboard shortcut: Cmd+Shift+G (Mac) or Ctrl+Shift+G (Windows)
-      document.addEventListener('keydown', (e) => {
-        const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0 || 
-                      navigator.userAgent.toUpperCase().indexOf('MAC') >= 0;
-        const modifier = isMac ? e.metaKey : e.ctrlKey;
-        
-        if (modifier && e.shiftKey && (e.key === 'G' || e.key === 'g')) {
-          e.preventDefault();
-          e.stopPropagation();
-          toggleGrid();
-        }
-      });
-      
-      console.log('GridOverlay initialized. Press Ctrl+Shift+G (Windows) or Cmd+Shift+G (Mac) to toggle.');
+  // Hide columns based on current breakpoint
+  function updateGridColumns() {
+    const width = window.innerWidth;
+    let visibleColumns = 4; // default (sm)
+    
+    if (width >= 1024) {
+      visibleColumns = 12; // lg
+    } else if (width >= 768) {
+      visibleColumns = 8; // md
     }
 
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', init);
-    } else {
-      init();
-    }
-  })();
+    // Show/hide columns based on breakpoint
+    const allColumns = document.querySelectorAll('.grid-column');
+    allColumns.forEach((col, index) => {
+      if (index < visibleColumns) {
+        (col as HTMLElement).style.display = 'block';
+      } else {
+        (col as HTMLElement).style.display = 'none';
+      }
+    });
+  }
+
+  // Update on load
+  updateGridColumns();
+
+  // Update on resize
+  let resizeTimer: number;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      updateGridColumns();
+    }, 100);
+  });
 </script>

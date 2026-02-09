@@ -1,52 +1,34 @@
-.grid-overlay {
+grid-overlay {
   display: none;
-  opacity: 0.3;
-  pointer-events: none;
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100vh;
-  height: 100lvh;
-  z-index: 999999999;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 9999;
 }
 
-.grid-overlay:not(.hidden) {
+grid-overlay.active {
   display: block;
 }
 
-.grid-overlay.hidden {
-  display: none;
+/* Style the grid columns */
+grid-overlay .grid-column {
+  position: relative;
 }
 
-.grid-debug-container {
-  position: fixed;
-  top: 0;
-  left: 0;
+grid-overlay .grid-column-inner {
   width: 100%;
-  min-height: 100vh;
-  z-index: 999999998;
-  pointer-events: none;
-}
-
-.grid-debug-column {
-  border-left: 2px solid rgba(255, 0, 0, 0.6);
-  border-right: 2px solid rgba(255, 0, 0, 0.6);
-  min-height: 100vh;
+  height: 100vh;
+  background-color: rgba(255, 0, 0, 0.1);
+  border-left: 1px solid rgba(255, 0, 0, 0.3);
+  border-right: 1px solid rgba(255, 0, 0, 0.3);
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
-}
-
-.grid-debug-inner {
-  background: rgba(0, 0, 0, 0.9);
-  color: white;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 16px;
+  font-size: 12px;
   font-weight: bold;
-  font-family: monospace;
-  pointer-events: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  color: rgba(255, 0, 0, 0.6);
 }

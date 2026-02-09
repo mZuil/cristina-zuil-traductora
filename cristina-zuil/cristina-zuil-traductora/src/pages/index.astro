@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, isHomePage } from '../config/i18n.js';
+import CustomContainer from '../structure/CustomContainer/CustomContainer.astro';
 
 // Fetch pages and find the homepage (empty slug)
 const pages = await fetchPagesByLocale(i18nConfig.defaultLocale);
@@ -23,31 +24,33 @@ const getLocaleLabel = (loc: string) => {
   contentType="WebSite"
 >
   <main>
-    <h1>{title}</h1>
-    
-    <nav class="language-switcher">
-      <a href="/" class="active">
-        {getLocaleLabel(i18nConfig.defaultLocale)}
-      </a>
-      {localizations?.map((localization: any) => {
-        const locale = localization.locale;
-        const localizedSlug = localization.slug;
-        return (
-          <a href={getLocalizedUrl(localizedSlug, locale)}>
-            {getLocaleLabel(locale)}
-          </a>
-        );
-      })}
-    </nav>
-    
-    {Array.isArray(content) ? (
-      <div>
-        {content.map((block: any) => (
-          <div set:html={block.body || ''} />
-        ))}
-      </div>
-    ) : (
-      <div set:html={content} />
-    )}
+    <CustomContainer>
+      <h1>{title}</h1>
+      
+      <nav class="language-switcher">
+        <a href="/" class="active">
+          {getLocaleLabel(i18nConfig.defaultLocale)}
+        </a>
+        {localizations?.map((localization: any) => {
+          const locale = localization.locale;
+          const localizedSlug = localization.slug;
+          return (
+            <a href={getLocalizedUrl(localizedSlug, locale)}>
+              {getLocaleLabel(locale)}
+            </a>
+          );
+        })}
+      </nav>
+      
+      {Array.isArray(content) ? (
+        <div>
+          {content.map((block: any) => (
+            <div set:html={block.body || ''} />
+          ))}
+        </div>
+      ) : (
+        <div set:html={content} />
+      )}
+    </CustomContainer>
   </main>
 </Layout>

@@ -2,113 +2,14 @@
 import './CustomContainer.css';
 
 interface Props {
+  full?: boolean;
   class?: string;
+  id?: string;
 }
 
-const { class: className = '' } = Astro.props;
+const { full, class: className, id } = Astro.props;
 ---
 
-<div class={`custom-container ${className}`}>
+<custom-container class={className} id={id} data-full={full ? 'true' : undefined }>
   <slot />
-</div>
-
-<script>
-  // Update CSS variables dynamically based on container size
-  function updateContainerVariables() {
-    const containers = document.querySelectorAll('.custom-container');
-    
-    containers.forEach((container) => {
-      const el = container as HTMLElement;
-      const rect = el.getBoundingClientRect();
-      
-      // Get current breakpoint values from CSS
-      const rootStyle = getComputedStyle(document.documentElement);
-      const smColumns = parseInt(rootStyle.getPropertyValue('--grid-columns-sm').trim()) || 4;
-      const mdColumns = parseInt(rootStyle.getPropertyValue('--grid-columns-md').trim()) || 8;
-      const lgColumns = parseInt(rootStyle.getPropertyValue('--grid-columns-lg').trim()) || 12;
-      
-      // Get gap values (convert rem to px if needed)
-      const smGapStr = rootStyle.getPropertyValue('--grid-gap-sm').trim();
-      const mdGapStr = rootStyle.getPropertyValue('--grid-gap-md').trim();
-      const lgGapStr = rootStyle.getPropertyValue('--grid-gap-lg').trim();
-      
-      // Get padding values
-      const smPaddingStr = rootStyle.getPropertyValue('--container-padding-sm').trim();
-      const mdPaddingStr = rootStyle.getPropertyValue('--container-padding-md').trim();
-      const lgPaddingStr = rootStyle.getPropertyValue('--container-padding-lg').trim();
-      
-      const maxWidthStr = rootStyle.getPropertyValue('--container-max-width').trim();
-      const maxWidthValue = parseFloat(maxWidthStr);
-      
-      // Helper to convert rem to px
-      function remToPx(remStr: string): number {
-        if (remStr.includes('rem')) {
-          const remValue = parseFloat(remStr);
-          return remValue * parseFloat(getComputedStyle(document.documentElement).fontSize);
-        }
-        return parseFloat(remStr);
-      }
-      
-      // Determine current breakpoint - use viewport width, not container width
-      const viewportWidth = window.innerWidth;
-      const width = rect.width;
-      const smBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-sm').trim()) || 640;
-      const mdBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-md').trim()) || 768;
-      const lgBreakpoint = parseFloat(rootStyle.getPropertyValue('--breakpoint-lg').trim()) || 1024;
-      
-      let currentColumns = smColumns;
-      let currentGap = smGapStr;
-      let currentPadding = smPaddingStr;
-      
-      // Use viewport width to determine breakpoint, not container width
-      if (viewportWidth >= lgBreakpoint) {
-        currentColumns = lgColumns;
-        currentGap = lgGapStr;
-        currentPadding = lgPaddingStr;
-      } else if (viewportWidth >= mdBreakpoint) {
-        currentColumns = mdColumns;
-        currentGap = mdGapStr;
-        currentPadding = mdPaddingStr;
-      }
-      
-      // Calculate values in pixels
-      const gapValue = remToPx(currentGap);
-      const paddingValue = remToPx(currentPadding);
-      const totalGaps = (currentColumns - 1) * gapValue;
-      const availableWidth = width - (paddingValue * 2);
-      const columnWidth = (availableWidth - totalGaps) / currentColumns;
-      
-      // Set CSS variables on the container
-      // Note: margin is handled by CSS (margin-inline: auto), so we don't set it here
-      el.style.setProperty('--container-width', `${width}px`);
-      el.style.setProperty('--column-width', `${columnWidth}px`);
-      el.style.setProperty('--grid-gutter', currentGap);
-      el.style.setProperty('--container-padding', currentPadding);
-      el.style.setProperty('--max-container-width', maxWidthStr);
-    });
-  }
-  
-  // Initialize
-  if (typeof window !== 'undefined') {
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', updateContainerVariables);
-    } else {
-      updateContainerVariables();
-    }
-    
-    // Throttle resize events
-    let resizeTimeout: ReturnType<typeof setTimeout> | undefined;
-    window.addEventListener('resize', () => {
-      if (resizeTimeout) clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(updateContainerVariables, 100);
-    });
-    
-    // Also update when DOM changes
-    const observer = new MutationObserver(() => {
-      if (resizeTimeout) clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(updateContainerVariables, 100);
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
-</script>
+</custom-container>

@@ -1,37 +1,53 @@
-.custom-container {
-  width: 100%;
-  max-width: calc(var(--container-max-width) + var(--container-padding-sm) * 2);
-  padding-inline: var(--container-padding-sm);
-  margin: 0 auto;
+custom-container {
   display: flex;
   flex-wrap: wrap;
-  column-gap: var(--grid-gap-sm);
+  width: 100%;
   box-sizing: border-box;
   
-  /* CSS Variables (responsive) */
-  --container-padding: var(--container-padding-sm);
-  --grid-gutter: var(--grid-gap-sm);
-  --total-columns: var(--grid-columns-sm);
+  /* Center container */
+  margin-left: auto;
+  margin-right: auto;
+  
+  /* Default (mobile-first): sm breakpoint */
+  --current-padding: var(--container-padding-sm);
+  --current-gap: var(--grid-gap-sm);
+  --current-columns: var(--grid-columns-sm);
+  
+  padding-left: var(--current-padding);
+  padding-right: var(--current-padding);
+  gap: var(--current-gap);
+  
+  /* Calculate inner width for column calculations */
+  --container-inner-width: calc(100% - var(--current-padding) * 2);
 }
 
+/* md breakpoint */
 @media (min-width: var(--breakpoint-md)) {
-  .custom-container {
-    max-width: calc(var(--container-max-width) + var(--container-padding-md) * 2);
-    padding-inline: var(--container-padding-md);
-    column-gap: var(--grid-gap-md);
-    --container-padding: var(--container-padding-md);
-    --grid-gutter: var(--grid-gap-md);
-    --total-columns: var(--grid-columns-md);
+  custom-container {
+    --current-padding: var(--container-padding-md);
+    --current-gap: var(--grid-gap-md);
+    --current-columns: var(--grid-columns-md);
   }
 }
 
+/* lg breakpoint */
 @media (min-width: var(--breakpoint-lg)) {
-  .custom-container {
-    max-width: calc(var(--container-max-width) + var(--container-padding-lg) * 2);
-    padding-inline: var(--container-padding-lg);
-    column-gap: var(--grid-gap-lg);
-    --container-padding: var(--container-padding-lg);
-    --grid-gutter: var(--grid-gap-lg);
-    --total-columns: var(--grid-columns-lg);
+  custom-container {
+    --current-padding: var(--container-padding-lg);
+    --current-gap: var(--grid-gap-lg);
+    --current-columns: var(--grid-columns-lg);
   }
+}
+
+/* When viewport exceeds container max-width, limit and center it */
+@media (min-width: var(--container-max-width)) {
+  custom-container {
+    max-width: var(--container-max-width);
+    --container-inner-width: calc(var(--container-max-width) - var(--current-padding) * 2);
+  }
+}
+
+/* Full width container (no max-width constraint) */
+custom-container[data-full="true"] {
+  max-width: none !important;
 }
