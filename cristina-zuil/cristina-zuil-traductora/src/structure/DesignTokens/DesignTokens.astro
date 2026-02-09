@@ -27,7 +27,7 @@ for (const key in breakpoints) {
 // Container max-width (separate from breakpoints)
 cssVars.push(`  --container-max-width: ${designTokens.containerMaxWidth};`);
 
-// Container variables (updated globally, responsive via media queries in global.css)
+// Container inner width (default)
 cssVars.push(`  --container-inner-width: 100%;`);
 
 // Font families
@@ -38,8 +38,44 @@ for (const key in fontFamilies) {
   }
 }
 
+// Responsive variables for each breakpoint
+const { sm, md, lg } = designTokens.breakpoints;
+const smBreakpoint = sm.breakpoint;
+const mdBreakpoint = md.breakpoint;
+const lgBreakpoint = lg.breakpoint;
+
 const cssVariables = `:root {
 ${cssVars.join('\n')}
+}
+
+/* Small breakpoint (default, up to md) */
+:root {
+  --total-columns: ${sm.columns};
+  --grid-gutter: ${sm.gap};
+  --container-padding: ${sm.padding};
+}
+
+/* Medium breakpoint */
+@media (min-width: ${mdBreakpoint}) and (max-width: calc(${lgBreakpoint} - 1px)) {
+  :root {
+    --total-columns: ${md.columns};
+    --grid-gutter: ${md.gap};
+    --container-padding: ${md.padding};
+  }
+}
+
+/* Large breakpoint */
+@media (min-width: ${lgBreakpoint}) {
+  :root {
+    --total-columns: ${lg.columns};
+    --grid-gutter: ${lg.gap};
+    --container-padding: ${lg.padding};
+  }
+  
+  /* Update container inner width when viewport exceeds max-width */
+  :root {
+    --container-inner-width: min(100dvw - 2 * var(--container-padding), var(--container-max-width));
+  }
 }`;
 ---
 

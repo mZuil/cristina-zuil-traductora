@@ -1,68 +1,14 @@
 custom-container {
-  display: flex;
-  flex-wrap: nowrap; /* Prevent wrapping - columns should stay in one row */
-  width: 100%;
   max-width: 100%;
+  width: calc(var(--container-max-width) + var(--container-padding) * 2);
+  padding-inline: var(--container-padding);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--grid-gutter);
   box-sizing: border-box;
-  min-width: 0; /* Allow flex items to shrink below their content size */
-  
-  /* Center container */
-  margin-inline: auto;
-  
-  /* Default (mobile-first): sm breakpoint */
-  --current-padding: var(--container-padding-sm);
-  --current-gap: var(--grid-gap-sm);
-  --current-columns: var(--grid-columns-sm);
-  
-  padding-left: var(--current-padding);
-  padding-right: var(--current-padding);
-  column-gap: var(--current-gap);
-  row-gap: 0;
-  
-  /* Calculate inner width for column calculations */
-  /* This is the available width inside the container (excluding padding) */
-  --container-inner-width: calc(100% - var(--current-padding) * 2);
 }
 
-/* md breakpoint */
-@media (min-width: var(--breakpoint-md)) {
-  custom-container {
-    --current-padding: var(--container-padding-md) !important;
-    --current-gap: var(--grid-gap-md) !important;
-    --current-columns: var(--grid-columns-md) !important;
-    --container-inner-width: calc(100% - var(--current-padding) * 2);
-    padding-left: var(--current-padding);
-    padding-right: var(--current-padding);
-    column-gap: var(--current-gap);
-  }
-}
-
-/* lg breakpoint */
-@media (min-width: var(--breakpoint-lg)) {
-  custom-container {
-    --current-padding: var(--container-padding-lg) !important;
-    --current-gap: var(--grid-gap-lg) !important;
-    --current-columns: var(--grid-columns-lg) !important;
-    --container-inner-width: calc(100% - var(--current-padding) * 2);
-    padding-left: var(--current-padding);
-    padding-right: var(--current-padding);
-    column-gap: var(--current-gap);
-  }
-}
-
-/* When viewport exceeds container max-width, limit and center it */
-/* 1440px (max-width) + 48px*2 (lg padding) = 1536px */
-/* When viewport >= 1536px, limit container to 1440px + padding and center it */
-@media (min-width: 1536px) {
-  custom-container {
-    max-width: calc(var(--container-max-width) + var(--current-padding) * 2);
-    padding-left: var(--current-padding);
-    padding-right: var(--current-padding);
-    --container-inner-width: calc(var(--container-max-width) - var(--current-padding) * 2);
-  }
-}
-
-/* Full width container (no max-width constraint) */
 custom-container[data-full="true"] {
-  max-width: none !important;
+  width: 100%;
 }
