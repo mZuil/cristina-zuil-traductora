@@ -19,30 +19,22 @@
   display: none;
 }
 
-.grid-column {
-  position: absolute;
+.grid-container-border {
+  position: fixed;
   pointer-events: none;
-  outline: 2px solid rgba(255, 0, 0, 0.6);
+  border: 2px solid rgba(255, 0, 0, 0.8);
+  box-sizing: border-box;
+}
+
+.grid-column-border {
+  position: fixed;
+  pointer-events: none;
+  border-left: 2px solid rgba(255, 0, 0, 0.6);
   border-right: 2px solid rgba(255, 0, 0, 0.6);
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.grid-gap {
-  position: absolute;
-  background: rgba(0, 255, 255, 0.2);
-  pointer-events: none;
-}
-
-.grid-gap::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: rgba(0, 255, 255, 0.8);
 }
 
 .grid-column-number {

@@ -1,7 +1,13 @@
-/* Import grid system base styles */
-@import '../../styles/grid-system.css';
-
 .custom-container {
+  max-width: 100%;
+  width: calc(min(100%, var(--container-max-width)) + var(--container-padding-sm) * 2);
+  padding-inline: var(--container-padding-sm);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: var(--grid-gap-sm);
+  box-sizing: border-box;
+  
   /* CSS Variables (responsive) */
   --container-padding: var(--container-padding-sm);
   --grid-gutter: var(--grid-gap-sm);
@@ -10,6 +16,9 @@
 
 @media (min-width: var(--breakpoint-md)) {
   .custom-container {
+    width: calc(min(100%, var(--container-max-width)) + var(--container-padding-md) * 2);
+    padding-inline: var(--container-padding-md);
+    column-gap: var(--grid-gap-md);
     --container-padding: var(--container-padding-md);
     --grid-gutter: var(--grid-gap-md);
     --total-columns: var(--grid-columns-md);
@@ -18,6 +27,9 @@
 
 @media (min-width: var(--breakpoint-lg)) {
   .custom-container {
+    width: calc(min(100%, var(--container-max-width)) + var(--container-padding-lg) * 2);
+    padding-inline: var(--container-padding-lg);
+    column-gap: var(--grid-gap-lg);
     --container-padding: var(--container-padding-lg);
     --grid-gutter: var(--grid-gap-lg);
     --total-columns: var(--grid-columns-lg);
