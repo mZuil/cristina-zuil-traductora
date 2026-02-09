@@ -1,12 +1,11 @@
 custom-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* Prevent wrapping - columns should stay in one row */
   width: 100%;
   box-sizing: border-box;
   
   /* Center container */
-  margin-left: auto;
-  margin-right: auto;
+  margin-inline: auto;
   
   /* Default (mobile-first): sm breakpoint */
   --current-padding: var(--container-padding-sm);
@@ -15,7 +14,8 @@ custom-container {
   
   padding-left: var(--current-padding);
   padding-right: var(--current-padding);
-  gap: var(--current-gap);
+  column-gap: var(--current-gap);
+  row-gap: 0;
   
   /* Calculate inner width for column calculations */
   --container-inner-width: calc(100% - var(--current-padding) * 2);
@@ -27,6 +27,7 @@ custom-container {
     --current-padding: var(--container-padding-md);
     --current-gap: var(--grid-gap-md);
     --current-columns: var(--grid-columns-md);
+    --container-inner-width: calc(100% - var(--current-padding) * 2);
   }
 }
 
@@ -36,13 +37,18 @@ custom-container {
     --current-padding: var(--container-padding-lg);
     --current-gap: var(--grid-gap-lg);
     --current-columns: var(--grid-columns-lg);
+    --container-inner-width: calc(100% - var(--current-padding) * 2);
   }
 }
 
 /* When viewport exceeds container max-width, limit and center it */
-@media (min-width: var(--container-max-width)) {
+/* 1440px (max-width) + 48px*2 (lg padding) = 1536px */
+/* When viewport >= 1536px, limit container to 1440px + padding and center it */
+@media (min-width: 1536px) {
   custom-container {
-    max-width: var(--container-max-width);
+    max-width: calc(var(--container-max-width) + var(--current-padding) * 2);
+    padding-left: var(--current-padding);
+    padding-right: var(--current-padding);
     --container-inner-width: calc(var(--container-max-width) - var(--current-padding) * 2);
   }
 }
