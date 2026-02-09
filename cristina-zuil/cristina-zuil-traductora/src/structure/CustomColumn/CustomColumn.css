@@ -1,7 +1,9 @@
 custom-column {
   display: block;
   flex-shrink: 0;
+  flex-grow: 0;
   box-sizing: border-box;
+  min-width: 0;
 }
 
 /* Default: full width on small screens */
@@ -13,6 +15,7 @@ custom-column:not([data-sm]) {
 custom-column[data-sm] {
   --w: calc((var(--container-inner-width) - var(--current-gap) * (var(--current-columns) - 1)) / var(--current-columns));
   width: calc(var(--w) * var(--col-span, 1) + var(--current-gap) * (var(--col-span, 1) - 1));
+  max-width: calc(var(--w) * var(--col-span, 1) + var(--current-gap) * (var(--col-span, 1) - 1));
 }
 
 custom-column[data-sm="1"] { --col-span: 1; }
@@ -43,6 +46,7 @@ custom-column[data-sm-push="4"] { --col-push: 4; }
   custom-column[data-md] {
     --w: calc((var(--container-inner-width) - var(--current-gap) * (var(--current-columns) - 1)) / var(--current-columns));
     width: calc(var(--w) * var(--col-span-md, 1) + var(--current-gap) * (var(--col-span-md, 1) - 1));
+    max-width: calc(var(--w) * var(--col-span-md, 1) + var(--current-gap) * (var(--col-span-md, 1) - 1));
   }
   
   custom-column[data-md="1"] { --col-span-md: 1; }
@@ -77,6 +81,7 @@ custom-column[data-sm-push="4"] { --col-push: 4; }
   custom-column[data-lg] {
     --w: calc((var(--container-inner-width) - var(--current-gap) * (var(--current-columns) - 1)) / var(--current-columns));
     width: calc(var(--w) * var(--col-span-lg, 1) + var(--current-gap) * (var(--col-span-lg, 1) - 1));
+    max-width: calc(var(--w) * var(--col-span-lg, 1) + var(--current-gap) * (var(--col-span-lg, 1) - 1));
   }
   
   custom-column[data-lg="1"] { --col-span-lg: 1; }
