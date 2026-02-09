@@ -1,8 +1,23 @@
 ---
 import './GridOverlay.css';
+import CustomContainer from '../CustomContainer/CustomContainer.astro';
+import CustomColumn from '../CustomColumn/CustomColumn.astro';
+import { designTokens } from '../../config/design-tokens';
+
+const { sm, md, lg } = designTokens.breakpoints;
 ---
 
-<div id="grid-overlay" class="grid-overlay hidden"></div>
+<div id="grid-overlay" class="grid-overlay hidden">
+  <CustomContainer class="grid-debug-container">
+    <!-- Create columns for all breakpoints: lg=1 md=1 sm=1 -->
+    <!-- On small: shows 4 columns, on medium: 8 columns, on large: 12 columns -->
+    {Array.from({ length: lg.columns }, (_, i) => (
+      <CustomColumn lg={1} md={1} sm={1} class="grid-debug-column">
+        <div class="grid-debug-inner">{i + 1}</div>
+      </CustomColumn>
+    ))}
+  </CustomContainer>
+</div>
 
 <script>
   // Grid overlay toggle component with keyboard shortcut
@@ -19,61 +34,6 @@ import './GridOverlay.css';
         return;
       }
 
-      // Store event handlers outside the element
-      let resizeHandler: (() => void) | null = null;
-      let scrollHandler: (() => void) | null = null;
-
-      // Calculate grid overlay based on actual CustomContainer and CustomColumn elements
-      function updateGridOverlay() {
-        if (!overlay) return;
-        
-        const containers = document.querySelectorAll('.custom-container');
-        
-        if (containers.length === 0) {
-          overlay.innerHTML = '';
-          return;
-        }
-        
-        let overlayHTML = '';
-        
-        // Process each container
-        containers.forEach((container) => {
-          const containerEl = container as HTMLElement;
-          const containerRect = containerEl.getBoundingClientRect();
-          
-          // Find all CustomColumn elements inside this container
-          const columns = containerEl.querySelectorAll('.custom-column');
-          
-          if (columns.length === 0) {
-            // If no columns, just draw the container border
-            overlayHTML += `<div class="grid-container-border" style="left: ${containerRect.left}px; top: ${containerRect.top}px; width: ${containerRect.width}px; height: ${containerRect.height}px;"></div>`;
-            return;
-          }
-          
-          // Draw borders for each column
-          columns.forEach((column, index) => {
-            const columnEl = column as HTMLElement;
-            const columnRect = columnEl.getBoundingClientRect();
-            
-            // Calculate position relative to viewport
-            const left = columnRect.left;
-            const top = containerRect.top; // Align to container top
-            const width = columnRect.width;
-            const height = containerRect.height;
-            
-            // Draw column border
-            overlayHTML += `<div class="grid-column-border" style="left: ${left}px; top: ${top}px; width: ${width}px; height: ${height}px;">
-              <span class="grid-column-number">${index + 1}</span>
-            </div>`;
-          });
-          
-          // Draw container border
-          overlayHTML += `<div class="grid-container-border" style="left: ${containerRect.left}px; top: ${containerRect.top}px; width: ${containerRect.width}px; height: ${containerRect.height}px;"></div>`;
-        });
-        
-        overlay.innerHTML = overlayHTML;
-      }
-
       function toggleGrid() {
         if (!overlay) return;
         
@@ -81,28 +41,6 @@ import './GridOverlay.css';
         overlay.classList.toggle('hidden', !isVisible);
         
         console.log('Grid overlay toggled:', isVisible ? 'ON' : 'OFF');
-        
-        if (isVisible) {
-          updateGridOverlay();
-          const updateHandler = () => {
-            requestAnimationFrame(updateGridOverlay);
-          };
-          window.addEventListener('resize', updateHandler);
-          window.addEventListener('scroll', updateHandler, true);
-          
-          // Store handlers for cleanup
-          resizeHandler = updateHandler;
-          scrollHandler = updateHandler;
-        } else {
-          if (resizeHandler) {
-            window.removeEventListener('resize', resizeHandler);
-            resizeHandler = null;
-          }
-          if (scrollHandler) {
-            window.removeEventListener('scroll', scrollHandler, true);
-            scrollHandler = null;
-          }
-        }
       }
 
       // Keyboard shortcut: Cmd+Shift+G (Mac) or Ctrl+Shift+G (Windows)

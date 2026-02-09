@@ -19,25 +19,27 @@
   display: none;
 }
 
-.grid-container-border {
+.grid-debug-container {
   position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-height: 100vh;
+  z-index: 999999998;
   pointer-events: none;
-  border: 2px solid rgba(255, 0, 0, 0.8);
-  box-sizing: border-box;
 }
 
-.grid-column-border {
-  position: fixed;
-  pointer-events: none;
+.grid-debug-column {
   border-left: 2px solid rgba(255, 0, 0, 0.6);
   border-right: 2px solid rgba(255, 0, 0, 0.6);
-  box-sizing: border-box;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
 }
 
-.grid-column-number {
+.grid-debug-inner {
   background: rgba(0, 0, 0, 0.9);
   color: white;
   padding: 8px 12px;
