@@ -2,11 +2,12 @@
 import './GridOverlay.css';
 import CustomContainer from '../CustomContainer/CustomContainer.astro';
 import CustomColumn from '../CustomColumn/CustomColumn.astro';
+import { designTokens } from '../../config/design-tokens';
 ---
 
 <grid-overlay id="grid-overlay" aria-hidden="true">
   <CustomContainer>
-    {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+    {Array.from({ length: designTokens.breakpoints.lg.columns }, (_, i) => i + 1).map((num) => (
       <CustomColumn lg="1" md="1" sm="1" class={`grid-column js-col-${num}`}>
         <div class="grid-column-inner">
           {num}
@@ -16,7 +17,19 @@ import CustomColumn from '../CustomColumn/CustomColumn.astro';
   </CustomContainer>
 </grid-overlay>
 
-<script>
+<script define:vars={{
+  GRID_BREAKPOINTS: {
+    sm: { columns: designTokens.breakpoints.sm.columns },
+    md: {
+      minWidth: Number.parseInt(designTokens.breakpoints.md.breakpoint, 10),
+      columns: designTokens.breakpoints.md.columns,
+    },
+    lg: {
+      minWidth: Number.parseInt(designTokens.breakpoints.lg.breakpoint, 10),
+      columns: designTokens.breakpoints.lg.columns,
+    },
+  },
+}}>
   // Toggle grid overlay with Ctrl+Shift+G or Cmd+Shift+G
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'G') {
@@ -31,21 +44,21 @@ import CustomColumn from '../CustomColumn/CustomColumn.astro';
   // Hide columns based on current breakpoint
   function updateGridColumns() {
     const width = window.innerWidth;
-    let visibleColumns = 4; // default (sm)
+    let visibleColumns = GRID_BREAKPOINTS.sm.columns; // default (sm)
     
-    if (width >= 1024) {
-      visibleColumns = 12; // lg
-    } else if (width >= 768) {
-      visibleColumns = 8; // md
+    if (width >= GRID_BREAKPOINTS.lg.minWidth) {
+      visibleColumns = GRID_BREAKPOINTS.lg.columns; // lg
+    } else if (width >= GRID_BREAKPOINTS.md.minWidth) {
+      visibleColumns = GRID_BREAKPOINTS.md.columns; // md
     }
 
     // Show/hide columns based on breakpoint
     const allColumns = document.querySelectorAll('.grid-column');
     allColumns.forEach((col, index) => {
       if (index < visibleColumns) {
-        (col as HTMLElement).style.display = 'block';
+        if (col instanceof HTMLElement) col.style.display = 'block';
       } else {
-        (col as HTMLElement).style.display = 'none';
+        if (col instanceof HTMLElement) col.style.display = 'none';
       }
     });
   }
@@ -54,7 +67,7 @@ import CustomColumn from '../CustomColumn/CustomColumn.astro';
   updateGridColumns();
 
   // Update on resize
-  let resizeTimer: number;
+  let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {

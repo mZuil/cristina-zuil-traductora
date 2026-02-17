@@ -54,7 +54,8 @@
 
 /* Forward navigation: old page slides up and out */
 ::view-transition-old(root) {
-  animation: 0.4s cubic-bezier(0.4, 0, 0.2, 1) both slide-out-up;
+  /* animation: 0.4s cubic-bezier(0.4, 0, 0.2, 1) both slide-out-up; */
+  animation: 0.4s ease-in-out both slide-out-up;
   /* 0.4s = duration
      cubic-bezier = smooth easing (starts fast, ends slow)
      both = applies animation styles before and after
@@ -63,18 +64,21 @@
 
 /* Forward navigation: new page slides up from bottom */
 ::view-transition-new(root) {
-  animation: 0.4s cubic-bezier(0.4, 0, 0.2, 1) both slide-up;
+  /* animation: 0.4s cubic-bezier(0.4, 0, 0.2, 1) both slide-up; */
+  animation: 0.4s ease-in-out both slide-up;
 }
 
 /* Backward navigation: old page slides down and out
    This targets when data-astro-transition="back" is set on <html> */
 html[data-astro-transition="back"]::view-transition-old(root) {
-  animation: 0.4s cubic-bezier(0.4, 0, 0.2, 1) both slide-out-down;
+  /* animation: 0.4s cubic-bezier(0.4, 0, 0.2, 1) both slide-out-down; */
+  animation: 0.4s ease-in-out both slide-out-down;
 }
 
 /* Backward navigation: new page slides down from top */
 html[data-astro-transition="back"]::view-transition-new(root) {
-  animation: 0.4s cubic-bezier(0.4, 0, 0.2, 1) both slide-down;
+  /* animation: 0.4s cubic-bezier(0.4, 0, 0.2, 1) both slide-down; */
+  animation: 0.4s ease-in-out both slide-down;
 }
 
 /* ============================================

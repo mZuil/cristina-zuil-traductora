@@ -39,6 +39,8 @@ export function isHomePage(page) {
 
 export async function fetchPagesByLocale(locale) {
   const url = `${i18nConfig.strapi.url}/api/pages?locale=${locale}&populate=*`;
+
+  console.log(`Fetching pages from: ${url}`);
     
   try {
     const response = await fetch(url);
