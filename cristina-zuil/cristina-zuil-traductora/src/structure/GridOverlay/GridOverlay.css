@@ -21,14 +21,14 @@ grid-overlay .grid-column {
 grid-overlay .grid-column-inner {
   width: 100%;
   height: 100vh;
-  background-color: rgba(255, 0, 0, 0.1);
-  border-left: 1px solid rgba(255, 0, 0, 0.3);
-  border-right: 1px solid rgba(255, 0, 0, 0.3);
+  background-color: rgba(0, 217, 255, 0.1);
+  border-left: 1px solid rgba(0, 98, 255, 0.3);
+  border-right: 1px solid rgba(0, 98, 255, 0.3);
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 20px;
   font-weight: bold;
-  color: rgba(255, 0, 0, 0.6);
+  color: rgba(0, 98, 255, 0.6);
 }
