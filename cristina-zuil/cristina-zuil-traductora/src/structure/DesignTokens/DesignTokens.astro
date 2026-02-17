@@ -44,6 +44,59 @@ const { sm, md, lg } = designTokens.breakpoints;
 const mdBreakpoint = md.breakpoint; // 610px
 const lgBreakpoint = lg.breakpoint; // 1191px
 
+const mdStart = Number.parseInt(mdBreakpoint, 10) || 610;
+const lgStart = Number.parseInt(lgBreakpoint, 10) || 1191;
+const mdEnd = lgStart - 1;
+
+let customColumnRules = '';
+
+const smSelectors: string[] = [];
+for (let i = 1; i <= sm.columns; i++) {
+  smSelectors.push(`custom-column[sm="${i}"]`);
+  smSelectors.push(`custom-column[sm-push="${i}"]`);
+}
+customColumnRules += `${smSelectors.join(',\n')} {\n  --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));\n}\n\n`;
+
+for (let i = 1; i <= sm.columns; i++) {
+  customColumnRules += `custom-column[sm="${i}"] {\n  width: calc(var(--w) * ${i} + var(--grid-gutter) * (${i} - 1));\n}\n\n`;
+}
+
+for (let i = 1; i <= sm.columns; i++) {
+  customColumnRules += `custom-column[sm-push="${i}"] {\n  margin-left: calc(var(--w) * ${i} + var(--grid-gutter) * ${i});\n}\n\n`;
+}
+
+const mdSelectors: string[] = [];
+for (let i = 1; i <= md.columns; i++) {
+  mdSelectors.push(`custom-column[md="${i}"]`);
+  mdSelectors.push(`custom-column[md-push="${i}"]`);
+}
+customColumnRules += `@media (min-width: ${mdStart}px) and (max-width: ${mdEnd}px) {\n  ${mdSelectors.join(',\n  ')} {\n    --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));\n  }\n}\n\n`;
+
+customColumnRules += `@media (min-width: ${mdStart}px) and (max-width: ${mdEnd}px) {\n`;
+for (let i = 1; i <= md.columns; i++) {
+  customColumnRules += `  custom-column[md="${i}"] {\n    width: calc(var(--w) * ${i} + var(--grid-gutter) * (${i} - 1));\n  }\n\n`;
+}
+for (let i = 1; i <= md.columns; i++) {
+  customColumnRules += `  custom-column[md-push="${i}"] {\n    margin-left: calc(var(--w) * ${i} + var(--grid-gutter) * ${i});\n  }\n\n`;
+}
+customColumnRules += `}\n\n`;
+
+const lgSelectors: string[] = [];
+for (let i = 1; i <= lg.columns; i++) {
+  lgSelectors.push(`custom-column[lg="${i}"]`);
+  lgSelectors.push(`custom-column[lg-push="${i}"]`);
+}
+customColumnRules += `@media (min-width: ${lgStart}px) {\n  ${lgSelectors.join(',\n  ')} {\n    --w: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));\n  }\n}\n\n`;
+
+customColumnRules += `@media (min-width: ${lgStart}px) {\n`;
+for (let i = 1; i <= lg.columns; i++) {
+  customColumnRules += `  custom-column[lg="${i}"] {\n    width: calc(var(--w) * ${i} + var(--grid-gutter) * (${i} - 1));\n  }\n\n`;
+}
+for (let i = 1; i <= lg.columns; i++) {
+  customColumnRules += `  custom-column[lg-push="${i}"] {\n    margin-left: calc(var(--w) * ${i} + var(--grid-gutter) * ${i});\n  }\n\n`;
+}
+customColumnRules += `}\n`;
+
 const cssVariables = `:root {
 ${cssVars.join('\n')}
 }
@@ -76,7 +129,9 @@ ${cssVars.join('\n')}
   :root {
     --container-inner-width: min(100dvw - 2 * var(--container-padding), var(--container-max-width));
   }
-}`;
+}
+
+${customColumnRules}`;
 ---
 
 <style is:global set:html={cssVariables}></style>
