@@ -1,25 +1,35 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, isHomePage } from '../config/i18n.js';
-import CustomContainer from '../structure/CustomContainer/CustomContainer.astro';
-import CustomColumn from '../structure/CustomColumn/CustomColumn.astro';
+import Layout from "../layouts/Layout.astro";
+import {
+  i18nConfig,
+  getLocalizedUrl,
+  fetchPagesByLocale,
+  isHomePage,
+} from "../config/i18n.js";
+import CustomContainer from "../structure/CustomContainer/CustomContainer.astro";
+import CustomColumn from "../structure/CustomColumn/CustomColumn.astro";
 
 // Fetch pages and find the homepage (empty slug)
 const pages = await fetchPagesByLocale(i18nConfig.defaultLocale);
 const homePage = pages.find((page: any) => isHomePage(page));
 
 if (!homePage) {
-  throw new Error(`Homepage not found! Create a page with an EMPTY slug in Strapi for locale "${i18nConfig.defaultLocale}"`);
+  throw new Error(
+    `Homepage not found! Create a page with an EMPTY slug in Strapi for locale "${i18nConfig.defaultLocale}"`,
+  );
 }
 
 const { title, content, slug, localizations } = homePage;
 
 const getLocaleLabel = (loc: string) => {
-  return i18nConfig.localeLabels[loc as keyof typeof i18nConfig.localeLabels] || loc.toUpperCase();
+  return (
+    i18nConfig.localeLabels[loc as keyof typeof i18nConfig.localeLabels] ||
+    loc.toUpperCase()
+  );
 };
 ---
 
-<Layout 
+<Layout
   content={homePage}
   locale={i18nConfig.defaultLocale}
   contentType="WebSite"
@@ -27,43 +37,43 @@ const getLocaleLabel = (loc: string) => {
   <main>
     <CustomContainer>
       <CustomColumn lg="6" md="4" sm="2">
-        <div>
-          <!-- Column 1 content -->
-          <p>Column 1 (lg: 6/12)</p>
-        </div>
+        <!-- Column 1 content -->
+        <p>Column 1 (lg: 6/12)</p>
       </CustomColumn>
       <CustomColumn lg="6" md="4" sm="2">
-        <div>
-          <!-- Column 2 content -->
-          <p>Column 2 (lg: 6/12)</p>
-        </div>
+        <!-- Column 2 content -->
+        <p>Column 2 (lg: 6/12)</p>
       </CustomColumn>
       <h1>{title}</h1>
-      
+
       <nav class="language-switcher">
         <a href="/" class="active">
           {getLocaleLabel(i18nConfig.defaultLocale)}
         </a>
-        {localizations?.map((localization: any) => {
-          const locale = localization.locale;
-          const localizedSlug = localization.slug;
-          return (
-            <a href={getLocalizedUrl(localizedSlug, locale)}>
-              {getLocaleLabel(locale)}
-            </a>
-          );
-        })}
+        {
+          localizations?.map((localization: any) => {
+            const locale = localization.locale;
+            const localizedSlug = localization.slug;
+            return (
+              <a href={getLocalizedUrl(localizedSlug, locale)}>
+                {getLocaleLabel(locale)}
+              </a>
+            );
+          })
+        }
       </nav>
-      
-      {Array.isArray(content) ? (
-        <div>
-          {content.map((block: any) => (
-            <div set:html={block.body || ''} />
-          ))}
-        </div>
-      ) : (
-        <div set:html={content} />
-      )}
+
+      {
+        Array.isArray(content) ? (
+          <div>
+            {content.map((block: any) => (
+              <div set:html={block.body || ""} />
+            ))}
+          </div>
+        ) : (
+          <div set:html={content} />
+        )
+      }
     </CustomContainer>
   </main>
 </Layout>
