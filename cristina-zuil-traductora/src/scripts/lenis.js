@@ -1,12 +1,14 @@
 import Lenis from 'lenis';
 
 let lenis;
+let rafId;
 
 /**
  * Initialize Lenis smooth scroll
  * This function sets up the smooth scrolling behavior
  */
 function initLenis() {
+  if (lenis) destroyLenis();
   // Create new Lenis instance
   lenis = new Lenis({
     duration: 1.2,        // Animation duration in seconds
@@ -19,13 +21,16 @@ function initLenis() {
     infinite: false,      // Disable infinite scroll
   });
 
+  const currentLenis = lenis;
+
   // Animation loop - required for Lenis to work
   function raf(time) {
-    lenis.raf(time);
-    requestAnimationFrame(raf);
+    if (!lenis || lenis !== currentLenis) return;
+    currentLenis.raf(time);
+    rafId = requestAnimationFrame(raf);
   }
 
-  requestAnimationFrame(raf);
+  rafId = requestAnimationFrame(raf);
 }
 
 /**
@@ -33,6 +38,11 @@ function initLenis() {
  * Important: Clean up when navigating away to prevent memory leaks
  */
 function destroyLenis() {
+  if (rafId) {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+
   if (lenis) {
     lenis.destroy();
     lenis = null;
