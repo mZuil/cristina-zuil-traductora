@@ -24,16 +24,6 @@
       },
       "required": true
     },
-    "slug": {
-      "type": "uid",
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
-      "targetField": "title",
-      "required": true
-    },
     "author": {
       "type": "string",
       "pluginOptions": {
@@ -62,8 +52,31 @@
           "localized": false
         }
       },
+      "required": true,
       "min": 2015,
       "max": 2100
+    },
+    "fromTranslation": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "default": "EN",
+      "maxLength": 2,
+      "required": true
+    },
+    "toTranslation": {
+      "type": "string",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "default": "ES",
+      "maxLength": 2,
+      "required": true
     },
     "coverPage": {
       "type": "media",
@@ -98,17 +111,6 @@
         "traduccion",
         "escrito"
       ]
-    },
-    "seo": {
-      "type": "component",
-      "repeatable": false,
-      "component": "seo.seo",
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
-      "required": false
     }
   }
 }

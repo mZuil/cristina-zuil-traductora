@@ -60,6 +60,19 @@
       "relation": "oneToMany",
       "target": "api::book.book",
       "mappedBy": "publisher"
+    },
+    "commentBgImage": {
+      "type": "media",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "multiple": false,
+      "allowedTypes": [
+        "images",
+        "files"
+      ]
     }
   }
 }

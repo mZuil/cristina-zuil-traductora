@@ -501,6 +501,17 @@ export interface ApiBookBook extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    fromTranslation: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 2;
+      }> &
+      Schema.Attribute.DefaultTo<'EN'>;
     genres: Schema.Attribute.Relation<'oneToMany', 'api::genre.genre'>;
     link: Schema.Attribute.Component<'links.link', false> &
       Schema.Attribute.SetPluginOptions<{
@@ -515,19 +526,6 @@ export interface ApiBookBook extends Struct.CollectionTypeSchema {
       'manyToOne',
       'api::publisher.publisher'
     >;
-    seo: Schema.Attribute.Component<'seo.seo', false> &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    slug: Schema.Attribute.UID<'title'> &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
     title: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.SetPluginOptions<{
@@ -535,10 +533,22 @@ export interface ApiBookBook extends Struct.CollectionTypeSchema {
           localized: true;
         };
       }>;
+    toTranslation: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }> &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 2;
+      }> &
+      Schema.Attribute.DefaultTo<'ES'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     year: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: false;
@@ -673,6 +683,12 @@ export interface ApiPublisherPublisher extends Struct.CollectionTypeSchema {
   };
   attributes: {
     books: Schema.Attribute.Relation<'oneToMany', 'api::book.book'>;
+    commentBgImage: Schema.Attribute.Media<'images' | 'files'> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
