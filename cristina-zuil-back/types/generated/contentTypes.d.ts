@@ -615,7 +615,7 @@ export interface ApiHeaderMenuHeaderMenu extends Struct.SingleTypeSchema {
     };
   };
   attributes: {
-    contactButton: Schema.Attribute.Component<'links.link', false> &
+    contactText: Schema.Attribute.String &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: true;

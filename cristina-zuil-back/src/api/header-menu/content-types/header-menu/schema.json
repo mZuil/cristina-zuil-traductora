@@ -34,15 +34,13 @@
       },
       "required": true
     },
-    "contactButton": {
-      "type": "component",
+    "contactText": {
+      "type": "string",
       "pluginOptions": {
         "i18n": {
           "localized": true
         }
-      },
-      "component": "links.link",
-      "repeatable": false
+      }
     }
   }
 }

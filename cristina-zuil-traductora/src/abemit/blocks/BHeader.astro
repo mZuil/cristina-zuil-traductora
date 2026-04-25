@@ -12,10 +12,7 @@ const url = `${i18nConfig.strapi.url}/api/header-menu?populate=*&locale=${locale
 
 let links: Link[] = [];
 let menuText = "";
-let contactButton = {
-    url: "",
-    label: "",
-};
+let contactText = "";
 
 const res = await fetch(url);
 if (res.ok) {
@@ -23,7 +20,7 @@ if (res.ok) {
     const headerMenu = json?.data;
     links = headerMenu?.links ?? [];
     menuText = headerMenu?.menuText ?? menuText;
-    contactButton = headerMenu?.contactMenu ?? contactButton;
+    contactText = headerMenu?.contactText ?? contactText;
 } else {
     console.error(
         `Failed to fetch header menu: ${res.status} ${res.statusText}`,
@@ -86,9 +83,7 @@ if (res.ok) {
                 <rect x="180.602" y="173.665" width="83.995" height="43.416" style="fill: rgb(0, 79, 255); stroke-width: 1; transform-box: fill-box; transform-origin: 50% 50%;" transform="matrix(0, 1, -1, 0, 90.681541, -47.247183)"></rect>
             </g>
         </svg>
-        <AButton as="a" href={contactButton.url} variant="primary">
-            {contactButton.label}
-        </AButton>
+        <AButton as="button" onClick="openContactModal()" variant="primary" size="menu-item">{contactText}</AButton>
     </nav>
 </header>
 
