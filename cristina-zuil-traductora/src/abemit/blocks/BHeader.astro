@@ -187,7 +187,7 @@ if (res.ok) {
                 .to(menuText, { opacity: 0, width: 0, paddingLeft: 0, paddingRight: 0, duration: 0.2, ease: "power2.in" }, 0)
                 .to(toggle, { paddingLeft: 13, paddingRight: 13, gap: 0, duration: 0.2, ease: "power2.in" }, 0)
                 // Menu expands slightly after, marginInline goes from -29.5px → 0 in sync
-                .to(menu, { width: "auto", marginInline: 0, duration: 0.5, ease: "back.out(1.5)" }, 0.05);
+                .to(menu, { width: "auto", marginInline: 0, duration: 0.5, ease: "back.out(1.5)" }, 0.25);
 
             toggle?.addEventListener("click", () => {
                 isOpen = !isOpen;
