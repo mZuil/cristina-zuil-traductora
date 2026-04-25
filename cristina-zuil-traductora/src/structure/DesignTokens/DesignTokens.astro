@@ -9,6 +9,11 @@ const colors = designTokens.colors as Record<string, string>;
 for (const key in colors) {
   if (colors.hasOwnProperty(key)) {
     cssVars.push(`  --color-${key}: ${colors[key]};`);
+
+    const kebabKey = key.replace(/_/g, '-');
+    if (kebabKey !== key) {
+      cssVars.push(`  --color-${kebabKey}: ${colors[key]};`);
+    }
   }
 }
 

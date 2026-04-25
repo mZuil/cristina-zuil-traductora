@@ -62,9 +62,37 @@ const wrapperClasses = ['b-button-wrapper', wrapperClass]
 
 <style lang="scss">
     .a-button {
+
+        text-decoration: none;
+        color: inherit;
         
         &.--primary {
-           background-color: var(--color-blue-default); 
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+
+            padding: 13px 27px;
+            background-color: var(--color-blue-default);
+            color: var(--color-white);
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+
+            &:hover {
+                background-color: var(--color-blue-dark);
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--color-blue-dark);
+                outline-offset: 2px;
+            }
+
+            &.--has-icon {
+                padding: 13px 27px 13px 20px;
+            }
         }
     }
 </style>
