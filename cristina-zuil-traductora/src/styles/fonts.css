@@ -8,7 +8,7 @@
  * 3. Place font files in /public/fonts/YourFontName/
  */
 
-@import './fonts/YourFontName.css';
+/* @import './fonts/YourFontName.css'; */
 
 /* Add more font imports here as you add fonts */
 /* @import './fonts/YourSecondaryFont.css'; */

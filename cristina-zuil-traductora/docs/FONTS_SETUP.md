@@ -33,6 +33,57 @@ Each font has its own folder in `/public/fonts/` and its own CSS file in `/src/s
 - **.otf** (OpenType)
 - **.ttf** (TrueType)
 
+## Using Google Fonts (Hosted Fonts)
+
+If you prefer not to self-host font files, you can load fonts directly from Google Fonts.
+
+### Recommended: Add `<link>` tags in the site `<head>`
+
+Add the Google Fonts snippet to the `<head>` in your shared layout/component (for example `src/layouts/Layout.astro`, or `src/features/seo/SEOHead.astro` if that component renders inside `<head>`):
+
+```html
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+```
+
+Then use the font in your styles (for example in `src/styles/global.css` or wherever you set your base typography):
+
+```css
+:root {
+  --font-family-primary: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+```
+
+### Alternative: `@import` from CSS
+
+If you want to keep it in CSS, add this at the very top of `src/styles/fonts.css`:
+
+```css
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap");
+```
+
+Then reference it like any other family:
+
+```css
+:root {
+  --font-family-primary: "Inter", system-ui, sans-serif;
+}
+```
+
+### Design tokens
+
+If you use `src/config/design-tokens.ts` to define font families, set `primary` / `secondary` to match the Google font family name:
+
+```typescript
+fonts: {
+  families: {
+    primary: 'Inter, system-ui, sans-serif',
+    secondary: 'serif',
+  },
+}
+```
+
 ## How to Set Up Fonts
 
 ### 1. Add Font Files

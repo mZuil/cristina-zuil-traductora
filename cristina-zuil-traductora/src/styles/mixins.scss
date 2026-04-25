@@ -1,0 +1,7 @@
+@mixin use-font($name) {
+  font-family: var(--font-style-#{$name}-font-family);
+  font-size: var(--font-style-#{$name}-font-size);
+  font-weight: var(--font-style-#{$name}-font-weight);
+  line-height: var(--font-style-#{$name}-line-height);
+  letter-spacing: var(--font-style-#{$name}-letter-spacing);
+}

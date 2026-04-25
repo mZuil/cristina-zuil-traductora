@@ -1,5 +1,5 @@
 ---
-import { designTokens } from '../../config/design-tokens';
+import { designTokens, getFontStyle } from '../../config/design-tokens';
 
 // Generate CSS variables from design tokens
 const cssVars: string[] = [];
@@ -36,6 +36,39 @@ for (const key in fontFamilies) {
   if (fontFamilies.hasOwnProperty(key)) {
     cssVars.push(`  --font-family-${key}: ${fontFamilies[key]};`);
   }
+}
+
+const fontStyleVarsSm: string[] = [];
+const fontStyleVarsMd: string[] = [];
+const fontStyleVarsLg: string[] = [];
+
+const fontStyleUtilityClasses: string[] = [];
+const fontStyleNames = Object.keys(designTokens.fonts.styles) as Array<keyof typeof designTokens.fonts.styles>;
+
+for (const styleName of fontStyleNames) {
+  const smStyle = getFontStyle(styleName, 'sm');
+  const mdStyle = getFontStyle(styleName, 'md');
+  const lgStyle = getFontStyle(styleName, 'lg');
+
+  fontStyleVarsSm.push(`  --font-style-${styleName}-font-family: ${smStyle.fontFamily};`);
+  fontStyleVarsSm.push(`  --font-style-${styleName}-font-size: ${smStyle.fontSize};`);
+  fontStyleVarsSm.push(`  --font-style-${styleName}-font-weight: ${smStyle.fontWeight};`);
+  fontStyleVarsSm.push(`  --font-style-${styleName}-line-height: ${smStyle.lineHeight};`);
+  fontStyleVarsSm.push(`  --font-style-${styleName}-letter-spacing: ${smStyle.letterSpacing};`);
+
+  fontStyleVarsMd.push(`  --font-style-${styleName}-font-family: ${mdStyle.fontFamily};`);
+  fontStyleVarsMd.push(`  --font-style-${styleName}-font-size: ${mdStyle.fontSize};`);
+  fontStyleVarsMd.push(`  --font-style-${styleName}-font-weight: ${mdStyle.fontWeight};`);
+  fontStyleVarsMd.push(`  --font-style-${styleName}-line-height: ${mdStyle.lineHeight};`);
+  fontStyleVarsMd.push(`  --font-style-${styleName}-letter-spacing: ${mdStyle.letterSpacing};`);
+
+  fontStyleVarsLg.push(`  --font-style-${styleName}-font-family: ${lgStyle.fontFamily};`);
+  fontStyleVarsLg.push(`  --font-style-${styleName}-font-size: ${lgStyle.fontSize};`);
+  fontStyleVarsLg.push(`  --font-style-${styleName}-font-weight: ${lgStyle.fontWeight};`);
+  fontStyleVarsLg.push(`  --font-style-${styleName}-line-height: ${lgStyle.lineHeight};`);
+  fontStyleVarsLg.push(`  --font-style-${styleName}-letter-spacing: ${lgStyle.letterSpacing};`);
+
+  fontStyleUtilityClasses.push(`.v-font-${styleName} {\n  font-family: var(--font-style-${styleName}-font-family);\n  font-size: var(--font-style-${styleName}-font-size);\n  font-weight: var(--font-style-${styleName}-font-weight);\n  line-height: var(--font-style-${styleName}-line-height);\n  letter-spacing: var(--font-style-${styleName}-letter-spacing);\n}`);
 }
 
 // Responsive variables for each breakpoint
@@ -88,6 +121,7 @@ ${cssVars.join('\n')}
   --grid-gutter: ${sm.gap};
   --container-padding: ${sm.padding};
   --width-col: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));
+${fontStyleVarsSm.join('\n')}
 }
 
 /* Medium breakpoint (610px - 1190px) */
@@ -97,6 +131,7 @@ ${cssVars.join('\n')}
     --grid-gutter: ${md.gap};
     --container-padding: ${md.padding};
     --width-col: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));
+${fontStyleVarsMd.join('\n')}
   }
 }
 
@@ -107,6 +142,7 @@ ${cssVars.join('\n')}
     --grid-gutter: ${lg.gap};
     --container-padding: ${lg.padding};
     --width-col: calc((var(--container-inner-width) - var(--grid-gutter) * (var(--total-columns) - 1)) / var(--total-columns));
+${fontStyleVarsLg.join('\n')}
   }
   
   /* Update container inner width when viewport exceeds max-width */
@@ -117,6 +153,9 @@ ${cssVars.join('\n')}
 }
 
 ${customColumnRules}`;
+
 ---
 
 <style is:global set:html={cssVariables}></style>
+
+<style is:global set:html={fontStyleUtilityClasses.join('\n\n')}></style>

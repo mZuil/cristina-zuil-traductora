@@ -1,0 +1,109 @@
+---
+import { i18nConfig } from "../../config/i18n.js";
+import AButton from "../atoms/AButton.astro";
+
+interface Link {
+    url: string;
+    label: string;
+}
+
+const locale = Astro.currentLocale ?? "es";
+const url = `${i18nConfig.strapi.url}/api/header-menu?populate=*&locale=${locale}`;
+
+let links: Link[] = [];
+let menuText = "";
+let contactButton = {
+    url: "",
+    label: "",
+};
+
+const res = await fetch(url);
+if (res.ok) {
+    const json = await res.json();
+    const headerMenu = json?.data;
+    links = headerMenu?.links ?? [];
+    menuText = headerMenu?.menuText ?? menuText;
+    contactButton = headerMenu?.contactMenu ?? contactButton;
+} else {
+    console.error(
+        `Failed to fetch header menu: ${res.status} ${res.statusText}`,
+    );
+}
+---
+
+<style lang="scss">
+    @use "../../styles/mixins" as *;
+
+    .b-header {
+        @include use-font(menu-item);
+
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 1rem 2rem;
+
+        &__nav {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+        }
+    }
+</style>
+
+<header class="b-header js-header">
+    <nav class="b-header__nav">
+        <button class="b-header__menu-toggle v-font-menu-item" type="button" aria-expanded="false" aria-controls="header-menu">
+            {menuText}
+        </button>
+        <ul class="b-header__menu" id="header-menu">
+            {
+                links.map((link: Link) => (
+                    <li>
+                        <a href={link.url}>{link.label}</a>
+                    </li>
+                ))
+            }
+        </ul>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+            <ellipse style="fill: rgb(170, 229, 236);" cx="275.681" cy="129.966" rx="107.69" ry="107.69"></ellipse>
+            <g>
+                <rect x="190.835" y="71.636" width="101.305" height="35.912" style="stroke-width: 1; fill: rgb(6, 5, 46);"></rect>
+                <rect x="226.881" y="113.941" width="116.794" height="38.281" style="stroke-width: 1; fill: rgb(6, 5, 46); transform-box: fill-box; transform-origin: 50% 50%;" transform="matrix(0.657795, -0.753197, 0.753197, 0.657795, -41.299144, -2.786393)"></rect>
+                <rect x="198.509" y="153.803" width="101.305" height="36.294" style="stroke-width: 1; fill: rgb(6, 5, 46);"></rect>
+                <rect x="191.145" y="161.654" width="25.376" height="28.435" style="stroke-width: 1; fill: rgb(6, 5, 46);"></rect>
+            </g>
+            <g>
+                <rect x="259.081" y="71.652" width="108.683" style="stroke-width: 1; fill: rgb(6, 5, 46);"></rect>
+                <rect x="191.145" y="161.654" width="25.376" height="28.435" style="stroke-width: 1; fill: rgb(6, 5, 46);"></rect>
+            </g>
+            <g>
+                <rect x="259.081" y="71.652" width="108.683" height="36.038" style="fill: rgb(0, 79, 255);"></rect>
+                <rect x="180.602" y="173.665" width="83.995" style="stroke-width: 1; fill: rgb(6, 5, 46);"></rect>
+            </g>
+            <g>
+                <rect x="259.081" y="71.652" width="108.683" height="36.038" style="fill: rgb(0, 79, 255);"></rect>
+                <rect x="180.602" y="173.665" width="83.995" height="43.416" style="fill: rgb(0, 79, 255); stroke-width: 1; transform-box: fill-box; transform-origin: 50% 50%;" transform="matrix(0, 1, -1, 0, 90.681541, -47.247183)"></rect>
+            </g>
+        </svg>
+        <AButton as="a" href={contactButton.url} variant="primary">
+            {contactButton.label}
+        </AButton>
+    </nav>
+</header>
+
+<script>
+    function initHeader() {
+        document.querySelectorAll(".js-header").forEach((header) => {
+            const toggle = header.querySelector(".b-header__menu-toggle");
+            const menu = header.querySelector(".b-header__menu");
+
+            toggle?.addEventListener("click", () => {
+                const isOpen = menu?.classList.toggle("is-open");
+                toggle.setAttribute("aria-expanded", String(isOpen));
+            });
+        });
+    }
+
+    document.addEventListener("astro:page-load", initHeader);
+</script>

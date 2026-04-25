@@ -4,6 +4,7 @@ import SEOHead from '../features/seo/SEOHead.astro';
 import DesignTokens from '../structure/DesignTokens/DesignTokens.astro';
 import { i18nConfig } from '../config/i18n.js';
 import { getSEOData, getStructuredData } from '../utils/seo.js';
+import BHeader from '../abemit/blocks/BHeader.astro';
 
 //CSS Styles
 import '../styles/global.css';
@@ -42,12 +43,20 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
 <html lang={locale}>
   <head>
     <meta charset="UTF-8"/>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:ital,opsz,wght@0,17..18,400..700;1,17..18,400..700&family=MuseoModerno:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    
     <DesignTokens />
     <SEOHead seoData={seoData} />
     <ClientRouter />
     <script type="application/ld+json" set:html={JSON.stringify(structuredData, null, 2)} />
   </head>
   <body>
+    <BHeader />
+
     <slot />
 
     <GridOverlay />

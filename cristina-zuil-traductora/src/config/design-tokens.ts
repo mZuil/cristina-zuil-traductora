@@ -6,8 +6,13 @@
 export const designTokens = {
   // Colors
   colors: {
-    black: '#000000',
     white: '#ffffff',
+    blue_dark: '#06052E',
+    blue_light: '#89DBE6',
+    blue_default: '#004FFF',
+    blue_lighter: '#AAE5EC',
+    blue_lightest: '#E8F4FF',
+    grey: '#0D1B2A35',
   },
 
   // Responsive breakpoints with grid configuration
@@ -40,35 +45,120 @@ export const designTokens = {
   fonts: {
     // Font families - reference the font names defined in fonts.css
     families: {
-      primary: 'YourFontName, sans-serif',
-      secondary: 'YourSecondaryFont, serif',
+      primary: 'MuseoModerno, serif',
+      secondary: 'Google Sans, sans-serif',
     },
 
     // Typography styles with responsive variants
     // Reference font families from families object above
     styles: {
+      'display-1': {
+        sm: {
+          fontFamily: 'primary',
+          fontSize: '148px',
+          fontWeight: 700,
+          lineHeight: 1.05,
+          letterSpacing: '0',
+        },
+        md: {},
+        lg: {},
+      },
+
       'headline-1': {
         sm: {
-          fontFamily: 'primary', // References fonts.families.primary
-          fontSize: '2rem',
+          fontFamily: 'secondary',
+          fontSize: '40px',
           fontWeight: 700,
-          lineHeight: 1.2,
-          letterSpacing: '-0.02em',
+          lineHeight: 0.99,
+          letterSpacing: '0',
         },
-        md: {
-          fontFamily: 'primary',
-          fontSize: '2.5rem',
+        md: {},
+        lg: {},
+      },
+
+      'headline-2': {
+        sm: {
+          fontFamily: 'secondary',
+          fontSize: '28px',
           fontWeight: 700,
-          lineHeight: 1.2,
-          letterSpacing: '-0.02em',
+          lineHeight: 0.99,
+          letterSpacing: '0',
         },
-        lg: {
-          fontFamily: 'primary',
-          fontSize: '3rem',
+        md: {},
+        lg: {},
+      },
+
+      'subheading-1': {
+        sm: {
+          fontFamily: 'secondary',
+          fontSize: '24px',
+          fontWeight: 400,
+          lineHeight: 1.21,
+          letterSpacing: '0.15em',
+        },
+        md: {},
+        lg: {},
+      },
+
+      'menu-item': {
+        sm: {
+          fontFamily: 'secondary',
+          fontSize: '20px',
           fontWeight: 700,
-          lineHeight: 1.2,
-          letterSpacing: '-0.02em',
+          lineHeight: 1,
+          letterSpacing: '0',
         },
+        md: {},
+        lg: {},
+      },
+
+      'body': {
+        sm: {
+          fontFamily: 'secondary',
+          fontSize: '20px',
+          fontWeight: 400,
+          lineHeight: 1,
+          letterSpacing: '0',
+        },
+        md: {},
+        lg: {},
+      },
+
+      'tagline': {
+        sm: {
+          fontFamily: 'secondary',
+          fontSize: '16px',
+          fontWeight: 400,
+          lineHeight: 1.81,
+          letterSpacing: '-0.01em',
+          textTransform: 'uppercase',
+        },
+        md: {},
+        lg: {},
+      },
+
+      'small-text': {
+        sm: {
+          fontFamily: 'secondary',
+          fontSize: '16px',
+          fontWeight: 400,
+          lineHeight: 1,
+          letterSpacing: '0',
+        },
+        md: {},
+        lg: {},
+      },
+
+      'small-bold-text': {
+        sm: {
+          fontFamily: 'secondary',
+          fontSize: '16px',
+          fontWeight: 700,
+          lineHeight: 1,
+          letterSpacing: '0',
+        },
+        md: {},
+        lg: {},
       },
     },
   },
@@ -86,13 +176,25 @@ export function getFontStyle(
   styleName: keyof typeof designTokens.fonts.styles,
   breakpoint: 'sm' | 'md' | 'lg' = 'md'
 ) {
-  const style = designTokens.fonts.styles[styleName][breakpoint];
-  // Resolve font family reference
-  const fontFamilyKey = style.fontFamily as keyof typeof designTokens.fonts.families;
-  const resolvedFontFamily = designTokens.fonts.families[fontFamilyKey] || style.fontFamily;
-  
+  const stylesByBreakpoint = designTokens.fonts.styles[styleName] as Record<string, Record<string, unknown>>;
+
+  const smStyle = (stylesByBreakpoint.sm ?? {}) as Record<string, unknown>;
+  const mdStyle = (stylesByBreakpoint.md ?? {}) as Record<string, unknown>;
+  const lgStyle = (stylesByBreakpoint.lg ?? {}) as Record<string, unknown>;
+
+  const hasKeys = (obj: Record<string, unknown>) => Object.keys(obj).length > 0;
+
+  const merged = {
+    ...smStyle,
+    ...(breakpoint === 'sm' ? {} : hasKeys(mdStyle) ? mdStyle : {}),
+    ...(breakpoint === 'lg' && hasKeys(lgStyle) ? lgStyle : {}),
+  } as typeof designTokens.fonts.styles[keyof typeof designTokens.fonts.styles]['sm'];
+
+  const fontFamilyKey = merged.fontFamily as keyof typeof designTokens.fonts.families;
+  const resolvedFontFamily = designTokens.fonts.families[fontFamilyKey] || merged.fontFamily;
+
   return {
-    ...style,
+    ...merged,
     fontFamily: resolvedFontFamily,
   };
 }
