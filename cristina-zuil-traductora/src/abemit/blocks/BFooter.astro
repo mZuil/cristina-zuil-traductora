@@ -1,0 +1,41 @@
+---
+import { i18nConfig } from "../../config/i18n.js";
+import AButton from "../atoms/AButton.astro";
+import AText from "../atoms/AText.astro";
+
+const locale = Astro.currentLocale ?? "es";
+const url = `${i18nConfig.strapi.url}/api/footer?populate=*&locale=${locale}`;
+
+let copyrightText = "";
+
+const res = await fetch(url);
+if (res.ok) {
+    const json = await res.json();
+    const footer = json?.data;
+    copyrightText = footer.copyrightText;
+} else {
+    console.error(
+        `Failed to fetch footer: ${res.status} ${res.statusText}`,
+    );
+}
+---
+
+<style lang="scss">
+    @use "../../styles/mixins" as *;
+
+    .b-footer {
+        @include use-font(menu-item);
+
+        margin-top: auto;
+
+        &__text {
+            padding-block: 20px 15px;
+            color: var(--color-grey);
+            text-align: center;
+        }
+    }
+</style>
+
+<footer class="b-footer js-footer">
+    <AText as="p" size="small-text" class="b-footer__text">{copyrightText}</AText>
+</footer>

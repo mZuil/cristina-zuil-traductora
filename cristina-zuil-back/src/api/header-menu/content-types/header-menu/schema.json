@@ -4,7 +4,7 @@
   "info": {
     "singularName": "header-menu",
     "pluralName": "header-menus",
-    "displayName": "Header menu"
+    "displayName": "Header"
   },
   "options": {
     "draftAndPublish": true

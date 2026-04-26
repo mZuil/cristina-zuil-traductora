@@ -6,8 +6,8 @@ import {
   fetchPagesByLocale,
   isHomePage,
 } from "../config/i18n.js";
-import CustomContainer from "../structure/CustomContainer/CustomContainer.astro";
-import CustomColumn from "../structure/CustomColumn/CustomColumn.astro";
+import CustomContainer from "../helpers/structure/CustomContainer/CustomContainer.astro";
+import CustomColumn from "../helpers/structure/CustomColumn/CustomColumn.astro";
 
 // Fetch pages and find the homepage (empty slug)
 const pages = await fetchPagesByLocale(i18nConfig.defaultLocale);
@@ -44,24 +44,6 @@ const getLocaleLabel = (loc: string) => {
         <!-- Column 2 content -->
         <p>Column 2 (lg: 6/12)</p>
       </CustomColumn>
-      <h1>{title}</h1>
-
-      <nav class="language-switcher">
-        <a href="/" class="active">
-          {getLocaleLabel(i18nConfig.defaultLocale)}
-        </a>
-        {
-          localizations?.map((localization: any) => {
-            const locale = localization.locale;
-            const localizedSlug = localization.slug;
-            return (
-              <a href={getLocalizedUrl(localizedSlug, locale)}>
-                {getLocaleLabel(locale)}
-              </a>
-            );
-          })
-        }
-      </nav>
 
       {
         Array.isArray(content) ? (

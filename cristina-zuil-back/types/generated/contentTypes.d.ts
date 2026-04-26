@@ -564,6 +564,40 @@ export interface ApiBookBook extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiFooterFooter extends Struct.SingleTypeSchema {
+  collectionName: 'footers';
+  info: {
+    displayName: 'Footer';
+    pluralName: 'footers';
+    singularName: 'footer';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: true;
+    };
+  };
+  attributes: {
+    copyrightText: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::footer.footer'>;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiGenreGenre extends Struct.CollectionTypeSchema {
   collectionName: 'genres';
   info: {
@@ -602,7 +636,7 @@ export interface ApiGenreGenre extends Struct.CollectionTypeSchema {
 export interface ApiHeaderMenuHeaderMenu extends Struct.SingleTypeSchema {
   collectionName: 'header_menus';
   info: {
-    displayName: 'Header menu';
+    displayName: 'Header';
     pluralName: 'header-menus';
     singularName: 'header-menu';
   };
@@ -1293,6 +1327,7 @@ declare module '@strapi/strapi' {
       'admin::user': AdminUser;
       'api::article.article': ApiArticleArticle;
       'api::book.book': ApiBookBook;
+      'api::footer.footer': ApiFooterFooter;
       'api::genre.genre': ApiGenreGenre;
       'api::header-menu.header-menu': ApiHeaderMenuHeaderMenu;
       'api::page.page': ApiPagePage;

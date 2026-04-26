@@ -85,21 +85,6 @@ const contentType = template === 'archive-books' || template === 'archive-articl
   contentType={contentType}
 >
   <main>
-    <nav class="language-switcher">
-      <a href={`/${slug}`} class="active">
-        {getLocaleLabel(i18nConfig.defaultLocale)}
-      </a>
-      {localizations?.map((localization: any) => {
-        const locale = localization.locale;
-        const localizedSlug = localization.slug;
-        return (
-          <a href={getLocalizedUrl(localizedSlug, locale)}>
-            {getLocaleLabel(locale)}
-          </a>
-        );
-      })}
-    </nav>
-    
     {/* Render based on template type */}
     {template === 'archive-books' && templateData ? (
       <ArchiveBooks 

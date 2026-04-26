@@ -45,23 +45,6 @@ const getLocaleLabel = (loc: string) => {
   contentType="WebSite"
 >
   <main>
-    <h1>{title}</h1>
-    
-    <nav class="language-switcher">
-      {localizations?.map((localization: any) => {
-        const loc = localization.locale;
-        const localizedSlug = localization.slug;
-        return (
-          <a href={getLocalizedUrl(localizedSlug, loc)}>
-            {getLocaleLabel(loc)}
-          </a>
-        );
-      })}
-      <a href={`/${locale}`} class="active">
-        {getLocaleLabel(locale)}
-      </a>
-    </nav>
-    
     {Array.isArray(content) ? (
       <div>
         {content.map((block: any) => (

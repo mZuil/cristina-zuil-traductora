@@ -1,14 +1,15 @@
 ---
 import { ClientRouter } from 'astro:transitions';
-import SEOHead from '../features/seo/SEOHead.astro';
-import DesignTokens from '../structure/DesignTokens/DesignTokens.astro';
+import SEOHead from '../helpers/seo/SEOHead.astro';
+import DesignTokens from '../helpers/structure/DesignTokens/DesignTokens.astro';
 import { i18nConfig } from '../config/i18n.js';
 import { getSEOData, getStructuredData } from '../utils/seo.js';
 import BHeader from '../abemit/blocks/BHeader.astro';
 
 //CSS Styles
 import '../styles/global.css';
-import GridOverlay from '../structure/GridOverlay/GridOverlay.astro';
+import GridOverlay from '../helpers/structure/GridOverlay/GridOverlay.astro';
+import BFooter from '../abemit/blocks/BFooter.astro';
 
 interface Props {
   content: any; // Strapi content (page, book, article, etc.)
@@ -55,9 +56,11 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
     <script type="application/ld+json" set:html={JSON.stringify(structuredData, null, 2)} />
   </head>
   <body>
-    <BHeader />
+    <BHeader transition:persist />
 
     <slot />
+
+    <BFooter />
 
     <GridOverlay />
   </body>

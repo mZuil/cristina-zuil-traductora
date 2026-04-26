@@ -1,0 +1,65 @@
+---
+/**
+ * AText
+ *
+ * A polymorphic text component for both plain text and WYSIWYG (rich text) content.
+ *
+ * Plain text:    pass content via <slot /> — renders the chosen tag with optional size/class
+ * WYSIWYG mode:  pass `html` prop — renders raw CMS HTML via set:html, respecting the tag wrapper
+ *
+ * The `html` prop is intended for Strapi (or any CMS) rich text fields that return an HTML string.
+ * It will render the HTML as-is inside the chosen tag, so your global/scoped CSS should
+ * handle the inner elements (p, a, strong, em, ul, li, h2… etc.) that the CMS produces.
+ *
+ * ⚠️  Never pass untrusted user input to `html` — it is injected unescaped via set:html.
+ */
+
+type Tag = 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'span' | 'div';
+
+interface Props {
+    as?: Tag;
+    html?: string;
+    size?: string;
+    class?: string;
+    wrapperClass?: string;
+    withWrapper?: boolean;
+    [key: string]: unknown;
+}
+
+const {
+    as: Tag = 'p',
+    html,
+    size,
+    class: className = '',
+    wrapperClass = '',
+    withWrapper = false,
+    ...rest
+} = Astro.props;
+
+const elementClasses = [
+    size     ? `v-font-${size}` : '',
+    className,
+]
+    .filter(Boolean)
+    .join(' ') || undefined;
+
+const wrapperClasses = ['a-text-wrapper', wrapperClass]
+    .filter(Boolean)
+    .join(' ');
+---
+
+{withWrapper ? (
+    <div class={wrapperClasses}>
+        {html !== undefined
+            ? <Tag class={elementClasses} set:html={html} {...rest} />
+            : <Tag class={elementClasses} {...rest}><slot /></Tag>
+        }
+    </div>
+) : (
+    <>
+        {html !== undefined
+            ? <Tag class={elementClasses} set:html={html} {...rest} />
+            : <Tag class={elementClasses} {...rest}><slot /></Tag>
+        }
+    </>
+)}

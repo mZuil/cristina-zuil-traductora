@@ -1,11 +1,7 @@
 ---
 import { i18nConfig } from "../../config/i18n.js";
 import AButton from "../atoms/AButton.astro";
-
-interface Link {
-    url: string;
-    label: string;
-}
+import type { Link } from "../../helpers/interfaces/Link.astro";
 
 const locale = Astro.currentLocale ?? "es";
 const url = `${i18nConfig.strapi.url}/api/header-menu?populate=*&locale=${locale}`;
