@@ -1,5 +1,17 @@
 import type { Schema, Struct } from '@strapi/strapi';
 
+export interface ComponentsCTitle extends Struct.ComponentSchema {
+  collectionName: 'components_components_c_titles';
+  info: {
+    displayName: 'CTitle';
+    icon: 'code';
+  };
+  attributes: {
+    hasSeparator: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    title: Schema.Attribute.String & Schema.Attribute.Required;
+  };
+}
+
 export interface LinksLink extends Struct.ComponentSchema {
   collectionName: 'components_links_links';
   info: {
@@ -51,6 +63,7 @@ export interface SeoSeo extends Struct.ComponentSchema {
 declare module '@strapi/strapi' {
   export module Public {
     export interface ComponentSchemas {
+      'components.c-title': ComponentsCTitle;
       'links.link': LinksLink;
       'seo.seo': SeoSeo;
     }

@@ -50,30 +50,41 @@ const fontStyleVarsLg: string[] = [];
 const fontStyleUtilityClasses: string[] = [];
 const fontStyleNames = Object.keys(designTokens.fonts.styles) as Array<keyof typeof designTokens.fonts.styles>;
 
+const toKebabCase = (input: string) =>
+  input
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .replace(/_/g, '-')
+    .toLowerCase();
+
+const pushStyleVars = (target: string[], styleName: string, style: Record<string, unknown>) => {
+  for (const [rawKey, rawValue] of Object.entries(style)) {
+    if (rawValue === undefined || rawValue === null) continue;
+    const key = toKebabCase(rawKey);
+    target.push(`  --font-style-${styleName}-${key}: ${rawValue};`);
+  }
+};
+
+const buildStyleClass = (styleName: string, style: Record<string, unknown>) => {
+  const lines: string[] = [];
+
+  for (const rawKey of Object.keys(style)) {
+    const cssProp = toKebabCase(rawKey);
+    lines.push(`  ${cssProp}: var(--font-style-${styleName}-${cssProp});`);
+  }
+
+  return `.v-font-${styleName} {\n${lines.join('\n')}\n}`;
+};
+
 for (const styleName of fontStyleNames) {
   const smStyle = getFontStyle(styleName, 'sm');
   const mdStyle = getFontStyle(styleName, 'md');
   const lgStyle = getFontStyle(styleName, 'lg');
 
-  fontStyleVarsSm.push(`  --font-style-${styleName}-font-family: ${smStyle.fontFamily};`);
-  fontStyleVarsSm.push(`  --font-style-${styleName}-font-size: ${smStyle.fontSize};`);
-  fontStyleVarsSm.push(`  --font-style-${styleName}-font-weight: ${smStyle.fontWeight};`);
-  fontStyleVarsSm.push(`  --font-style-${styleName}-line-height: ${smStyle.lineHeight};`);
-  fontStyleVarsSm.push(`  --font-style-${styleName}-letter-spacing: ${smStyle.letterSpacing};`);
+  pushStyleVars(fontStyleVarsSm, `${styleName}`, smStyle as unknown as Record<string, unknown>);
+  pushStyleVars(fontStyleVarsMd, `${styleName}`, mdStyle as unknown as Record<string, unknown>);
+  pushStyleVars(fontStyleVarsLg, `${styleName}`, lgStyle as unknown as Record<string, unknown>);
 
-  fontStyleVarsMd.push(`  --font-style-${styleName}-font-family: ${mdStyle.fontFamily};`);
-  fontStyleVarsMd.push(`  --font-style-${styleName}-font-size: ${mdStyle.fontSize};`);
-  fontStyleVarsMd.push(`  --font-style-${styleName}-font-weight: ${mdStyle.fontWeight};`);
-  fontStyleVarsMd.push(`  --font-style-${styleName}-line-height: ${mdStyle.lineHeight};`);
-  fontStyleVarsMd.push(`  --font-style-${styleName}-letter-spacing: ${mdStyle.letterSpacing};`);
-
-  fontStyleVarsLg.push(`  --font-style-${styleName}-font-family: ${lgStyle.fontFamily};`);
-  fontStyleVarsLg.push(`  --font-style-${styleName}-font-size: ${lgStyle.fontSize};`);
-  fontStyleVarsLg.push(`  --font-style-${styleName}-font-weight: ${lgStyle.fontWeight};`);
-  fontStyleVarsLg.push(`  --font-style-${styleName}-line-height: ${lgStyle.lineHeight};`);
-  fontStyleVarsLg.push(`  --font-style-${styleName}-letter-spacing: ${lgStyle.letterSpacing};`);
-
-  fontStyleUtilityClasses.push(`.v-font-${styleName} {\n  font-family: var(--font-style-${styleName}-font-family);\n  font-size: var(--font-style-${styleName}-font-size);\n  font-weight: var(--font-style-${styleName}-font-weight);\n  line-height: var(--font-style-${styleName}-line-height);\n  letter-spacing: var(--font-style-${styleName}-letter-spacing);\n}`);
+  fontStyleUtilityClasses.push(buildStyleClass(`${styleName}`, smStyle as unknown as Record<string, unknown>));
 }
 
 // Responsive variables for each breakpoint

@@ -79,10 +79,7 @@ const contentType = template === 'archive-books' || template === 'archive-articl
   : 'WebPage';
 ---
 
-<Layout 
-  content={page}
-  locale={i18nConfig.defaultLocale}
-  contentType={contentType}
+<Layout content={page} locale={i18nConfig.defaultLocale} contentType={contentType}
 >
   <main>
     {/* Render based on template type */}

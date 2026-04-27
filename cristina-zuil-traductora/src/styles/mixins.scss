@@ -4,4 +4,5 @@
   font-weight: var(--font-style-#{$name}-font-weight);
   line-height: var(--font-style-#{$name}-line-height);
   letter-spacing: var(--font-style-#{$name}-letter-spacing);
+  text-transform: var(--font-style-#{$name}-text-transform);
 }

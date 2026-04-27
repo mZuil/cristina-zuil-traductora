@@ -699,7 +699,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
     };
   };
   attributes: {
-    content: Schema.Attribute.DynamicZone<['links.link']> &
+    content: Schema.Attribute.DynamicZone<['components.c-title']> &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: true;

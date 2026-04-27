@@ -1,0 +1,19 @@
+{
+  "collectionName": "components_components_c_titles",
+  "info": {
+    "displayName": "CTitle",
+    "icon": "code"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "hasSeparator": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "config": {}
+}

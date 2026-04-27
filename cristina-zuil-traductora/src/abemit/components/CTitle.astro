@@ -1,0 +1,183 @@
+---
+import CustomContainer from "../../helpers/structure/CustomContainer/CustomContainer.astro";
+import CustomColumn from "../../helpers/structure/CustomColumn/CustomColumn.astro";
+import AText from "../atoms/AText.astro";
+
+interface Props {
+    title: string;
+    hasSeparator?: boolean;
+}
+
+const { title, hasSeparator = true } = Astro.props;
+
+let titleText = "";
+
+if (!title) {
+    throw new Error("Title is required");
+} else {
+    const titleParts = title.split(" ");
+    titleText = `
+        <span class="c-title__text-part --first" aria-hidden="true">${titleParts[0]}</span>
+        <br aria-hidden="true">
+        <span class="c-title__text-part --second" aria-hidden="true">${titleParts.slice(1).join(" ")}</span>
+    `;
+}
+---
+
+<style lang="scss">
+    @use "../../styles/mixins" as *;
+
+    .c-title {
+        @include use-font(menu-item);
+        position: relative;
+        background-color: var(--color-blue-light);
+
+        &.has-separator &__blue-container {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        &__background {
+            position: absolute;
+            top: 7px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+
+            &-svg {
+                width: 100%;
+            }
+        }
+
+        &__text {
+            position: relative;
+            padding-block: 235px 145px;
+            text-align: center;
+            z-index: 1;
+
+            :global(.c-title__text-part.--first) {
+                color: var(--color-blue-dark);
+            }
+
+            :global(.c-title__text-part.--second) {
+                color: var(--color-blue-default);
+            }
+        }
+        
+        &__separator {
+            height: 50px;
+            position: relative;
+            overflow: hidden;
+            
+
+            &-track {
+                position: absolute;
+                inset: 0;
+                width: 200%;
+                height: 100%;
+
+                background-image: url("data:image/svg+xml,%3Csvg width='1440' height='50' viewBox='0 0 1440 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M 0 34 C 90 24, 170 46, 260 40 S 430 20, 520 31 S 690 50, 790 38 S 950 20, 1060 31 S 1200 44, 1300 37 C 1360 31, 1405 34, 1440 34 L 1440 72 L 0 72 Z'/%3E%3C/svg%3E");
+
+                background-repeat: repeat-x;
+                background-size: 1440px 52px;
+                will-change: transform;
+            }
+        }
+    }
+</style>
+
+<div class={`c-title js-c-title ${hasSeparator ? 'has-separator' : ''}`}>
+    <div class="c-title__blue-container">
+        <div class="c-title__background">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 1440 294" class="c-title__background-svg">
+                <g fill="#fff" opacity=".22">
+                    <path d="M-76 122.191c0-22.091 17.909-40 40-40h210.278v43.663c0 22.091-17.908 40-40 40H-36c-22.091 0-40-17.909-40-40z" />
+                    <path d="M114.722 106.652c0-13.51 10.951-24.46 24.461-24.46h201.356c13.51 0 24.461 10.95 24.461 24.46 0 13.509-10.951 24.461-24.461 24.461H139.183c-13.51 0-24.461-10.952-24.461-24.461" />
+                    <path d="M49.494 52c0-22.091 17.908-40 40-40h156.098c22.091 0 40 17.909 40 40v37.99H49.494z" />
+                    <path d="M49.848 63.757c-2.661 12.692-7.974 16.714-23.752 18.789h23.752z" />
+                    <path d="M168 150c2.913-14.185 8.729-18.68 26-21h-26z" />
+                    <path d="M304.026 84.319c-12.692-2.662-16.714-7.975-18.789-23.752v23.752z" />
+                </g>
+                <g fill="#fff" opacity=".2">
+                    <path d="M148.931 223.159c1.71 8.152 5.123 10.736 15.257 12.069h-15.257z" />
+                    <path d="M15.486 247.069C13.776 238.917 10.363 236.333.228 235h15.258z" />
+                    <path d="M148.931 219.413c0-16.797-13.616-30.413-30.413-30.413H-23c-12.702 0-23 10.297-23 23s10.298 23 23 23h171.931z" />
+                    <path d="M232.277 258c0-12.703-10.297-23-23-23H15.485v15.587c0 16.797 13.617 30.413 30.413 30.413h163.379c12.703 0 23-10.297 23-23" />
+                </g>
+                <g fill="#fff" opacity=".28">
+                    <path d="M1143.56 51.33c0-10.123 8.21-18.33 18.33-18.33h134.01c12.09 0 21.89 9.803 21.89 21.896v14.766h-155.9c-10.12 0-18.33-8.207-18.33-18.331" />
+                    <path d="M1209.99 69.299h188.63c12.1 0 21.9 9.803 21.9 21.896v.855c0 12.093-9.8 21.896-21.9 21.896h-166.74c-12.09 0-21.89-9.803-21.89-21.896z" />
+                    <rect width="217.793" height="32.669" x="1100" y="86.359" rx="16.334" />
+                    <path d="M1232.49 113.22h108.534v36.662H1232.49z" />
+                    <rect width="203.999" height="34.484" x="1187.12" y="134.274" rx="17.242" />
+                    <path d="M1341.02 123.565c1.37-6.497 4.09-8.556 12.16-9.619h-12.16z" />
+                    <path d="M1210.17 76.921c-1.37 6.498-4.09 8.557-12.16 9.62h12.16z" />
+                    <path d="M1200.55 69.662c6.5 1.362 8.55 4.082 9.62 12.16v-12.16zM1350.64 134.456c-6.49-1.363-8.55-4.083-9.62-12.161v12.161zM1232.49 125.018c-1.36 6.497-4.08 8.556-12.16 9.619h12.16z" />
+                    <path d="M1223.05 118.665c6.5 1.363 8.56 4.083 9.62 12.16v-12.16zM1327.41 69.843c-6.5-1.362-8.55-4.082-9.62-12.16v12.16z" />
+                </g>
+                <g fill="#fff" opacity=".15">
+                    <path d="M475.346 34.159c-1.709 8.152-5.122 10.736-15.257 12.069h15.257z" />
+                    <path d="M608.792 58.07c1.709-8.153 5.122-10.737 15.257-12.07h-15.257z" />
+                    <path d="M475.346 30.413C475.346 13.616 488.963 0 505.759 0h141.518c12.703 0 23 10.298 23 23s-10.297 23-23 23H475.346z" />
+                    <path d="M392 69c0-12.702 10.297-23 23-23h193.792v15.587c0 16.797-13.616 30.413-30.413 30.413H415c-12.703 0-23-10.297-23-23" />
+                </g>
+                <g fill="#fff" opacity=".18">
+                    <path d="M1433.93 236.159c1.71 8.152 5.12 10.736 15.26 12.069h-15.26z" />
+                    <path d="M1300.49 260.069c-1.71-8.152-5.13-10.736-15.26-12.069h15.26z" />
+                    <path d="M1433.93 232.413c0-16.797-13.62-30.413-30.41-30.413H1262c-12.7 0-23 10.297-23 23s10.3 23 23 23h171.93z" />
+                    <path d="M1517.28 271c0-12.703-10.3-23-23-23h-193.79v15.587c0 16.797 13.61 30.413 30.41 30.413h163.38c12.7 0 23-10.297 23-23" />
+                </g>
+            </svg>
+        </div>
+        <CustomContainer>
+            <CustomColumn lg="12" md="8" sm="4" class="c-title__column">
+                <AText as="h1" size="display-1" html={titleText} class="c-title__text" aria-label={title} />
+            </CustomColumn>
+        </CustomContainer>
+    </div>
+
+    {hasSeparator && (
+        <div class="c-title__separator js-title-separator">
+            <div class="c-title__separator-track js-title-separator-track"></div>
+        </div>
+    )}
+</div>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import { BaseComponent } from "../../helpers/base/BaseComponent";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    class CTitle extends BaseComponent {
+        constructor(nodeInDOM: HTMLElement) {
+            super(nodeInDOM);
+
+            const separator = this.nodeInDOM.querySelector(".js-title-separator-track");
+
+            gsap.fromTo(
+                separator,
+                { x: 0 },
+                {
+                    x: -500,
+                    ease: "none",
+                    scrollTrigger: {
+                        trigger: this.nodeInDOM,
+                        start: "top top",
+                        end: "bottom top",
+                        scrub: 1,
+                    },
+                }
+            );
+        }
+    }
+
+    function initTitle() {
+        BaseComponent.mountAll(".js-c-title", CTitle);
+    }
+
+    document.addEventListener("astro:page-load", initTitle);
+</script>

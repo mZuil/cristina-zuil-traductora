@@ -59,6 +59,7 @@ export const designTokens = {
           fontWeight: 700,
           lineHeight: 1.05,
           letterSpacing: '0',
+          textTransform: 'uppercase',
         },
         md: {},
         lg: {},
