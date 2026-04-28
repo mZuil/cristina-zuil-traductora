@@ -1,0 +1,32 @@
+{
+  "collectionName": "components_components_c_featured_data",
+  "info": {
+    "displayName": "CFeaturedData",
+    "icon": "code"
+  },
+  "options": {},
+  "attributes": {
+    "booksText": {
+      "type": "string"
+    },
+    "languagesText": {
+      "type": "string"
+    },
+    "languagesNumber": {
+      "type": "integer"
+    },
+    "yearText": {
+      "type": "string"
+    },
+    "dateNumber": {
+      "type": "date"
+    },
+    "awardsText": {
+      "type": "string"
+    },
+    "awardsNumber": {
+      "type": "integer"
+    }
+  },
+  "config": {}
+}

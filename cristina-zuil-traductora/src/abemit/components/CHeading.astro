@@ -1,0 +1,67 @@
+---
+import CustomColumn from '../../helpers/structure/CustomColumn/CustomColumn.astro';
+import CustomContainer from '../../helpers/structure/CustomContainer/CustomContainer.astro';
+import AText from '../atoms/AText.astro';
+
+interface Props {
+  titleInDark: string;
+  titleInBlue: string;
+  subheading?: string;
+}
+
+const { titleInDark, titleInBlue, subheading } = Astro.props;
+
+---
+
+<style lang="scss">
+
+  .c-heading {
+
+    position: relative;
+    padding-block: 50px 60px;
+    background-color: var(--color-white);
+    z-index: 1;
+
+    &__heading {
+      text-align: center;
+    }
+    
+    &__title-dark {
+      color: var(--color-blue-dark);
+    }
+
+    &__title-blue {
+      color: var(--color-blue-default);
+    }
+
+    &__subheading {
+      margin-top: 20px;
+    }
+  }
+
+</style>
+
+
+<section class="c-heading">
+  <CustomContainer>
+    <CustomColumn lg="12" md="8" sm="4">
+      <div class="c-heading__heading">
+        {
+          titleInDark && titleInBlue && (
+            <AText as="h2" size="headline-1" class="c-heading__title" aria-label={`${titleInDark} ${titleInBlue}`}>
+              <span class="c-heading__title-dark" aria-hidden="true">{titleInDark}</span>
+              <span class="c-heading__title-blue" aria-hidden="true"> {titleInBlue}</span>
+            </AText>
+          )
+        }
+        {
+          subheading && (
+            <AText as="p" size="body" class="c-heading__subheading">
+              {subheading}
+            </AText>
+          )
+        }
+      </div>
+    </CustomColumn>
+  </CustomContainer>
+</section>

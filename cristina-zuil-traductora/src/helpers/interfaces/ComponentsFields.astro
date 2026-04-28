@@ -1,0 +1,64 @@
+---
+import CTitle from '../../abemit/components/CTitle.astro';
+import CFeaturedData from '../../abemit/components/CFeaturedData.astro';
+import CHeading from '../../abemit/components/CHeading.astro';
+
+interface Props {
+  content: any;
+  itemsCount: number;
+}
+
+const { content, itemsCount = 0 } = Astro.props;
+
+type Renderer = {
+  Component: any;
+  props: (block: any) => Record<string, any>;
+};
+
+const renderers: Record<string, Renderer> = {
+  'components.c-title': {
+    Component: CTitle,
+    props: (block) => ({
+      title: block.title,
+      hasSeparator: block.hasSeparator ?? true,
+    }),
+  },
+  'components.c-heading': {
+    Component: CHeading,
+    props: (block) => ({
+      titleInDark: block.titleInDark,
+      titleInBlue: block.titleInBlue,
+      subheading: block.subheading,
+    }),
+  },
+  'components.c-featured-data': {
+    Component: CFeaturedData,
+    props: (block) => ({
+      booksText: block.booksText,
+      booksNumber: itemsCount,
+      languagesText: block.languagesText,
+      languagesNumber: block.languagesNumber,
+      yearText: block.yearText,
+      dateNumber: block.dateNumber ? new Date(block.dateNumber) : new Date(),
+      awardsText: block.awardsText,
+      awardsNumber: block.awardsNumber,
+    }),
+  },
+};
+---
+
+{Array.isArray(content) ? (
+  content.map((block: any) => {
+    const uid = block?.__component;
+    const renderer = uid ? renderers[uid] : undefined;
+
+    if (renderer) {
+      const Component = renderer.Component;
+      return <Component {...renderer.props(block)} />;
+    }
+
+    return <div set:html={block?.body || ''} />;
+  })
+) : (
+  <div set:html={content} />
+)}

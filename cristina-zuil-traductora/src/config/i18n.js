@@ -69,7 +69,7 @@ export async function fetchPagesByLocale(locale) {
  * Fetch books from Strapi for a specific locale and optional category
  */
 export async function fetchBooksByLocale(locale, category = null) {
-  let url = `${i18nConfig.strapi.url}/api/books?locale=${locale}&populate=*`;
+  let url = `${i18nConfig.strapi.url}/api/books?locale=${locale}&populate=*&pagination[pageSize]=1000`;
   
   if (category) {
     url += `&filters[category][$eq]=${category}`;
@@ -82,23 +82,26 @@ export async function fetchBooksByLocale(locale, category = null) {
     
     if (!response.ok) {
       console.error(`Failed to fetch books for locale ${locale}:`, response.status, response.statusText);
-      return [];
+      return { items: [], total: 0 };
     }
     
     const result = await response.json();
-    const { data } = result;
+    const { data, meta } = result;
     
     if (!data) {
       console.error('No "data" field in response');
-      return [];
+      return { items: [], total: 0 };
     }
     
-    console.log(`Found ${data.length} books for locale ${locale}${category ? ` in category ${category}` : ''}`);
+    const total = meta?.pagination?.total ?? data.length;
+    console.log(
+      `Found ${data.length} books for locale ${locale}${category ? ` in category ${category}` : ''} (total: ${total})`
+    );
     
-    return data || [];
+    return { items: data || [], total };
   } catch (error) {
     console.error(`Error fetching books for locale ${locale}:`, error);
-    return [];
+    return { items: [], total: 0 };
   }
 }
 

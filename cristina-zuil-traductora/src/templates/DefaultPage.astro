@@ -1,5 +1,5 @@
 ---
-import { i18nConfig } from '../config/i18n.js';
+import ComponentsFields from '../helpers/interfaces/ComponentsFields.astro';
 
 interface Props {
   page: {
@@ -9,17 +9,10 @@ interface Props {
 }
 
 const { page } = Astro.props;
-const { title, content } = page;
+const { content } = page;
+
 ---
 
 <div class="page-content">  
-  <div class="content">
-    {Array.isArray(content) ? (
-      content.map((block: any) => (
-        <div set:html={block.body || ''} />
-      ))
-    ) : (
-      <div set:html={content} />
-    )}
-  </div>
+  <ComponentsFields content={content} />
 </div>

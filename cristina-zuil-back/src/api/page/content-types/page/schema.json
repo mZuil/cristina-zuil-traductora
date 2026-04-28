@@ -55,18 +55,10 @@
           "localized": true
         }
       },
-      "conditions": {
-        "visible": {
-          "==": [
-            {
-              "var": "template"
-            },
-            "default"
-          ]
-        }
-      },
       "components": [
-        "components.c-title"
+        "components.c-title",
+        "components.c-heading",
+        "components.c-featured-data"
       ]
     },
     "seo": {

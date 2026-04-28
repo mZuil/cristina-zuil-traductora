@@ -1,5 +1,35 @@
 import type { Schema, Struct } from '@strapi/strapi';
 
+export interface ComponentsCFeaturedData extends Struct.ComponentSchema {
+  collectionName: 'components_components_c_featured_data';
+  info: {
+    displayName: 'CFeaturedData';
+    icon: 'code';
+  };
+  attributes: {
+    awardsNumber: Schema.Attribute.Integer;
+    awardsText: Schema.Attribute.String;
+    booksText: Schema.Attribute.String;
+    dateNumber: Schema.Attribute.Date;
+    languagesNumber: Schema.Attribute.Integer;
+    languagesText: Schema.Attribute.String;
+    yearText: Schema.Attribute.String;
+  };
+}
+
+export interface ComponentsCHeading extends Struct.ComponentSchema {
+  collectionName: 'components_components_c_headings';
+  info: {
+    displayName: 'CHeading';
+    icon: 'code';
+  };
+  attributes: {
+    subheading: Schema.Attribute.String;
+    titleInBlue: Schema.Attribute.String;
+    titleInDark: Schema.Attribute.String;
+  };
+}
+
 export interface ComponentsCTitle extends Struct.ComponentSchema {
   collectionName: 'components_components_c_titles';
   info: {
@@ -63,6 +93,8 @@ export interface SeoSeo extends Struct.ComponentSchema {
 declare module '@strapi/strapi' {
   export module Public {
     export interface ComponentSchemas {
+      'components.c-featured-data': ComponentsCFeaturedData;
+      'components.c-heading': ComponentsCHeading;
       'components.c-title': ComponentsCTitle;
       'links.link': LinksLink;
       'seo.seo': SeoSeo;

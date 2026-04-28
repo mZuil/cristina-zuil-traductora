@@ -1,0 +1,89 @@
+---
+import CustomColumn from '../../helpers/structure/CustomColumn/CustomColumn.astro';
+import CustomContainer from '../../helpers/structure/CustomContainer/CustomContainer.astro';
+import AText from '../atoms/AText.astro';
+
+interface Props {
+  booksText: string;
+  booksNumber: number;
+  languagesText: string;
+  languagesNumber: number;
+  yearText: string;
+  dateNumber: Date;
+  awardsText: string;
+  awardsNumber: number;
+}
+
+const { booksText, booksNumber, languagesText, languagesNumber, yearText, dateNumber, awardsText, awardsNumber } = Astro.props;
+const yearNumber = getFullYearsSince(dateNumber);
+
+function getFullYearsSince(dateNumber: Date) {
+  const start = dateNumber;
+  const now = new Date();
+
+  let years = now.getFullYear() - start.getFullYear();
+
+  const hasNotHadAnniversaryYet =
+    now.getMonth() < start.getMonth() ||
+    (now.getMonth() === start.getMonth() &&
+      now.getDate() < start.getDate());
+
+  if (hasNotHadAnniversaryYet) {
+    years--;
+  }
+
+  return Math.max(0, years);
+}
+---
+
+<style lang="scss">
+
+  .c-featured-data {
+
+    position: relative;
+    padding-block: 6px 123px;
+    background-color: var(--color-white);
+    z-index: 1;
+
+    &__item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 2rem;
+      border-radius: 30px;
+      background-color: var(--color-blue-light);
+    }
+  }
+
+</style>
+
+
+<section class="c-featured-data">
+  <CustomContainer>
+    <CustomColumn lg-push='2' lg="2" md="8" sm="4">
+      <div class="c-featured-data__item">
+        <AText as="p" size="headline-2">{booksNumber}</AText>
+        <AText as="p" size="tagline">{booksText}</AText>
+      </div>
+    </CustomColumn>
+    <CustomColumn lg="2" md="8" sm="4">
+      <div class="c-featured-data__item">
+        <AText as="p" size="headline-2">{languagesNumber}</AText>
+        <AText as="p" size="tagline">{languagesText}</AText>
+      </div>
+    </CustomColumn>
+    <CustomColumn lg="2" md="8" sm="4">
+      <div class="c-featured-data__item">
+        <AText as="p" size="headline-2">{yearNumber}</AText>
+        <AText as="p" size="tagline">{yearText}</AText>
+      </div>
+    </CustomColumn>
+    <CustomColumn lg="2" md="8" sm="4">
+      <div class="c-featured-data__item">
+        <AText as="p" size="headline-2">{awardsNumber}</AText>
+        <AText as="p" size="tagline">{awardsText}</AText>
+      </div>
+    </CustomColumn>
+  </CustomContainer>
+</section>

@@ -85,11 +85,13 @@ const contentType = template === 'archive-books' || template === 'archive-articl
     {/* Render based on template type */}
     {template === 'archive-books' && templateData ? (
       <ArchiveBooks 
-        items={templateData}
+        items={templateData.items}
         title={title}
         description={content}
         archiveSlug={slug}
         category={page.bookCategory || ''}
+        content={page.content}
+        itemsCount={templateData.total}
       />
     ) : template === 'archive-articles' && templateData ? (
       <ArchiveArticles 

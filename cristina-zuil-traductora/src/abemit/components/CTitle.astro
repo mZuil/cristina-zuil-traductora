@@ -29,14 +29,11 @@ if (!title) {
 
     .c-title {
         @include use-font(menu-item);
-        position: relative;
+        
+        position: sticky;
+        top: 0;
         background-color: var(--color-blue-light);
-
-        &.has-separator &__blue-container {
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
+        z-index: 0;
 
         &__background {
             position: absolute;
@@ -55,7 +52,6 @@ if (!title) {
             position: relative;
             padding-block: 235px 145px;
             text-align: center;
-            z-index: 1;
 
             :global(.c-title__text-part.--first) {
                 color: var(--color-blue-dark);
@@ -68,6 +64,7 @@ if (!title) {
         
         &__separator {
             height: 50px;
+            margin-top: -50px;
             position: relative;
             overflow: hidden;
             
@@ -78,7 +75,7 @@ if (!title) {
                 width: 200%;
                 height: 100%;
 
-                background-image: url("data:image/svg+xml,%3Csvg width='1440' height='50' viewBox='0 0 1440 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M 0 34 C 90 24, 170 46, 260 40 S 430 20, 520 31 S 690 50, 790 38 S 950 20, 1060 31 S 1200 44, 1300 37 C 1360 31, 1405 34, 1440 34 L 1440 72 L 0 72 Z'/%3E%3C/svg%3E");
+                background-image: url("data:image/svg+xml,%3Csvg width='1440' height='50' viewBox='0 0 1440 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M 0 34 C 70 34, 160 46, 260 40 S 430 20, 520 31 S 690 50, 790 38 S 950 20, 1060 31 S 1200 44, 1300 37 C 1360 31, 1410 34, 1440 34 L 1440 72 L 0 72 Z'/%3E%3C/svg%3E");
 
                 background-repeat: repeat-x;
                 background-size: 1440px 52px;
@@ -88,7 +85,7 @@ if (!title) {
     }
 </style>
 
-<div class={`c-title js-c-title ${hasSeparator ? 'has-separator' : ''}`}>
+<section class={`c-title js-c-title ${hasSeparator ? 'has-separator' : ''}`}>
     <div class="c-title__blue-container">
         <div class="c-title__background">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 1440 294" class="c-title__background-svg">
@@ -137,13 +134,13 @@ if (!title) {
             </CustomColumn>
         </CustomContainer>
     </div>
+</section>
 
-    {hasSeparator && (
-        <div class="c-title__separator js-title-separator">
-            <div class="c-title__separator-track js-title-separator-track"></div>
-        </div>
-    )}
-</div>
+{hasSeparator && (
+    <div class="c-title__separator js-title-separator">
+        <div class="c-title__separator-track js-title-separator-track"></div>
+    </div>
+)}
 
 <script>
     import { gsap } from "gsap";
@@ -156,7 +153,13 @@ if (!title) {
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
 
-            const separator = this.nodeInDOM.querySelector(".js-title-separator-track");
+            // Separator is a sibling, not a child — querySelector won't find it
+            const separatorWrapper = this.nodeInDOM.nextElementSibling;
+            const separator = separatorWrapper?.classList.contains('js-title-separator')
+                ? separatorWrapper.querySelector('.js-title-separator-track')
+                : null;
+
+            if (!separator) return;
 
             gsap.fromTo(
                 separator,
@@ -165,9 +168,9 @@ if (!title) {
                     x: -500,
                     ease: "none",
                     scrollTrigger: {
-                        trigger: this.nodeInDOM,
-                        start: "top top",
-                        end: "bottom top",
+                        trigger: separator,      // ← trigger on the separator itself
+                        start: "top bottom",     // ← when separator enters viewport
+                        end: "top top",
                         scrub: 1,
                     },
                 }
