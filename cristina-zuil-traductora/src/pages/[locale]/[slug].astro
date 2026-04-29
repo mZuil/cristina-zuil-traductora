@@ -8,7 +8,7 @@ import {
   fetchArticlesByLocale,
   getNonDefaultLocales,
   isHomePage 
-} from '../../config/i18n.js';
+} from '../../config/i18n';
 
 import DefaultPage from '../../templates/DefaultPage.astro';
 import ArchiveBooks from '../../templates/archive/ArchiveBooks.astro';
@@ -73,8 +73,7 @@ const contentType = template === 'archive-books' || template === 'archive-articl
   : 'WebPage';
 ---
 
-<Layout 
-  content={page}
+<Layout  content={page}
   locale={locale}
   contentType={contentType}
 >

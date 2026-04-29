@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, getNonDefaultLocales, isHomePage } from '../../config/i18n.js';
+import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, getNonDefaultLocales, isHomePage } from '../../config/i18n';
 
 export async function getStaticPaths() {
   const nonDefaultLocales = getNonDefaultLocales();

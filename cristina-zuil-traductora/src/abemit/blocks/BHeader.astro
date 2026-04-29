@@ -1,27 +1,18 @@
 ---
-import { i18nConfig } from "../../config/i18n.js";
 import AButton from "../atoms/AButton.astro";
 import type { Link } from "../../helpers/interfaces/Link.astro";
+import { fetchHeaderMenu } from "../../utils/api/fetchers/blocks";
 
 const locale = Astro.currentLocale ?? "es";
-const url = `${i18nConfig.strapi.url}/api/header-menu?populate=*&locale=${locale}`;
 
 let links: Link[] = [];
 let menuText = "";
 let contactText = "";
 
-const res = await fetch(url);
-if (res.ok) {
-    const json = await res.json();
-    const headerMenu = json?.data;
-    links = headerMenu?.links ?? [];
-    menuText = headerMenu?.menuText ?? menuText;
-    contactText = headerMenu?.contactText ?? contactText;
-} else {
-    console.error(
-        `Failed to fetch header menu: ${res.status} ${res.statusText}`,
-    );
-}
+const headerMenu = await fetchHeaderMenu(locale);
+links = headerMenu.links as Link[];
+menuText = headerMenu.menuText;
+contactText = headerMenu.contactText;
 ---
 
 <style lang="scss">

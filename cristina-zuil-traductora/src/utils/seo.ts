@@ -1,4 +1,4 @@
-import { i18nConfig, getLocalizedUrl } from '../config/i18n.js';
+import { i18nConfig, getLocalizedUrl } from '../config/i18n';
 import type { AstroGlobal } from 'astro';
 
 /**

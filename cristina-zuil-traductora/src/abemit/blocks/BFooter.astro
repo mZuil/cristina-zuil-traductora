@@ -1,22 +1,14 @@
 ---
-import { i18nConfig } from "../../config/i18n.js";
 import AText from "../atoms/AText.astro";
+import { fetchFooter } from "../../utils/api/fetchers/blocks";
 
 const locale = Astro.currentLocale ?? "es";
-const url = `${i18nConfig.strapi.url}/api/footer?populate=*&locale=${locale}`;
 
 let copyrightText = "";
 
-const res = await fetch(url);
-if (res.ok) {
-    const json = await res.json();
-    const footer = json?.data;
-    copyrightText = footer.copyrightText;
-} else {
-    console.error(
-        `Failed to fetch footer: ${res.status} ${res.statusText}`,
-    );
-}
+const footer = await fetchFooter(locale);
+copyrightText = footer.copyrightText;
+
 ---
 
 <style lang="scss">
