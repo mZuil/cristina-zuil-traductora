@@ -5,6 +5,9 @@ export type BooksFiltersDetail = {
 };
 
 export function initBooksFilters(root: HTMLElement): void {
+  if (root.dataset.filtersInit === '1') return;
+  root.dataset.filtersInit = '1';
+
   const locale = root.dataset.locale || 'es';
 
   const input = root.querySelector('#books-search');
@@ -43,7 +46,7 @@ export function initBooksFilters(root: HTMLElement): void {
     for (const item of items) {
       const opt = document.createElement('option');
       opt.value = String(item.id);
-      opt.textContent = String(item?.attributes?.name ?? '');
+      opt.textContent = String(item?.name ?? '');
       if (opt.textContent) selectEl.appendChild(opt);
     }
   };
@@ -59,8 +62,6 @@ export function initBooksFilters(root: HTMLElement): void {
 
     fillSelect(genreSelect, genresJson?.data ?? []);
     fillSelect(publisherSelect, publishersJson?.data ?? []);
-
-    emit();
   };
 
   load();

@@ -1,5 +1,6 @@
 ---
 import CBooksList from '../../abemit/components/CBooksList.astro';
+import CFilters from '../../abemit/components/CFilters.astro';
 import ComponentsFields from '../../helpers/interfaces/ComponentsFields.astro';
 
 interface Props {
@@ -22,9 +23,9 @@ console.log("bookCategory:", bookCategory);
 <div class="archive-books">
   <ComponentsFields content={content} itemsCount={itemsCount} />
 
-  <!-- {bookCategory === 'bookCategory' && (
+  {bookCategory === 'traduccion' && (
     <CFilters locale={locale} />
-  )} -->
+  )}
 
   <CBooksList locale={locale} bookCategory={bookCategory} initialItems={items} initialTotal={itemsCount} pageSize={12} />
 </div>

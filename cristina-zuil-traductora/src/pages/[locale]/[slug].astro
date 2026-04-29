@@ -78,22 +78,6 @@ const contentType = template === 'archive-books' || template === 'archive-articl
   contentType={contentType}
 >
   <main>
-    <nav class="language-switcher">
-      {localizations?.map((localization: any) => {
-        const loc = localization.locale;
-        const localizedSlug = localization.slug;
-        
-        return (
-          <a href={getLocalizedUrl(localizedSlug, loc)}>
-            {getLocaleLabel(loc)}
-          </a>
-        );
-      })}
-      <a href={`/${locale}/${slug}`} class="active">
-        {getLocaleLabel(locale)}
-      </a>
-    </nav>
-    
     {template === 'archive-books' && templateData ? (
       <ArchiveBooks 
         items={templateData.items}
@@ -101,7 +85,7 @@ const contentType = template === 'archive-books' || template === 'archive-articl
         description={content}
         locale={locale}
         archiveSlug={slug}
-        category={page.bookCategory || ''}
+        bookCategory={page.bookCategory || ''}
         content={page.content}
         itemsCount={templateData.total}
       />
