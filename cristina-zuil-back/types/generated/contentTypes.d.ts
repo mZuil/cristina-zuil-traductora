@@ -699,6 +699,12 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
     };
   };
   attributes: {
+    bookCategory: Schema.Attribute.Enumeration<['traduccion', 'escrito']> &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
     content: Schema.Attribute.DynamicZone<
       [
         'components.c-title',

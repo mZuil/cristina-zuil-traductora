@@ -8,21 +8,23 @@ interface Props {
   description?: string;
   locale?: string;
   archiveSlug: string;
-  category: 'traduccion' | 'escrito';
+  bookCategory: 'traduccion' | 'escrito';
   content: any;
   itemsCount: number;
 }
 
-const { content, itemsCount = 0, items = [], locale, category } = Astro.props;
+const { content, itemsCount = 0, items = [], locale, bookCategory } = Astro.props;
+
+console.log("bookCategory:", bookCategory);
 
 ---
 
 <div class="archive-books">
   <ComponentsFields content={content} itemsCount={itemsCount} />
 
-  <!-- {category === 'traduccion' && (
+  <!-- {bookCategory === 'bookCategory' && (
     <CFilters locale={locale} />
   )} -->
 
-  <CBooksList locale={locale} bookCategory={category} initialItems={items} initialTotal={itemsCount} pageSize={12} />
+  <CBooksList locale={locale} bookCategory={bookCategory} initialItems={items} initialTotal={itemsCount} pageSize={12} />
 </div>

@@ -2,7 +2,6 @@
 import Layout from '../layouts/Layout.astro';
 import { 
   i18nConfig, 
-  getLocalizedUrl, 
   fetchPagesByLocale,
   fetchBooksByLocale,
   fetchArticlesByLocale,
@@ -89,7 +88,7 @@ const contentType = template === 'archive-books' || template === 'archive-articl
         title={title}
         description={content}
         archiveSlug={slug}
-        category={page.bookCategory || ''}
+        bookCategory={page.bookCategory || ''}
         content={page.content}
         itemsCount={templateData.total}
       />

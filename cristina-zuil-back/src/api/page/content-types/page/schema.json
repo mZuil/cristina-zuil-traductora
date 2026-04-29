@@ -48,6 +48,28 @@
         "single-article"
       ]
     },
+    "bookCategory": {
+      "type": "enumeration",
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "conditions": {
+        "visible": {
+          "==": [
+            {
+              "var": "template"
+            },
+            "archive-books"
+          ]
+        }
+      },
+      "enum": [
+        "traduccion",
+        "escrito"
+      ]
+    },
     "content": {
       "type": "dynamiczone",
       "pluginOptions": {
