@@ -129,7 +129,7 @@ export const designTokens = {
         sm: {
           fontFamily: 'secondary',
           fontSize: '16px',
-          fontWeight: 400,
+          fontWeight: 700,
           lineHeight: 1.81,
           letterSpacing: '-0.01em',
           textTransform: 'uppercase',
@@ -143,18 +143,6 @@ export const designTokens = {
           fontFamily: 'secondary',
           fontSize: '16px',
           fontWeight: 400,
-          lineHeight: 1,
-          letterSpacing: '0',
-        },
-        md: {},
-        lg: {},
-      },
-
-      'small-bold-text': {
-        sm: {
-          fontFamily: 'secondary',
-          fontSize: '16px',
-          fontWeight: 700,
           lineHeight: 1,
           letterSpacing: '0',
         },

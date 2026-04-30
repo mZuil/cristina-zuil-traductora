@@ -2,6 +2,8 @@
 // src/components/organisms/CFilters.astro
 import CustomColumn from '../../helpers/structure/CustomColumn/CustomColumn.astro';
 import CustomContainer from '../../helpers/structure/CustomContainer/CustomContainer.astro';
+import { uiT } from '../../config/strings-ui';
+import ASelect from '../atoms/ASelect.astro';
 
 interface Props {
   locale?: string;
@@ -9,28 +11,16 @@ interface Props {
 
 const { locale = 'es' } = Astro.props;
 
-const labels = {
-  search:      locale === 'en' ? 'Search books…'    : 'Buscar libros…',
-  genre:       locale === 'en' ? 'Genre'            : 'Género',
-  publisher:   locale === 'en' ? 'Publisher'        : 'Editorial',
-  allGenres:   locale === 'en' ? 'All genres'       : 'Todos los géneros',
-  allPublish:  locale === 'en' ? 'All publishers'   : 'Todas las editoriales',
-};
 ---
 
 <style lang="scss">
+  @use '../../styles/mixins.scss' as *;
+  
   .c-filters {
+
     position: relative;
     background-color: var(--color-white);
-    padding-block: 24px; //TODO: change
-    z-index: 1;
-
-    &__inner {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 12px;
-    }
+    z-index: 2; //For the selector to be over the next component
 
     &__search-wrap {
       position: relative;
@@ -43,82 +33,65 @@ const labels = {
       top: 50%;
       transform: translateY(-50%);
       pointer-events: none;
-      color: var(--color-grey-400);
+      color: var(--color-blue-dark);
     }
 
     &__input {
+      @include use-font("small-text");
+
       width: 100%;
-      height: 48px;
-      padding: 0 16px 0 42px;
-      border: 1.5px solid var(--color-grey-200);
-      border-radius: 8px;
-      background: var(--color-white);
-      font-size: 0.9rem;
+      padding: 8px 16px 8px 42px;
+      border: 2px solid var(--color-blue-light);
+      border-radius: 10px;
       transition: border-color 0.2s;
 
       &:focus {
         outline: none;
-        border-color: var(--color-blue-default);
+        border-color: var(--color-blue-dark);
       }
 
       &::placeholder {
-        color: var(--color-grey-400);
+        color: var(--color-grey);
       }
     }
 
-    &__select {
-      height: 48px;
-      padding: 0 36px 0 14px;
-      border: 1.5px solid var(--color-grey-200);
-      border-radius: 8px;
-      background: var(--color-white);
-      font-size: 0.9rem;
-      appearance: none;
-      cursor: pointer;
-      // Chevron via background image so we don't need an extra element
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%23888' stroke-width='1.5' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      transition: border-color 0.2s;
+    &__select-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 35px;
+    }
 
-      &:focus {
-        outline: none;
-        border-color: var(--color-blue-default);
-      }
+    &__label {
+      @include use-font("tagline");
     }
   }
 </style>
 
 <div class="c-filters" data-locale={locale}>
   <CustomContainer>
-    <CustomColumn lg="12" md="8" sm="4">
-      <div class="c-filters__inner">
-
-        <div class="c-filters__search-wrap">
-          <svg class="c-filters__search-icon" xmlns="http://www.w3.org/2000/svg"
-            width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <input
-            id="books-search"
-            class="c-filters__input"
-            type="search"
-            placeholder={labels.search}
-            autocomplete="off"
-          />
+    <CustomColumn lg-push="2" lg="8" md="8" sm="4">
+      <div class="c-filters__search-wrap">
+        <svg class="c-filters__search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input id="books-search" class="c-filters__input" type="search" placeholder={uiT(locale, 'searchPlaceholder')} autocomplete="off" />
+      </div>
+    </CustomColumn>
+    <CustomColumn lg-push="2" lg="4" md="4" sm="4">
+      <div class="c-filters__select-wrap">
+        <label for="books-genre" class="c-filters__label">{uiT(locale, 'genreLabel')}</label>
+        <div class="c-filters__select-field">
+          <ASelect id="books-genre" label={uiT(locale, 'allOption')} />
         </div>
-
-        <select id="books-genre" class="c-filters__select">
-          <option value="">{labels.allGenres}</option>
-          {/* Options populated by booksFilters.ts at runtime */}
-        </select>
-
-        <select id="books-publisher" class="c-filters__select">
-          <option value="">{labels.allPublish}</option>
-          {/* Options populated by booksFilters.ts at runtime */}
-        </select>
-
+      </div>
+    </CustomColumn>
+    <CustomColumn lg="4" md="4" sm="4">
+      <div class="c-filters__select-wrap">
+        <label for="books-publisher" class="c-filters__label">{uiT(locale, 'publisherLabel')}</label>
+        <div class="c-filters__select-field">
+          <ASelect id="books-publisher" label={uiT(locale, 'allOption')} />
+        </div>
       </div>
     </CustomColumn>
   </CustomContainer>
@@ -126,11 +99,11 @@ const labels = {
 
 <script>
   import { initBooksFilters } from '../../scripts/booksFilters';
+  import { initCustomSelect }  from '../../scripts/customSelect';
 
   const initAll = () => {
-    document.querySelectorAll<HTMLElement>('.c-filters').forEach((root) => {
-      initBooksFilters(root);
-    });
+    document.querySelectorAll<HTMLElement>('.c-filters').forEach(initBooksFilters);
+    document.querySelectorAll<HTMLElement>('[data-select-id]').forEach(initCustomSelect);
   };
 
   initAll();

@@ -23,9 +23,9 @@
         }
       }
     },
-    "book": {
+    "books": {
       "type": "relation",
-      "relation": "manyToOne",
+      "relation": "manyToMany",
       "target": "api::book.book",
       "inversedBy": "genres"
     }

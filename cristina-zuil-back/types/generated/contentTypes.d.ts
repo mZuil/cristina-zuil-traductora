@@ -512,7 +512,7 @@ export interface ApiBookBook extends Struct.CollectionTypeSchema {
         maxLength: 2;
       }> &
       Schema.Attribute.DefaultTo<'EN'>;
-    genres: Schema.Attribute.Relation<'oneToMany', 'api::genre.genre'>;
+    genres: Schema.Attribute.Relation<'manyToMany', 'api::genre.genre'>;
     link: Schema.Attribute.Component<'links.link', false> &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -614,7 +614,7 @@ export interface ApiGenreGenre extends Struct.CollectionTypeSchema {
     };
   };
   attributes: {
-    book: Schema.Attribute.Relation<'manyToOne', 'api::book.book'>;
+    books: Schema.Attribute.Relation<'manyToMany', 'api::book.book'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;

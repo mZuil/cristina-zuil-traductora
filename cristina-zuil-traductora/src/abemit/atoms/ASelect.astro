@@ -1,0 +1,161 @@
+---
+// src/components/atoms/ASelect.astro
+interface Props {
+  id: string;
+  label?: string;
+  class?: string;
+}
+const { id, label, class: className = '' } = Astro.props;
+---
+
+<style lang="scss">
+  @use '../../styles/mixins.scss' as *;
+
+  .a-select {
+    position: relative;
+    width: 100%;
+
+    // ── Trigger button ──────────────────────────────────────────
+    &__select {
+        @include use-font("small-text");
+
+        width: 100%;
+        height: 35px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 0 36px 0 14px;
+        border: 2px solid var(--color-blue-light);
+        border-radius: 10px;
+        
+        background: var(--color-white);
+        color: var(--color-blue-dark);
+        font-weight: 700;
+        cursor: pointer;
+
+        transition: border-color 0.2s ease-in-out;
+
+        &:hover {
+            border-color: var(--color-blue-dark);
+        }
+
+        &:focus {
+            border-color: var(--color-blue-dark);
+            outline: none;
+        }
+    }
+
+    &__select-text {
+        flex: 1;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    &__chevron {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%) rotate(0deg);
+        transition: transform 0.25s ease-in-out;
+    }
+
+    // ── Dropdown panel ──────────────────────────────────────────
+    &__dropdown {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0; right: 0;
+        background: var(--color-white);
+        border: 2px solid var(--color-blue-dark);
+        border-radius: 10px;
+        overflow: hidden;
+        z-index: 100;
+
+        // Animation
+        display: grid;
+        grid-template-rows: 0fr;
+        opacity: 0;
+        transition: grid-template-rows 0.2s ease-in-out, opacity 0.2s ease-in-out;
+    }
+
+    &__dropdown-inner {
+        max-height: 200px;
+        overflow-y: auto;
+        min-height: 0;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+    }
+
+    :global(.a-select__option) {
+        @include use-font("small-text");
+
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 8px 14px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        text-align: left;
+        color: var(--color-blue-dark);
+        transition: background 0.15s;
+
+        &:hover { background: color-mix(in srgb, var(--color-blue-light) 40%, transparent); }
+
+        &[aria-selected="true"] {
+            font-weight: 700;
+            color: var(--color-blue-default);
+        }
+    }
+
+    :global(.a-select__option[aria-selected="true"] .a-select__option-dot) {
+        background-color: var(--color-blue-default);
+        border-color: var(--color-blue-default);
+    }
+
+    :global(.a-select__option-dot) {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background-color: transparent;
+        border: 1px solid var(--color-grey);
+        flex-shrink: 0;
+        opacity: 1;
+    }
+
+    // ── Open state ──────────────────────────────────────────────
+    &.is-open {
+      .a-select__chevron {
+        transform: translateY(-50%) rotate(-180deg);
+      }
+      .a-select__dropdown {
+        grid-template-rows: 1fr;
+        opacity: 1;
+      }
+    }
+  }
+</style>
+
+<div class={`a-select ${className}`} data-select-id={id}>
+  {/* Hidden native select keeps form semantics & booksFilters.ts compatibility */}
+  <select id={id} style="display:none" aria-hidden="true">
+    <option value="">{label}</option>
+    <slot />
+  </select>
+
+  <button type="button" class="a-select__select | js-select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls={`${id}-listbox`}>
+    <span class="a-select__trigger-text">{label}</span>
+    <svg class="a-select__chevron" xmlns="http://www.w3.org/2000/svg"
+      width="12" height="12" viewBox="0 0 12 12">
+      <path fill="none" stroke="currentColor" stroke-width="1.5" d="M2 4l4 4 4-4"/>
+    </svg>
+  </button>
+
+  <div class="a-select__dropdown" role="listbox" id={`${id}-listbox`}>
+    <div class="a-select__dropdown-inner" data-lenis-prevent>
+      {/* Options injected by JS — same as before */}
+    </div>
+  </div>
+</div>

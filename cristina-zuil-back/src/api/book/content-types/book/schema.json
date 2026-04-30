@@ -41,9 +41,9 @@
     },
     "genres": {
       "type": "relation",
-      "relation": "oneToMany",
+      "relation": "manyToMany",
       "target": "api::genre.genre",
-      "mappedBy": "book"
+      "mappedBy": "books"
     },
     "year": {
       "type": "integer",
