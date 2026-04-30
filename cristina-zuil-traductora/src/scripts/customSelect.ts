@@ -43,6 +43,11 @@ export function initCustomSelect(wrapper: HTMLElement): void {
     triggerText.textContent = selected?.text ?? '';
   }
 
+  nativeSelect.addEventListener('change', () => {
+    syncTrigger();
+    renderOptions();
+  });
+
   // ── Populate options (called by booksFilters.ts equivalent) ──────────
   // Re-render the visual listbox to mirror the native select
   function renderOptions() {

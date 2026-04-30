@@ -18,7 +18,17 @@ export function initBooksFilters(root: HTMLElement): void {
   if (!(genreSelect instanceof HTMLSelectElement)) throw new Error('Missing genre select');
   if (!(publisherSelect instanceof HTMLSelectElement)) throw new Error('Missing publisher select');
 
+  const params = new URLSearchParams(location.search);
+  const initialSearch = params.get('search') || '';
+  const initialGenre = params.get('genre') || params.get('genreSlug') || params.get('genreId') || '';
+  const initialPublisher = params.get('publisher') || params.get('publisherSlug') || params.get('publisherId') || '';
+
+  if (initialSearch) input.value = initialSearch;
+
+  let suppressEmit = false;
+
   const emit = () => {
+    if (suppressEmit) return;
     const detail: BooksFiltersDetail = {
       search: input.value || '',
       genreId: genreSelect.value || '',
@@ -45,7 +55,7 @@ export function initBooksFilters(root: HTMLElement): void {
   const fillSelect = (selectEl: HTMLSelectElement, items: any[]) => {
     for (const item of items) {
       const opt = document.createElement('option');
-      opt.value = String(item.id);
+      opt.value = String(item?.slug ?? item.id);
       opt.textContent = String(item?.name ?? '');
       if (opt.textContent) selectEl.appendChild(opt);
     }
@@ -62,6 +72,20 @@ export function initBooksFilters(root: HTMLElement): void {
 
     fillSelect(genreSelect, genresJson?.data ?? []);
     fillSelect(publisherSelect, publishersJson?.data ?? []);
+
+    suppressEmit = true;
+
+    if (initialGenre) {
+      genreSelect.value = initialGenre;
+      genreSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (initialPublisher) {
+      publisherSelect.value = initialPublisher;
+      publisherSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    suppressEmit = false;
+    emit();
   };
 
   load();

@@ -15,6 +15,9 @@ export const GET: APIRoute = async ({ url }) => {
   const genreId = (url.searchParams.get('genreId') || '').trim();
   const publisherId = (url.searchParams.get('publisherId') || '').trim();
 
+  const genreSlug = (url.searchParams.get('genre') || url.searchParams.get('genreSlug') || '').trim();
+  const publisherSlug = (url.searchParams.get('publisher') || url.searchParams.get('publisherSlug') || '').trim();
+
   console.log('Books API - URL params:', {
     locale,
     bookCategory,
@@ -22,7 +25,9 @@ export const GET: APIRoute = async ({ url }) => {
     pageSize,
     search,
     genreId,
-    publisherId
+    publisherId,
+    genreSlug,
+    publisherSlug,
   });
 
   return proxyJson(
@@ -34,6 +39,8 @@ export const GET: APIRoute = async ({ url }) => {
       search: search || undefined,
       genreId: genreId || undefined,
       publisherId: publisherId || undefined,
+      genreSlug: genreSlug || undefined,
+      publisherSlug: publisherSlug || undefined,
     }),
   );
 };

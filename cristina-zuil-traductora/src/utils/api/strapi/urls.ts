@@ -5,6 +5,7 @@ function buildNameOnlyCollectionUrl(params: { collection: string; locale: string
   upstreamUrl.searchParams.set('locale', params.locale);
   upstreamUrl.searchParams.set('pagination[pageSize]', '1000');
   upstreamUrl.searchParams.set('fields[0]', 'name');
+  upstreamUrl.searchParams.set('fields[1]', 'slug');
   upstreamUrl.searchParams.set('sort[0]', 'name:asc');
   return upstreamUrl;
 }
@@ -25,6 +26,8 @@ export function buildBooksUrl(params: {
   search?: string;
   genreId?: string;
   publisherId?: string;
+  genreSlug?: string;
+  publisherSlug?: string;
 }): URL {
   const upstreamUrl = new URL(`${i18nConfig.strapi.url}/api/books`);
   upstreamUrl.searchParams.set('locale', params.locale);
@@ -37,11 +40,15 @@ export function buildBooksUrl(params: {
     upstreamUrl.searchParams.set('filters[bookCategory][$eq]', params.bookCategory);
   }
 
-  if (params.publisherId) {
+  if (params.publisherSlug) {
+    upstreamUrl.searchParams.set('filters[publisher][slug][$eq]', params.publisherSlug);
+  } else if (params.publisherId) {
     upstreamUrl.searchParams.set('filters[publisher][id][$eq]', params.publisherId);
   }
 
-  if (params.genreId) {
+  if (params.genreSlug) {
+    upstreamUrl.searchParams.set('filters[genres][slug][$eq]', params.genreSlug);
+  } else if (params.genreId) {
     upstreamUrl.searchParams.set('filters[genres][id][$eq]', params.genreId);
   }
 

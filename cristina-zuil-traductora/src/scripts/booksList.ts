@@ -202,10 +202,12 @@ export function initBooksList(root: HTMLElement): void {
     document.addEventListener('books:filters', (e) => {
       const { search, genreId, publisherId } = (e as CustomEvent<BooksFiltersDetail>).detail;
       pushParams({
-        search:      search      || null,
-        genreId:     genreId     || null,
-        publisherId: publisherId || null,
-        page:        '1',
+        search:    search || null,
+        genre:     genreId || null,
+        publisher: publisherId || null,
+        genreId: null,
+        publisherId: null,
+        page:      '1',
       });
       void fetchAndRender();
     });
