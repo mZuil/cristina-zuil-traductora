@@ -35,7 +35,7 @@ const coverImage = (Astro.props.initialItems?.[0] as any).coverPage as
     position: relative;
     background-color: var(--color-white);
     z-index: 1;
-    padding-block: 100px 60px; //TODO: change
+    padding-block: 100px 60px;
 
     &__grid {
       display: grid;
@@ -191,7 +191,7 @@ const coverImage = (Astro.props.initialItems?.[0] as any).coverPage as
       width: 100%;
       display: flex;
       justify-content: center;
-      margin-top: 146px;
+      margin-top: 111px;
     }
 
     &__pages {
@@ -239,11 +239,7 @@ const coverImage = (Astro.props.initialItems?.[0] as any).coverPage as
 
       &:hover {
         &::after {
-          background-color: color-mix(
-            in srgb,
-            var(--color-blue-default) 20%,
-            transparent
-          );
+          background-color: color-mix(in srgb, var(--color-blue-default) 20%, transparent);
         }
       }
     }

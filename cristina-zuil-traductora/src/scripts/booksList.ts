@@ -112,7 +112,10 @@ export function initBooksList(root: HTMLElement): void {
     root.addEventListener('click', (e) => {
       const target = e.target as HTMLElement | null;
       const container = target?.closest<HTMLElement>('.c-books-list__book-container');
-      if (!container) return;
+      if (!container) {
+        closeAllOpen();
+        return;
+      }
 
       const shouldOpen = !container.classList.contains('is-open');
       closeAllOpen();
