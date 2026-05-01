@@ -91,6 +91,11 @@ export function initBooksList(root: HTMLElement): void {
   const results = root.querySelector<HTMLElement>('[data-results]');
   const pages   = root.querySelector<HTMLElement>('[data-pages]')!;
 
+  const closeAllOpen = (): void => {
+    root.querySelectorAll<HTMLElement>('.c-books-list__book-container.is-open')
+      .forEach((el) => el.classList.remove('is-open'));
+  };
+
   const getPage = (): number =>
     Math.max(1, Number(new URLSearchParams(location.search).get('page') || '1') || 1);
 
@@ -100,6 +105,25 @@ export function initBooksList(root: HTMLElement): void {
       value ? params.set(key, value) : params.delete(key);
     }
     history.pushState({}, '', `?${params}`);
+  }
+
+  if (isFirstInit) {
+    // Toggle book open state (delegated) + close when clicking outside
+    root.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement | null;
+      const container = target?.closest<HTMLElement>('.c-books-list__book-container');
+      if (!container) return;
+
+      const shouldOpen = !container.classList.contains('is-open');
+      closeAllOpen();
+      if (shouldOpen) container.classList.add('is-open');
+    });
+
+    document.addEventListener('click', (e) => {
+      const target = e.target as Node | null;
+      if (target && root.contains(target)) return;
+      closeAllOpen();
+    });
   }
 
   // ── Render: grid ─────────────────────────────────────────────────────────

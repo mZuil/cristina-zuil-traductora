@@ -35,14 +35,11 @@ const coverImage = (Astro.props.initialItems?.[0] as any).coverPage as
     position: relative;
     background-color: var(--color-white);
     z-index: 1;
-    padding-block: 24px 60px; //TODO: change
+    padding-block: 100px 60px; //TODO: change
 
     &__grid {
       display: grid;
-      grid-template-columns: repeat(
-        4,
-        calc(var(--width-col) * 3 + var(--grid-gutter) * 2)
-      );
+      grid-template-columns: repeat(4, calc(var(--width-col) * 3 + var(--grid-gutter) * 2));
       column-gap: var(--grid-gutter);
       row-gap: 24px;
     }
@@ -53,13 +50,15 @@ const coverImage = (Astro.props.initialItems?.[0] as any).coverPage as
       perspective: 1200px;
       cursor: pointer;
       aspect-ratio: 2/3;
-      transform: translateY(44px);
       transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
     :global(.c-books-list__book-container:hover .c-books-list__book-cover) {
+      transform: rotateY(-23deg);
+    }
+
+    :global(.c-books-list__book-container.is-open .c-books-list__book-cover) {
       transform: rotateY(-83deg);
-      // transform: rotateY(-32deg);
     }
 
     :global(.c-books-list__book-scene) {
@@ -76,6 +75,7 @@ const coverImage = (Astro.props.initialItems?.[0] as any).coverPage as
       transform-origin: left center;
       overflow: hidden;
       pointer-events: none;
+      will-change: transform;
       transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
       z-index: 2;
 
