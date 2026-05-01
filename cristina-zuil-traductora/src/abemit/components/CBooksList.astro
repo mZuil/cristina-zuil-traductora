@@ -1,123 +1,253 @@
 ---
-import CustomColumn from '../../helpers/structure/CustomColumn/CustomColumn.astro';
-import CustomContainer from '../../helpers/structure/CustomContainer/CustomContainer.astro';
-
-// ── Helpers shared between SSR and client ──────────────────────────────────
-// (duplicated here because Astro frontmatter runs server-side only;
-//  the client version lives in booksList.ts)
-
-const SPINE_PALETTE = [
-  '#6B3A2A', '#1A3D30', '#5C3D2A', '#5E1E1E',
-  '#1B2535', '#7A2E10', '#3B2E5E', '#1A3D27',
-];
-
-function hashColor(str: string): string {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
-  return SPINE_PALETTE[h % SPINE_PALETTE.length];
-}
+import CustomColumn from "../../helpers/structure/CustomColumn/CustomColumn.astro";
+import CustomContainer from "../../helpers/structure/CustomContainer/CustomContainer.astro";
+import AImage from "../atoms/AImage.astro";
+import type { StrapiImage } from "../../helpers/interfaces/StrapiImage";
+import { uiT } from "../../config/strings-ui";
 
 // Strapi URL is only used to build image src — API calls go through /api/*
-const STRAPI_URL = import.meta.env.PUBLIC_STRAPI_URL ?? '';
+const STRAPI_URL = import.meta.env.PUBLIC_STRAPI_URL ?? "";
 
 // ── Props ──────────────────────────────────────────────────────────────────
 interface Props {
   locale?: string;
-  bookCategory: 'traduccion' | 'escrito';
+  bookCategory: "traduccion" | "escrito";
   initialItems: any[];
   initialTotal: number;
   pageSize?: number;
 }
 
-const {
-  locale       = 'es',
-  bookCategory,
-  pageSize     = 12,
-} = Astro.props;
+const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
 
-const labels = {
-  genre:     locale === 'en' ? 'Genre'     : 'Género',
-  publisher: locale === 'en' ? 'Publisher' : 'Editorial',
-  year:      locale === 'en' ? 'Year'      : 'Año',
-  empty:     locale === 'en' ? 'No results found.' : 'No hay resultados.',
-  prev:      locale === 'en' ? 'Previous page'     : 'Página anterior',
-  next:      locale === 'en' ? 'Next page'         : 'Página siguiente',
-  results:   locale === 'en' ? 'books'             : 'libros',
-  pagination:locale === 'en' ? 'Pagination'        : 'Paginación',
-};
+const coverImage = (Astro.props.initialItems?.[0] as any).coverPage as
+  | StrapiImage
+  | undefined;
 ---
 
 <style lang="scss">
+
+  @use '../../styles/mixins.scss' as *;
+  
   .c-books-list {
+
+    $self: &;
+
     position: relative;
     background-color: var(--color-white);
     z-index: 1;
     padding-block: 24px 60px; //TODO: change
 
     &__grid {
-        display: grid;
-        grid-template-columns: repeat(4, calc(var(--width-col) * 3 + var(--grid-gutter) * 2));
-        column-gap: var(--grid-gutter);
-        row-gap: 24px;
+      display: grid;
+      grid-template-columns: repeat(
+        4,
+        calc(var(--width-col) * 3 + var(--grid-gutter) * 2)
+      );
+      column-gap: var(--grid-gutter);
+      row-gap: 24px;
     }
 
-    &__pagination {
+    /* Book item */
+    :global(.c-books-list__book-container) {
+      position: relative;
+      perspective: 1200px;
+      cursor: pointer;
+      aspect-ratio: 2/3;
+      transform: translateY(44px);
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    :global(.c-books-list__book-container:hover .c-books-list__book-cover) {
+      transform: rotateY(-83deg);
+      // transform: rotateY(-32deg);
+    }
+
+    :global(.c-books-list__book-scene) {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+    }
+
+    :global(.c-books-list__book-cover) {
+      position: absolute;
+      inset: 0;
+      border-radius: 0 20px 20px 0;
+      transform-origin: left center;
+      overflow: hidden;
+      pointer-events: none;
+      transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+      z-index: 2;
+
+      :global(picture) {
         width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      :global(img) {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center center;
+        display: block;
+      }
+    }
+
+    :global(.c-books-list__book-page) {
+        width: 100%;
+        height: 100%;
+        position:absolute;
+        top:0;
+        right:0;
         display: flex;
+        flex-direction: column;
         justify-content: center;
-        margin-top: 146px;
+        gap: 13px;
+        padding-inline: 50px;
+        background:#fffef9;
+        border: 1px solid var(--color-grey);
+        border-radius: 0 20px 20px 0;
+        overflow:hidden;
+    }
+
+    //Lines of the pages
+    :global(.c-books-list__book-page::before) {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(transparent, transparent 26px, rgba(13, 27, 42, .04) 26px, rgba(13, 27, 42, .04) 27px);
+      pointer-events: none;
+    }
+
+    :global(.c-books-list__book-section) {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      color: var(--color-blue-dark);
+      pointer-events: none;
+    }
+    
+    :global(.c-books-list__heading-field) {
+      @include use-font("caption");
+    }
+
+    :global(.c-books-list__value-field) {
+      @include use-font("small-text");
+      font-weight: 700;
+
+      &.--genres {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+    }
+
+    :global(.c-books-list__genre) {
+      width: fit-content;
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 20px;
+      background-color: var(--color-blue-light);
+      color: var(--color-blue-dark);
+      font-weight: 700;
+    }
+
+    :global(.c-books-list__divider) {
+      margin-block: 5px;
+    }
+
+    :global(.c-books-list__book-title) {
+      @include use-font("small-text");
+
+      font-weight: 700;
+      padding-bottom: 3px;
+    }
+
+    :global(.c-books-list__book-author) {
+      @include use-font("small-text");
+    }
+
+    :global(.c-books-list__button) {
+      @include use-font("small-text");
+
+      margin-top: 20px;
+      padding: 4px 8px;
+      color: var(--color-white);
+      background-color: var(--color-blue-default);
+      border-radius: 20px;
+      text-decoration: none;
+      text-align: center;
+      transition: background-color 0.2s ease-in-out;
+      pointer-events: auto;
+
+      &:hover {
+        background-color: var(--color-blue-dark);
+      }
+    }
+
+    /* Pagination */
+    &__pagination {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      margin-top: 146px;
     }
 
     &__pages {
-        display: flex;
-        flex-direction: row;
-        gap: 10px;
+      display: flex;
+      flex-direction: row;
+      gap: 10px;
     }
 
     :global(.c-books-list__pagination-btn) {
-        width: 50px;
-        height: 50px;
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+      width: 50px;
+      height: 50px;
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
 
-        background-color: transparent;
-        border: none;
-        cursor: pointer;
-        
-        text-align: center;
-        padding-left: 3px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
 
-        transition: color 0.2s ease-in-out;
+      text-align: center;
+      padding-left: 3px;
+
+      transition: color 0.2s ease-in-out;
+
+      &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border: 2px solid var(--color-blue-default);
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: -1;
+        transition: background-color 0.2s ease-in-out;
+      }
+
+      &.is-current {
+        color: var(--color-white);
+        pointer-events: none;
 
         &::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border: 2px solid var(--color-blue-default);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: -1;
-            transition: background-color 0.2s ease-in-out;
+          background-color: var(--color-blue-default);
         }
+      }
 
-        &.is-current {
-            color: var(--color-white);
-            pointer-events: none;
-
-            &::after {
-                background-color: var(--color-blue-default);
-            }
+      &:hover {
+        &::after {
+          background-color: color-mix(
+            in srgb,
+            var(--color-blue-default) 20%,
+            transparent
+          );
         }
-        
-        &:hover {
-            &::after {
-                background-color: color-mix(in srgb, var(--color-blue-default) 20%, transparent);
-            }
-        }
+      }
     }
-}
+  }
 </style>
 
 <section class="c-books-list" data-locale={locale} data-category={bookCategory} data-page-size={String(pageSize)} data-strapi-url={STRAPI_URL}>
@@ -125,7 +255,7 @@ const labels = {
     <CustomColumn lg="12" md="8" sm="4">
       <div class="c-books-list__grid"></div>
 
-      <nav class="c-books-list__pagination" aria-label={labels.pagination}>
+      <nav class="c-books-list__pagination" aria-label={uiT(locale, "pagination")}>
         <div class="c-books-list__pages" data-pages></div>
       </nav>
     </CustomColumn>
@@ -133,14 +263,14 @@ const labels = {
 </section>
 
 <script>
-  import { initBooksList } from '../../scripts/booksList';
+  import { initBooksList } from "../../scripts/booksList";
 
   const initAll = () => {
-    document.querySelectorAll<HTMLElement>('.c-books-list').forEach((root) => {
+    document.querySelectorAll<HTMLElement>(".c-books-list").forEach((root) => {
       initBooksList(root);
     });
   };
 
   initAll();
-  document.addEventListener('astro:page-load', initAll);
+  document.addEventListener("astro:page-load", initAll);
 </script>

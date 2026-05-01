@@ -143,8 +143,20 @@ export const designTokens = {
           fontFamily: 'secondary',
           fontSize: '16px',
           fontWeight: 400,
-          lineHeight: 1,
+          lineHeight: 1.2,
           letterSpacing: '0',
+        },
+        md: {},
+        lg: {},
+      },
+
+      'caption': {
+        sm: {
+          fontFamily: 'secondary',
+          fontSize: '12px',
+          fontWeight: 400,
+          lineHeight: 1.2,
+          letterSpacing: '-0.01em',
         },
         md: {},
         lg: {},
