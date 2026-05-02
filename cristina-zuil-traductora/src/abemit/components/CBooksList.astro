@@ -91,6 +91,13 @@ const coverImage = (Astro.props.initialItems?.[0] as any).coverPage as
         object-fit: cover;
         object-position: center center;
         display: block;
+
+        transition: filter 0.25s ease, transform 0.25s ease;
+      }
+
+      :global(img.is-lqip) {
+        filter: blur(12px);
+        transform: scale(1.02);
       }
     }
 
@@ -172,18 +179,22 @@ const coverImage = (Astro.props.initialItems?.[0] as any).coverPage as
       @include use-font("small-text");
 
       margin-top: 20px;
-      padding: 4px 8px;
+      padding: 6px 8px;
       color: var(--color-white);
       background-color: var(--color-blue-default);
       border-radius: 20px;
       text-decoration: none;
       text-align: center;
       transition: background-color 0.2s ease-in-out;
-      pointer-events: auto;
+      pointer-events: none;
 
       &:hover {
         background-color: var(--color-blue-dark);
       }
+    }
+
+    :global(.c-books-list__book-container.is-open .c-books-list__button) {
+      pointer-events: auto;
     }
 
     /* Pagination */

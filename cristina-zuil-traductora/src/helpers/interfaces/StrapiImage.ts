@@ -22,12 +22,13 @@ export type StrapiImage = {
 export const DEFAULT_SIZES = '(max-width: 768px) 100vw, 50vw';
 
 const OPTIMIZED_BREAKPOINTS: Array<{ key: string; width: number }> = [
+  { key: 'lqip', width: 12 },
+  { key: 'thumbnail', width: 156 },
   { key: 'xsmall', width: 320 },
   { key: 'small', width: 640 },
   { key: 'medium', width: 960 },
   { key: 'large', width: 1280 },
   { key: 'xlarge', width: 1920 },
-  { key: 'thumbnail', width: 156 },
 ];
 
 export function buildSrcSet(image: StrapiImage, format: 'avif' | 'webp'): string {

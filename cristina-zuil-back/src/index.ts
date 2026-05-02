@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 
 const BREAKPOINTS: Record<string, number> = {
+  lqip:      12,
   thumbnail: 156,
   xsmall:    320,
   small:     640,

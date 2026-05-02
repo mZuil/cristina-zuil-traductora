@@ -1,5 +1,14 @@
 import { uiT } from '../config/strings-ui';
 import type { BooksFiltersDetail } from './booksFilters';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+let gsapPluginsRegistered = false;
+function ensureGsapPlugins(): void {
+  if (gsapPluginsRegistered) return;
+  gsap.registerPlugin(ScrollTrigger);
+  gsapPluginsRegistered = true;
+}
 
 // ── Spine color ────────────────────────────────────────────────────────────
 function esc(str: string): string {
@@ -13,6 +22,7 @@ function esc(str: string): string {
 // ── Image helpers ──────────────────────────────────────────────────────────
 // Must match BREAKPOINTS in your image-optimizer Strapi plugin
 const BREAKPOINTS: Record<string, number> = {
+  lqip:      12,
   thumbnail: 156,
   xsmall:    320,
   small:     640,
@@ -23,6 +33,7 @@ const BREAKPOINTS: Record<string, number> = {
 
 interface CoverData {
   src:           string;
+  placeholderSrc: string;
   hash:          string;
   width:         number;
   avifSrcSet:    string;
@@ -44,6 +55,13 @@ function getCoverData(book: any, strapiUrl: string): CoverData | null {
   const { url, hash, width = 1920, formats = {} } = imgAttr;
   const src = strapiUrl ? `${strapiUrl}${url}` : url;
 
+  const fmtValues = Object.values(formats || {}) as Array<{ url?: string; width?: number }>;
+  const smallest = fmtValues
+    .filter((f) => Boolean(f?.url))
+    .sort((a, b) => Number(a.width ?? Infinity) - Number(b.width ?? Infinity))[0];
+
+  const placeholderSrc = smallest?.url ? `${strapiUrl}${smallest.url}` : src;
+
   // Native srcset from Strapi's own breakpoints (JPEG/PNG fallback)
   const nativeEntries = Object.entries(BREAKPOINTS)
     .map(([name, w]) => {
@@ -55,6 +73,7 @@ function getCoverData(book: any, strapiUrl: string): CoverData | null {
 
   return {
     src,
+    placeholderSrc,
     hash,
     width,
     avifSrcSet:   buildSrcSet(hash, 'avif', width, strapiUrl),
@@ -65,7 +84,12 @@ function getCoverData(book: any, strapiUrl: string): CoverData | null {
 
 const DEFAULT_SIZES = '(max-width: 320px) 320px, (max-width: 640px) 640px, (max-width: 960px) 960px, (max-width: 1280px) 1280px, 1920px';
 
-function renderPicture(cover: CoverData | null, alt: string, sizes = DEFAULT_SIZES): string {
+function renderPicture(
+  cover: CoverData | null,
+  alt: string,
+  sizes = DEFAULT_SIZES,
+  loading: 'lazy' | 'eager' = 'lazy',
+): string {
   if (!cover) return '';
 
   return `
@@ -73,12 +97,14 @@ function renderPicture(cover: CoverData | null, alt: string, sizes = DEFAULT_SIZ
       ${cover.avifSrcSet   ? `<source type="image/avif" srcset="${cover.avifSrcSet}" sizes="${sizes}">` : ''}
       ${cover.webpSrcSet   ? `<source type="image/webp" srcset="${cover.webpSrcSet}" sizes="${sizes}">` : ''}
       ${cover.nativeSrcSet ? `<source srcset="${cover.nativeSrcSet}" sizes="${sizes}">` : ''}
-      <img class="a-image" src="${cover.src}" alt="${alt}" width="${cover.width}" loading="lazy">
+      <img class="a-image is-lqip" src="${cover.placeholderSrc}" alt="${alt}" width="${cover.width}" loading="${loading}" decoding="async">
     </picture>`;
 }
 
 // ── Init ───────────────────────────────────────────────────────────────────
 export function initBooksList(root: HTMLElement): void {
+  ensureGsapPlugins();
+
   const isFirstInit = root.dataset.booksListInit !== '1';
   if (isFirstInit) root.dataset.booksListInit = '1';
 
@@ -94,6 +120,66 @@ export function initBooksList(root: HTMLElement): void {
   const closeAllOpen = (): void => {
     root.querySelectorAll<HTMLElement>('.c-books-list__book-container.is-open')
       .forEach((el) => el.classList.remove('is-open'));
+  };
+
+  const scrollToTop = (): void => {
+    const headerOffset = 16;
+    const top = root.getBoundingClientRect().top + window.scrollY - headerOffset;
+
+    const lenis = (window as any).__lenis as { scrollTo?: (target: number, opts?: unknown) => void } | undefined;
+    if (lenis?.scrollTo) {
+      lenis.scrollTo(top, { duration: 0.8 });
+      return;
+    }
+
+    window.scrollTo({ top, behavior: 'smooth' });
+  };
+
+  const wireLqipHandlers = (): void => {
+    root.querySelectorAll<HTMLImageElement>('img.a-image.is-lqip').forEach((img) => {
+      const done = () => img.classList.remove('is-lqip');
+      if (img.complete) {
+        done();
+        return;
+      }
+      img.addEventListener('load', done, { once: true });
+      img.addEventListener('error', done, { once: true });
+    });
+  };
+
+  const killGridAnimations = (): void => {
+    const state = (root as any).__booksListGsap as { tween?: gsap.core.Tween; trigger?: ScrollTrigger } | undefined;
+    state?.tween?.kill();
+    state?.trigger?.kill();
+    delete (root as any).__booksListGsap;
+  };
+
+  const animateGrid = (): void => {
+    killGridAnimations();
+
+    const cards = Array.from(root.querySelectorAll<HTMLElement>('.c-books-list__book-container'));
+    if (!cards.length) return;
+
+    gsap.set(cards, { autoAlpha: 0, y: 24 });
+
+    const tween = gsap.to(cards, {
+      autoAlpha: 1,
+      y: 0,
+      duration: 0.55,
+      ease: 'power2.out',
+      stagger: 0.06,
+      clearProps: 'transform',
+      scrollTrigger: {
+        trigger: grid,
+        start: 'top 80%',
+        once: true,
+      },
+    });
+
+    const trigger = tween.scrollTrigger ?? undefined;
+    (root as any).__booksListGsap = { tween, trigger };
+
+    ScrollTrigger.refresh();
   };
 
   const getPage = (): number =>
@@ -133,6 +219,7 @@ export function initBooksList(root: HTMLElement): void {
   function renderGrid(items: any[]): void {
     if (!items.length) {
       grid.innerHTML = `<div class="c-books-list__empty">${uiT(locale, 'noResults')}</div>`;
+      killGridAnimations();
       return;
     }
 
@@ -233,7 +320,7 @@ export function initBooksList(root: HTMLElement): void {
         <div class="c-books-list__book-container" data-index="${i}">
           <div class="c-books-list__book-scene">
             <div class="c-books-list__book-cover">
-              ${renderPicture(cover, title)}
+              ${renderPicture(cover, title, DEFAULT_SIZES, i < 4 ? 'eager' : 'lazy')}
             </div>
             <div class="c-books-list__book-page">
               ${translationSection}
@@ -247,6 +334,9 @@ export function initBooksList(root: HTMLElement): void {
           </div>
         </div>`;
     }).join('');
+
+    animateGrid();
+    wireLqipHandlers();
 
     grid.querySelectorAll<HTMLElement>('.book-card, .c-books-list__book-card').forEach((card, i) => {
       new IntersectionObserver((entries, obs) => {
@@ -276,6 +366,9 @@ export function initBooksList(root: HTMLElement): void {
       if (!page) return;
       if (el instanceof HTMLButtonElement && el.disabled) return;
       pushParams({ page });
+
+      scrollToTop();
+
       void fetchAndRender();
     };
   }
@@ -298,6 +391,7 @@ export function initBooksList(root: HTMLElement): void {
     } catch (err) {
       console.error('[CBooksList] fetch failed:', err);
       grid.innerHTML = `<div class="c-books-list__empty">${uiT(locale, 'noResults')}</div>`;
+      killGridAnimations();
     }
   }
 

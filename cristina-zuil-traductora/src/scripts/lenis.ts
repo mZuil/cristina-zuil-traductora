@@ -3,6 +3,12 @@ import Lenis from 'lenis';
 let lenis: Lenis | null = null;
 let rafId: number | null = null;
 
+declare global {
+  interface Window {
+    __lenis?: Lenis;
+  }
+}
+
 function initLenis() {
   if (lenis) destroyLenis();
 
@@ -16,6 +22,8 @@ function initLenis() {
     touchMultiplier: 2,
     infinite: false,
   });
+
+  window.__lenis = lenis;
 
   const currentLenis = lenis;
 
@@ -38,6 +46,8 @@ function destroyLenis() {
     lenis.destroy();
     lenis = null;
   }
+
+  delete window.__lenis;
 }
 
 initLenis();
