@@ -154,13 +154,57 @@ export function initBooksList(root: HTMLElement): void {
     delete (root as any).__booksListGsap;
   };
 
-  const animateGrid = (): void => {
+  const nextRenderNonce = (): number => {
+    const prev = Number((root as any).__booksListRenderNonce ?? 0);
+    const next = prev + 1;
+    (root as any).__booksListRenderNonce = next;
+    return next;
+  };
+
+  const waitForCoversReady = async (cards: HTMLElement[], nonce: number): Promise<void> => {
+    const imgs = cards
+      .map((c) => c.querySelector<HTMLImageElement>('.c-books-list__book-cover img'))
+      .filter((img): img is HTMLImageElement => Boolean(img));
+
+    const awaitImg = (img: HTMLImageElement): Promise<void> => new Promise((resolve) => {
+      const done = async () => {
+        if (Number((root as any).__booksListRenderNonce ?? 0) !== nonce) return resolve();
+        try {
+          // decode() helps avoid animating while the browser is still painting the image
+          if (typeof (img as any).decode === 'function') await (img as any).decode();
+        } catch {
+          // ignore decode failures
+        }
+        resolve();
+      };
+
+      if (img.complete) {
+        void done();
+        return;
+      }
+      img.addEventListener('load', () => void done(), { once: true });
+      img.addEventListener('error', () => void done(), { once: true });
+    });
+
+    await Promise.all(imgs.map(awaitImg));
+    if (Number((root as any).__booksListRenderNonce ?? 0) !== nonce) return;
+    await new Promise<void>((r) => requestAnimationFrame(() => r()));
+  };
+
+  const animateGridWhenReady = async (): Promise<void> => {
     killGridAnimations();
 
     const cards = Array.from(root.querySelectorAll<HTMLElement>('.c-books-list__book-container'));
     if (!cards.length) return;
 
+    const nonce = nextRenderNonce();
+
+    // Keep hidden until content + cover are ready
     gsap.set(cards, { autoAlpha: 0, y: 24 });
+    wireLqipHandlers();
+
+    await waitForCoversReady(cards, nonce);
+    if (Number((root as any).__booksListRenderNonce ?? 0) !== nonce) return;
 
     const tween = gsap.to(cards, {
       autoAlpha: 1,
@@ -171,14 +215,13 @@ export function initBooksList(root: HTMLElement): void {
       clearProps: 'transform',
       scrollTrigger: {
         trigger: grid,
-        start: 'top 80%',
+        start: 'top 90%',
         once: true,
       },
     });
 
     const trigger = tween.scrollTrigger ?? undefined;
     (root as any).__booksListGsap = { tween, trigger };
-
     ScrollTrigger.refresh();
   };
 
@@ -335,8 +378,7 @@ export function initBooksList(root: HTMLElement): void {
         </div>`;
     }).join('');
 
-    animateGrid();
-    wireLqipHandlers();
+    void animateGridWhenReady();
 
     grid.querySelectorAll<HTMLElement>('.book-card, .c-books-list__book-card').forEach((card, i) => {
       new IntersectionObserver((entries, obs) => {
