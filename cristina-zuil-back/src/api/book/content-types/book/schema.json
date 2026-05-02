@@ -63,6 +63,16 @@
           "localized": true
         }
       },
+      "conditions": {
+        "visible": {
+          "==": [
+            {
+              "var": "bookCategory"
+            },
+            "traduccion"
+          ]
+        }
+      },
       "default": "EN",
       "maxLength": 2,
       "required": true
@@ -72,6 +82,16 @@
       "pluginOptions": {
         "i18n": {
           "localized": true
+        }
+      },
+      "conditions": {
+        "visible": {
+          "==": [
+            {
+              "var": "bookCategory"
+            },
+            "traduccion"
+          ]
         }
       },
       "default": "ES",

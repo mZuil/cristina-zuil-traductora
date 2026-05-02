@@ -1,8 +1,6 @@
 ---
 import CustomColumn from "../../helpers/structure/CustomColumn/CustomColumn.astro";
 import CustomContainer from "../../helpers/structure/CustomContainer/CustomContainer.astro";
-import AImage from "../atoms/AImage.astro";
-import type { StrapiImage } from "../../helpers/interfaces/StrapiImage";
 import { uiT } from "../../config/strings-ui";
 
 // Strapi URL is only used to build image src — API calls go through /api/*
@@ -12,16 +10,10 @@ const STRAPI_URL = import.meta.env.PUBLIC_STRAPI_URL ?? "";
 interface Props {
   locale?: string;
   bookCategory: "traduccion" | "escrito";
-  initialItems: any[];
-  initialTotal: number;
   pageSize?: number;
 }
 
 const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
-
-const coverImage = (Astro.props.initialItems?.[0] as any).coverPage as
-  | StrapiImage
-  | undefined;
 ---
 
 <style lang="scss">
@@ -195,6 +187,17 @@ const coverImage = (Astro.props.initialItems?.[0] as any).coverPage as
 
     :global(.c-books-list__book-container.is-open .c-books-list__button) {
       pointer-events: auto;
+    }
+
+    :global(.c-books-list__empty) {
+      @include use-font("subheading-1");
+
+      width: 100%;
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
     }
 
     /* Pagination */

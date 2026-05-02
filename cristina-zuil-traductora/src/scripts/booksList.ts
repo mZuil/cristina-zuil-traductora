@@ -285,7 +285,7 @@ export function initBooksList(root: HTMLElement): void {
 
       const linkUrl = typeof attr.link?.url === 'string' ? attr.link.url : '';
 
-      const hasTranslation = Boolean(fromTranslation || toTranslation);
+      const hasTranslation = Boolean(fromTranslation || toTranslation) && attr.bookCategory === 'traduccion';
       const hasPublisher = Boolean(publisher);
       const hasGenres = genresArr.length > 0;
       const hasYear = Boolean(year);
@@ -396,6 +396,8 @@ export function initBooksList(root: HTMLElement): void {
     const pageCount   = Math.max(1, Math.ceil(total / pageSize));
     const currentPage = getPage();
 
+    if(pageCount <= 1 && pages) return;
+
     pages.innerHTML = Array.from({ length: pageCount }, (_, i) => {
       const p         = i + 1;
       const isCurrent = p === currentPage;
@@ -428,7 +430,14 @@ export function initBooksList(root: HTMLElement): void {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
 
-      renderGrid(Array.isArray(json?.data) ? json.data : []);
+      const rawItems: any[] = Array.isArray(json?.data) ? json.data : [];
+      const sortedItems = rawItems.slice().sort((a, b) => {
+        const aId = Number(a?.id ?? a?.attributes?.id ?? 0);
+        const bId = Number(b?.id ?? b?.attributes?.id ?? 0);
+        return bId - aId;
+      });
+
+      renderGrid(sortedItems);
       renderPagination(Number(json?.meta?.pagination?.total ?? 0));
     } catch (err) {
       console.error('[CBooksList] fetch failed:', err);

@@ -4,9 +4,6 @@ import CFilters from '../../abemit/components/CFilters.astro';
 import ComponentsFields from '../../helpers/interfaces/ComponentsFields.astro';
 
 interface Props {
-  items: any[];
-  title: string;
-  description?: string;
   locale?: string;
   archiveSlug: string;
   bookCategory: 'traduccion' | 'escrito';
@@ -14,7 +11,7 @@ interface Props {
   itemsCount: number;
 }
 
-const { content, itemsCount = 0, items = [], locale, bookCategory } = Astro.props;
+const { content, itemsCount = 0, locale, bookCategory } = Astro.props;
 
 ---
 
@@ -25,5 +22,5 @@ const { content, itemsCount = 0, items = [], locale, bookCategory } = Astro.prop
     <CFilters locale={locale} />
   )}
 
-  <CBooksList locale={locale} bookCategory={bookCategory} initialItems={items} initialTotal={itemsCount} pageSize={12} />
+  <CBooksList locale={locale} bookCategory={bookCategory} pageSize={12} />
 </div>

@@ -79,10 +79,7 @@ const contentType = template === 'archive-books' || template === 'archive-articl
 >
   <main>
     {template === 'archive-books' && templateData ? (
-      <ArchiveBooks 
-        items={templateData.items}
-        title={title}
-        description={content}
+      <ArchiveBooks
         locale={locale}
         archiveSlug={slug}
         bookCategory={page.bookCategory || ''}
@@ -92,10 +89,9 @@ const contentType = template === 'archive-books' || template === 'archive-articl
     ) : template === 'archive-articles' && templateData ? (
       <ArchiveArticles 
         items={templateData}
-        title={title}
+        content={page.content}
         description={content}
         locale={locale}
-        archiveSlug={slug}
       />
     ) : (
       <DefaultPage page={page} />

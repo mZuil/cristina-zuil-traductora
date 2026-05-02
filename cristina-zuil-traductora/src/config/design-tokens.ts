@@ -95,7 +95,7 @@ export const designTokens = {
           fontSize: '24px',
           fontWeight: 400,
           lineHeight: 1.21,
-          letterSpacing: '0.15em',
+          letterSpacing: '0.03em',
         },
         md: {},
         lg: {},

@@ -83,10 +83,8 @@ const contentType = template === 'archive-books' || template === 'archive-articl
   <main>
     {/* Render based on template type */}
     {template === 'archive-books' && templateData ? (
-      <ArchiveBooks 
-        items={templateData.items}
-        title={title}
-        description={content}
+      <ArchiveBooks
+        locale={i18nConfig.defaultLocale}
         archiveSlug={slug}
         bookCategory={page.bookCategory || ''}
         content={page.content}
@@ -95,9 +93,9 @@ const contentType = template === 'archive-books' || template === 'archive-articl
     ) : template === 'archive-articles' && templateData ? (
       <ArchiveArticles 
         items={templateData}
-        title={title}
+        content={page.content}
         description={content}
-        archiveSlug={slug}
+        locale={i18nConfig.defaultLocale}
       />
     ) : (
       <DefaultPage page={page} />

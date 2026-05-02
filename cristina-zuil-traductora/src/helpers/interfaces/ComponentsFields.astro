@@ -5,7 +5,7 @@ import CHeading from '../../abemit/components/CHeading.astro';
 
 interface Props {
   content: any;
-  itemsCount: number;
+  itemsCount?: number;
 }
 
 const { content, itemsCount = 0 } = Astro.props;
