@@ -163,7 +163,7 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
       position: fixed;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      // transform: translate(-50%, -50%);
       border-radius: 30px;
 
       background-color: var(--color-white);
@@ -235,12 +235,7 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
         {articles.map((article) => (
           <button type="button" class="c-articles-list__card js-article-card" data-article={encodeURIComponent(JSON.stringify(article))} aria-haspopup="dialog">
             <div class="c-articles-list__image-wrap">
-              <AImage
-                image={article.image}
-                class="c-articles-list__image"
-                aspect="1/1"
-                loading="lazy"
-              />
+              <AImage image={article.image} class="c-articles-list__image" aspect="1/1" loading="lazy" />
             </div>
             <AText tag="p" size="headline-2" class="c-articles-list__article-title">{article.title}</AText>
           </button>

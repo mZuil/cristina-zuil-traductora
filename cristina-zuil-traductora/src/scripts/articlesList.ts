@@ -20,23 +20,66 @@ export function initArticlesList(root: HTMLElement): void {
   const dialog = root.querySelector('dialog[data-dialog]');
   if (!(dialog instanceof HTMLDialogElement)) return;
 
+  const dialogPanel = dialog.querySelector<HTMLElement>('.c-articles-list__dialog-inner');
+
   const dialogImg = dialog.querySelector('[data-dialog-image]');
   const dialogTitle = dialog.querySelector('[data-dialog-title]');
   const dialogDescription = dialog.querySelector('[data-dialog-description]');
   const dialogLink = dialog.querySelector('[data-dialog-link]');
   const closeBtn = dialog.querySelector('[data-dialog-close]');
 
+  // ─── Dialog tween ────────────────────────────────────────────────────────────
+
+  let dialogTween: gsap.core.Tween | null = null;
+
+  const killDialogTween = (): void => {
+    dialogTween?.kill();
+    dialogTween = null;
+  };
+
+  const openDialog = (): void => {
+    killDialogTween();
+    if (dialog.open) dialog.close();
+    dialog.showModal();
+
+    gsap.set(dialogPanel, {
+      xPercent: -50,
+      yPercent: -50,
+      scale: 0.85,
+      autoAlpha: 0,
+      transformOrigin: '50% 50%',
+    });
+
+    dialogTween = gsap.to(dialogPanel, {
+      scale: 1,
+      autoAlpha: 1,
+      duration: 0.5,
+      ease: 'back.out(1.7)',
+    });
+  };
+
+  const closeDialog = (): void => {
+    if (!dialog.open) return;
+    killDialogTween();
+
+    dialogTween = gsap.to(dialogPanel, {
+      scale: 0.85,
+      autoAlpha: 0,
+      duration: 0.3,
+      ease: 'back.in(1.7)',
+      onComplete: () => {
+        dialog.close();
+        gsap.set(dialogPanel, { clearProps: 'all' });
+      },
+    });
+  };
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+
   const setBodyScrollLocked = (locked: boolean): void => {
     const body = document.body;
     if (!body) return;
     body.classList.toggle('is-overflow-hidden', locked);
-  };
-
-  const setLenisEnabled = (enabled: boolean): void => {
-    const lenis = (window as any).__lenis as { stop?: () => void; start?: () => void } | undefined;
-    if (!lenis) return;
-    if (enabled) lenis.start?.();
-    else lenis.stop?.();
   };
 
   const setText = (el: Element | null, value: unknown): void => {
@@ -52,6 +95,8 @@ export function initArticlesList(root: HTMLElement): void {
     el.style.pointerEvents = safeHref ? '' : 'none';
     el.style.opacity = safeHref ? '' : '0.5';
   };
+
+  // ─── Grid animation ───────────────────────────────────────────────────────────
 
   const scheduleScrollTriggerRefresh = (): void => {
     const prev = Number((root as any).__articlesListRefreshRaf ?? 0);
@@ -72,9 +117,7 @@ export function initArticlesList(root: HTMLElement): void {
   const animateGrid = (): void => {
     killGridAnimations();
 
-    const cards = Array.from(
-      root.querySelectorAll<HTMLElement>('.js-article-card'),
-    );
+    const cards = Array.from(root.querySelectorAll<HTMLElement>('.js-article-card'));
     if (!cards.length) return;
 
     gsap.set(cards, { autoAlpha: 0, y: 24 });
@@ -98,23 +141,35 @@ export function initArticlesList(root: HTMLElement): void {
     scheduleScrollTriggerRefresh();
   };
 
+  // ─── Event listeners ──────────────────────────────────────────────────────────
+
   if (isFirstInit) {
     animateGrid();
 
-    const close = () => {
-      if (dialog.open) dialog.close();
+    closeBtn?.addEventListener('click', () => {
+      closeDialog();
       setBodyScrollLocked(false);
-      setLenisEnabled(true);
-    };
-
-    closeBtn?.addEventListener('click', close);
-    dialog.addEventListener('click', (e) => {
-      if (e.target === dialog) close();
     });
 
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) {
+        closeDialog();
+        setBodyScrollLocked(false);
+      }
+    });
+
+    // Intercept native ESC so it plays the close animation first
+    dialog.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeDialog();
+        setBodyScrollLocked(false);
+      }
+    });
+
+    // Safety net: clean up body state if dialog closes by any other means
     dialog.addEventListener('close', () => {
       setBodyScrollLocked(false);
-      setLenisEnabled(true);
     });
 
     root.addEventListener('click', async (e) => {
@@ -145,10 +200,7 @@ export function initArticlesList(root: HTMLElement): void {
 
           await new Promise<void>((resolve) => {
             const done = () => resolve();
-            if (preload.complete) {
-              resolve();
-              return;
-            }
+            if (preload.complete) { resolve(); return; }
             preload.addEventListener('load', done, { once: true });
             preload.addEventListener('error', done, { once: true });
           });
@@ -165,8 +217,7 @@ export function initArticlesList(root: HTMLElement): void {
       }
 
       setBodyScrollLocked(true);
-      setLenisEnabled(false);
-      dialog.showModal();
+      openDialog();
     });
 
     window.addEventListener('resize', () => scheduleScrollTriggerRefresh());
