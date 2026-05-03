@@ -445,7 +445,7 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    featured_image: Schema.Attribute.Media<
+    featuredImage: Schema.Attribute.Media<
       'images' | 'files' | 'videos' | 'audios'
     >;
     link: Schema.Attribute.Component<'links.link', false>;
@@ -456,6 +456,7 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
     > &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
+    publishedDate: Schema.Attribute.Date;
     seo: Schema.Attribute.Component<'seo.seo', false>;
     title: Schema.Attribute.String & Schema.Attribute.Required;
     updatedAt: Schema.Attribute.DateTime;

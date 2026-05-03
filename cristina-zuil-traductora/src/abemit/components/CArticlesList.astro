@@ -1,0 +1,295 @@
+---
+import CustomContainer from "../../helpers/structure/CustomContainer/CustomContainer.astro";
+import CustomColumn from "../../helpers/structure/CustomColumn/CustomColumn.astro";
+import AText from "../atoms/AText.astro";
+import AImage from "../atoms/AImage.astro";
+import type { StrapiImage } from "../../helpers/interfaces/StrapiImage";
+import { uiT } from "../../config/strings-ui";
+
+interface Props {
+  items: any[];
+  locale?: string;
+}
+
+const { items = [], locale = "es" } = Astro.props;
+
+const STRAPI_URL = import.meta.env.PUBLIC_STRAPI_URL ?? "";
+
+type ArticleViewModel = {
+  id: string;
+  title: string;
+  content: string;
+  linkUrl: string;
+  image: StrapiImage;
+  imageUrl: string;
+};
+
+const toStr = (v: unknown): string => (typeof v === "string" ? v : "");
+
+const getStrapiImage = (article: any): StrapiImage | null => {
+  const attr = article?.attributes ?? article ?? {};
+
+  const imgAttr =
+    attr?.featuredImage?.data?.attributes ??
+    attr?.featuredImage ??
+    attr?.featured_image?.data?.attributes ??
+    attr?.featured_image ??
+    attr?.image?.data?.attributes ??
+    attr?.image ??
+    null;
+
+  if (!imgAttr) return null;
+  if (typeof imgAttr?.url !== 'string' || !imgAttr.url) return null;
+  if (typeof imgAttr?.width !== 'number' || typeof imgAttr?.height !== 'number') return null;
+  if (typeof imgAttr?.mime !== 'string' || !imgAttr.mime) return null;
+  return imgAttr as StrapiImage;
+};
+
+const getAbsoluteImageUrl = (image: StrapiImage): string => {
+  const raw = image?.url;
+  if (typeof raw !== 'string' || !raw) return '';
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  return `${STRAPI_URL}${raw}`;
+};
+
+const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
+  .map((a: any) => {
+    const attr = a?.attributes ?? a ?? {};
+
+    const title = toStr(attr?.title);
+    const content = toStr(attr?.content) || "";
+
+    const linkUrl = toStr(attr?.link?.url);
+    const image = getStrapiImage(a);
+    const id = String(a?.id ?? attr?.id ?? title ?? "");
+
+    if (!image) return null;
+    return { id, title, content, linkUrl, image, imageUrl: getAbsoluteImageUrl(image) };
+  })
+  .filter((a): a is ArticleViewModel => Boolean(a && a.title));
+---
+
+<style lang="scss">
+
+  @use '../../styles/mixins.scss' as *;
+
+  .c-articles-list {
+
+    $self: &;
+
+    position: relative;
+    padding-block: 100px 60px;
+    background-color: var(--color-white);
+    z-index: 1;
+
+    &__grid {
+      display: grid;
+      grid-template-columns: repeat(3,  calc(var(--width-col) * 4 + var(--grid-gutter) * 3));
+      column-gap: var(--grid-gutter);
+      row-gap: 57px;
+    }
+
+    &__card {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      cursor: pointer;
+      background-color: var(--color-white);
+      border: none;
+
+      &:hover #{$self}__image-wrap::after {
+        background-color: var(--color-blue-light);
+      }
+
+      &:hover #{$self}__image {
+        transform: rotate(-2deg) scale(1.03);
+      }
+
+      &:hover #{$self}__article-title {
+        color: var(--color-blue-default);
+      }
+    }
+
+    &__image-wrap {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      position: relative;
+      border-radius: 15px;
+      overflow: hidden;
+    }
+
+    &__image {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center;
+
+      transition: transform 0.3s ease-in-out;
+      transform-origin: center;
+    }
+
+    &__image-wrap::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-color: transparent;
+      mix-blend-mode: multiply;
+      transition: background-color 0.3s ease-in-out;
+      pointer-events: none;
+    }
+
+    &__article-title {
+      padding-top: 22px;
+      text-align: left;
+      color: var(--color-blue-dark);
+    }
+
+    &__dialog {
+      border: none;
+      padding: 0;
+      border-radius: 18px;
+      overflow: hidden;
+
+      &::backdrop {
+        background: rgba(13, 27, 42, 0.55);
+      }
+    }
+
+    &__dialog-inner {
+      width: calc(var(--width-col) * 8 + var(--grid-gutter) * 7);
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      padding: var(--grid-gutter);
+      border-radius: 30px;
+
+      background-color: var(--color-white);
+    }
+
+    &__dialog-image {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center;
+      border-radius: 15px;
+    }
+
+    &__dialog-body {
+      padding: 20px 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    &__dialog-title {
+      @include use-font('headline-1');
+      color: var(--color-blue-dark);
+    }
+
+    &__dialog-description {
+      @include use-font('body');
+      color: var(--color-blue-dark);
+    }
+
+    &__dialog-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    &__dialog-close {
+      @include use-font('small-text');
+
+      border: 2px solid var(--color-blue-light);
+      background: transparent;
+      color: var(--color-blue-dark);
+      border-radius: 999px;
+      padding: 8px 12px;
+      cursor: pointer;
+
+      &:hover {
+        border-color: var(--color-blue-dark);
+      }
+    }
+
+    &__dialog-link {
+      @include use-font('small-text');
+
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--color-blue-default);
+      color: var(--color-white);
+      text-decoration: none;
+
+      &:hover {
+        background: var(--color-blue-dark);
+      }
+    }
+  }
+</style>
+
+<div class="c-articles-list js-articles-list" data-locale={locale}>
+  <CustomContainer>
+    <CustomColumn lg="12" md="8" sm="4">
+      <div class="c-articles-list__grid js-articles-grid">
+        {articles.map((article) => (
+          <button type="button" class="c-articles-list__card js-article-card" data-article={encodeURIComponent(JSON.stringify(article))} aria-haspopup="dialog">
+            <div class="c-articles-list__image-wrap">
+              <AImage
+                image={article.image}
+                class="c-articles-list__image"
+                aspect="1/1"
+                loading="lazy"
+              />
+            </div>
+            <AText tag="p" size="headline-2" class="c-articles-list__article-title">{article.title}</AText>
+          </button>
+        ))}
+      </div>
+    </CustomColumn>
+  </CustomContainer>
+
+  <dialog class="c-articles-list__dialog js-articles-dialog" data-dialog aria-label={uiT(locale, "articleItem")}>
+    <div class="c-articles-list__dialog-inner">
+      <div class="c-articles-list__dialog-media">
+        <img class="c-articles-list__dialog-image" data-dialog-image alt="" />
+      </div>
+      <div class="c-articles-list__dialog-body">
+        <div class="c-articles-list__dialog-title" data-dialog-title></div>
+        <div class="c-articles-list__dialog-description" data-dialog-description></div>
+        <div class="c-articles-list__dialog-actions">
+          <a class="c-articles-list__dialog-link" data-dialog-link href="#" target="_blank" rel="noopener noreferrer">
+            {uiT(locale, "readMore")}
+          </a>
+          <button type="button" class="c-articles-list__dialog-close" data-dialog-close>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+</div>
+
+<script>
+  import { initArticlesList } from "../../scripts/articlesList";
+
+  const initAll = () => {
+    document.querySelectorAll<HTMLElement>(".js-articles-list").forEach((root) => {
+      initArticlesList(root);
+    });
+  };
+
+  initAll();
+  document.addEventListener("astro:page-load", initAll);
+</script>

@@ -53,7 +53,7 @@ const { title } = Astro.props;
 - ✅ **Shared styles** - Used by multiple components
 - ✅ **Very large** - 200+ lines of CSS
 - ✅ **Third-party** - External CSS libraries
-- ✅ **Global styles** - Already handled in `styles/global.css`
+- ✅ **Global styles** - Already handled in `styles/global.scss`
 
 **How to import:**
 ```astro

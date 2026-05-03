@@ -18,18 +18,6 @@ export const GET: APIRoute = async ({ url }) => {
   const genreSlug = (url.searchParams.get('genre') || url.searchParams.get('genreSlug') || '').trim();
   const publisherSlug = (url.searchParams.get('publisher') || url.searchParams.get('publisherSlug') || '').trim();
 
-  console.log('Books API - URL params:', {
-    locale,
-    bookCategory,
-    page,
-    pageSize,
-    search,
-    genreId,
-    publisherId,
-    genreSlug,
-    publisherSlug,
-  });
-
   return proxyJson(
     buildBooksUrl({
       locale,

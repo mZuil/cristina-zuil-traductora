@@ -17,6 +17,10 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     genres: 'Géneros',
     year: 'Año',
     visitShop: 'Visitar tienda',
+
+    //For articles
+    articleItem: 'Artículo',
+    readMore: 'Leer más',
   },
   en: {
     //For searching
@@ -34,6 +38,10 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     genres: 'Genres',
     year: 'Year',
     visitShop: 'Visit shop',
+    
+    //For articles
+    articleItem: 'Article',
+    readMore: 'Read more',
   },
 };
 

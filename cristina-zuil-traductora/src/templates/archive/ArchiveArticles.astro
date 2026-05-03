@@ -1,17 +1,19 @@
 ---
+import CArticlesList from '../../abemit/components/CArticlesList.astro';
 import ComponentsFields from '../../helpers/interfaces/ComponentsFields.astro';
 
 interface Props {
   content: any;
   items: any[];
-  description?: string;
   locale?: string;
 }
 
-const { content, items, description, locale } = Astro.props;
+const { content, items, locale } = Astro.props;
 
 ---
 
 <div class="archive-articles">
   <ComponentsFields content={content} />
+
+  <CArticlesList items={items} locale={locale} />
 </div>

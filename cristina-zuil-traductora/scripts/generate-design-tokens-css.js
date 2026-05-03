@@ -1,6 +1,6 @@
 /**
  * Script to generate CSS variables from design-tokens.ts
- * Run this script to update the CSS variables in global.css
+ * Run this script to update the CSS variables in global.scss
  * 
  * Usage: node scripts/generate-design-tokens-css.js
  */
@@ -52,8 +52,8 @@ const cssVariables = `:root {
 ${cssVars.join('\n')}
 }`;
 
-// Read current global.css
-const globalCssPath = join(rootDir, 'src/styles/global.css');
+// Read current global.scss
+const globalCssPath = join(rootDir, 'src/styles/global.scss');
 let globalCss = readFileSync(globalCssPath, 'utf-8');
 
 // Replace or add CSS variables section

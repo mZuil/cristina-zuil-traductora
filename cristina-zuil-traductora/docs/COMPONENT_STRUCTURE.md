@@ -119,7 +119,7 @@ ComponentName/
 - ✅ **Shared styles** - Styles used by multiple components
 - ✅ **Very large stylesheets** - 200+ lines of CSS
 - ✅ **Third-party CSS** - External libraries
-- ✅ **Global styles** - Already in `styles/global.css`
+- ✅ **Global styles** - Already in `styles/global.scss`
 
 **Separate JavaScript files:**
 - ✅ **Shared utilities** - Functions used by multiple components

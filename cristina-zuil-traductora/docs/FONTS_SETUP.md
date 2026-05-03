@@ -47,7 +47,7 @@ Add the Google Fonts snippet to the `<head>` in your shared layout/component (fo
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 ```
 
-Then use the font in your styles (for example in `src/styles/global.css` or wherever you set your base typography):
+Then use the font in your styles (for example in `src/styles/global.scss` or wherever you set your base typography):
 
 ```css
 :root {
@@ -157,7 +157,7 @@ fonts: {
 
 ### 5. Update CSS Variables
 
-Edit `src/styles/global.css` (in the `:root` section):
+Edit `src/styles/global.scss` (in the `:root` section):
 
 ```css
 :root {
