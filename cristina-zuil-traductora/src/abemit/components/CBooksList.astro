@@ -280,7 +280,5 @@ const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
       initBooksList(root);
     });
   };
-
-  initAll();
   document.addEventListener("astro:page-load", initAll);
 </script>

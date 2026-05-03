@@ -432,6 +432,13 @@ export function initBooksList(root: HTMLElement): void {
 
       const rawItems: any[] = Array.isArray(json?.data) ? json.data : [];
       const sortedItems = rawItems.slice().sort((a, b) => {
+        const aYearRaw = a?.attributes?.year ?? a?.year;
+        const bYearRaw = b?.attributes?.year ?? b?.year;
+        const aYear = Number.isFinite(Number(aYearRaw)) ? Number(aYearRaw) : -Infinity;
+        const bYear = Number.isFinite(Number(bYearRaw)) ? Number(bYearRaw) : -Infinity;
+
+        if (aYear !== bYear) return bYear - aYear;
+        
         const aId = Number(a?.id ?? a?.attributes?.id ?? 0);
         const bId = Number(b?.id ?? b?.attributes?.id ?? 0);
         return bId - aId;

@@ -12,7 +12,7 @@ export const designTokens = {
     blue_default: '#004FFF',
     blue_lighter: '#AAE5EC',
     blue_lightest: '#E8F4FF',
-    grey: '#0D1B2A35',
+    grey: '#0D1B2A60',
   },
 
   // Responsive breakpoints with grid configuration

@@ -80,7 +80,7 @@ const { locale = 'es' } = Astro.props;
     </CustomColumn>
     <CustomColumn lg-push="2" lg="4" md="4" sm="4">
       <div class="c-filters__select-wrap">
-        <label for="books-genre" class="c-filters__label">{uiT(locale, 'genreLabel')}</label>
+        <label id="books-genre-label" for="books-genre-trigger" class="c-filters__label">{uiT(locale, 'genreLabel')}</label>
         <div class="c-filters__select-field">
           <ASelect id="books-genre" label={uiT(locale, 'allOption')} />
         </div>
@@ -88,7 +88,7 @@ const { locale = 'es' } = Astro.props;
     </CustomColumn>
     <CustomColumn lg="4" md="4" sm="4">
       <div class="c-filters__select-wrap">
-        <label for="books-publisher" class="c-filters__label">{uiT(locale, 'publisherLabel')}</label>
+        <label id="books-publisher-label" for="books-publisher-trigger" class="c-filters__label">{uiT(locale, 'publisherLabel')}</label>
         <div class="c-filters__select-field">
           <ASelect id="books-publisher" label={uiT(locale, 'allOption')} />
         </div>

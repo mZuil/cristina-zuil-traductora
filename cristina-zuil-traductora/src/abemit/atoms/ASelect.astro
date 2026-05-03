@@ -145,7 +145,7 @@ const { id, label, class: className = '' } = Astro.props;
     <slot />
   </select>
 
-  <button type="button" class="a-select__select | js-select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls={`${id}-listbox`}>
+  <button id={`${id}-trigger`} type="button" class="a-select__select | js-select-trigger" aria-haspopup="listbox" aria-expanded="false" aria-controls={`${id}-listbox`} aria-labelledby={`${id}-label`}>
     <span class="a-select__trigger-text">{label}</span>
     <svg class="a-select__chevron" xmlns="http://www.w3.org/2000/svg"
       width="12" height="12" viewBox="0 0 12 12">
@@ -153,7 +153,7 @@ const { id, label, class: className = '' } = Astro.props;
     </svg>
   </button>
 
-  <div class="a-select__dropdown" role="listbox" id={`${id}-listbox`}>
+  <div class="a-select__dropdown" role="listbox" id={`${id}-listbox`} aria-labelledby={`${id}-label`}>
     <div class="a-select__dropdown-inner" data-lenis-prevent>
       {/* Options injected by JS — same as before */}
     </div>
