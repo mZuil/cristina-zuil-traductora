@@ -70,7 +70,7 @@ export const designTokens = {
           fontFamily: 'secondary',
           fontSize: '40px',
           fontWeight: 700,
-          lineHeight: 0.99,
+          lineHeight: 1.1,
           letterSpacing: '0',
         },
         md: {},

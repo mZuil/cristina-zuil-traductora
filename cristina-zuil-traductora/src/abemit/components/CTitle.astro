@@ -149,6 +149,44 @@ if (!title) {
 
     gsap.registerPlugin(ScrollTrigger);
 
+    declare global {
+        interface Window {
+            __cTitleScrollTriggers?: ScrollTrigger[];
+        }
+    }
+
+    const getCtitleTriggers = (): ScrollTrigger[] => {
+        if (!window.__cTitleScrollTriggers) window.__cTitleScrollTriggers = [];
+        return window.__cTitleScrollTriggers;
+    };
+
+    const cTitleTriggerProgress = new Map<ScrollTrigger, number>();
+
+    const disableCTitleTriggers = (): void => {
+        getCtitleTriggers().forEach((t) => {
+            cTitleTriggerProgress.set(t, t.progress);
+            t.disable(false);
+        });
+    };
+
+    const enableCTitleTriggers = (): void => {
+        getCtitleTriggers().forEach((t) => {
+            t.enable();
+            const p = cTitleTriggerProgress.get(t);
+            if (typeof p === 'number' && t.animation) {
+                t.animation.progress(p);
+            }
+            t.update();
+        });
+
+        requestAnimationFrame(() => {
+            ScrollTrigger.refresh();
+        });
+    };
+
+    document.addEventListener('articles-modal:open', disableCTitleTriggers);
+    document.addEventListener('articles-modal:close', enableCTitleTriggers);
+
     class CTitle extends BaseComponent {
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
@@ -161,7 +199,7 @@ if (!title) {
 
             if (!separator) return;
 
-            gsap.fromTo(
+            const tween = gsap.fromTo(
                 separator,
                 { x: 0 },
                 {
@@ -175,6 +213,10 @@ if (!title) {
                     },
                 }
             );
+
+            if (tween.scrollTrigger) {
+                getCtitleTriggers().push(tween.scrollTrigger);
+            }
         }
     }
 

@@ -42,6 +42,8 @@ export function initArticlesList(root: HTMLElement): void {
     if (dialog.open) dialog.close();
     dialog.showModal();
 
+    document.dispatchEvent(new CustomEvent('articles-modal:open'));
+
     gsap.set(dialogPanel, {
       xPercent: -50,
       yPercent: -50,
@@ -70,6 +72,10 @@ export function initArticlesList(root: HTMLElement): void {
       onComplete: () => {
         dialog.close();
         gsap.set(dialogPanel, { clearProps: 'all' });
+        setBodyScrollLocked(false);  // ← restore scroll here, only once
+        setLenisEnabled(true);
+
+        document.dispatchEvent(new CustomEvent('articles-modal:close'));
       },
     });
   };
@@ -79,7 +85,32 @@ export function initArticlesList(root: HTMLElement): void {
   const setBodyScrollLocked = (locked: boolean): void => {
     const body = document.body;
     if (!body) return;
-    body.classList.toggle('is-overflow-hidden', locked);
+
+    if (locked) {
+      if (body.dataset.scrollY !== undefined) return; // already locked
+      const scrollY = window.scrollY;
+      body.style.position = 'fixed';
+      body.style.top = `-${scrollY}px`;
+      body.style.left = '0';
+      body.style.right = '0';
+      body.dataset.scrollY = String(scrollY);
+    } else {
+      if (body.dataset.scrollY === undefined) return; // already unlocked
+      const scrollY = Number(body.dataset.scrollY);
+      body.style.position = '';
+      body.style.top = '';
+      body.style.left = '';
+      body.style.right = '';
+      delete body.dataset.scrollY;
+      window.scrollTo(0, scrollY);
+    }
+  };
+
+  const setLenisEnabled = (enabled: boolean): void => {
+    const lenis = (window as any).__lenis as { stop?: () => void; start?: () => void } | undefined;
+    if (!lenis) return;
+    if (enabled) lenis.start?.();
+    else lenis.stop?.();
   };
 
   const setText = (el: Element | null, value: unknown): void => {
@@ -148,13 +179,11 @@ export function initArticlesList(root: HTMLElement): void {
 
     closeBtn?.addEventListener('click', () => {
       closeDialog();
-      setBodyScrollLocked(false);
     });
 
     dialog.addEventListener('click', (e) => {
       if (e.target === dialog) {
         closeDialog();
-        setBodyScrollLocked(false);
       }
     });
 
@@ -163,13 +192,15 @@ export function initArticlesList(root: HTMLElement): void {
       if (e.key === 'Escape') {
         e.preventDefault();
         closeDialog();
-        setBodyScrollLocked(false);
       }
     });
 
     // Safety net: clean up body state if dialog closes by any other means
     dialog.addEventListener('close', () => {
       setBodyScrollLocked(false);
+      setLenisEnabled(true);
+
+      document.dispatchEvent(new CustomEvent('articles-modal:close'));
     });
 
     root.addEventListener('click', async (e) => {
@@ -217,6 +248,7 @@ export function initArticlesList(root: HTMLElement): void {
       }
 
       setBodyScrollLocked(true);
+      setLenisEnabled(false);
       openDialog();
     });
 
