@@ -10,13 +10,10 @@ interface Props {
 }
 
 const { titleInDark, titleInBlue, subheading } = Astro.props;
-
 ---
 
 <style lang="scss">
-
   .c-heading {
-
     position: relative;
     padding-block: 70px 60px;
     background-color: var(--color-white);
@@ -25,7 +22,7 @@ const { titleInDark, titleInBlue, subheading } = Astro.props;
     &__heading {
       text-align: center;
     }
-    
+
     &__title-dark {
       color: var(--color-blue-dark);
     }
@@ -37,12 +34,32 @@ const { titleInDark, titleInBlue, subheading } = Astro.props;
     &__subheading {
       margin-top: 10px;
     }
-  }
 
+    &__separator {
+        height: 50px;
+        margin-top: -50px;
+        position: relative;
+        overflow: hidden;
+
+        &-track {
+            position: absolute;
+            inset: 0;
+            width: 200%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg width='1440' height='50' viewBox='0 0 1440 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M 0 34 C 70 34, 160 46, 260 40 S 430 20, 520 31 S 690 50, 790 38 S 950 20, 1060 31 S 1200 44, 1300 37 C 1360 31, 1410 34, 1440 34 L 1440 72 L 0 72 Z'/%3E%3C/svg%3E");
+            background-repeat: repeat-x;
+            background-size: 1440px 52px;
+            will-change: transform;
+        }
+    }
+  }
 </style>
 
+<div class="c-heading__separator js-title-separator">
+  <div class="c-heading__separator-track js-title-separator-track"></div>
+</div>
 
-<section class="c-heading">
+<section class="c-heading js-c-heading">
   <CustomContainer>
     <CustomColumn lg="12" md="8" sm="4">
       <div class="c-heading__heading">
@@ -65,3 +82,88 @@ const { titleInDark, titleInBlue, subheading } = Astro.props;
     </CustomColumn>
   </CustomContainer>
 </section>
+
+<script>
+  import { gsap } from "gsap";
+  import { ScrollTrigger } from "gsap/ScrollTrigger";
+  import { BaseComponent } from "../../helpers/base/BaseComponent";
+
+  gsap.registerPlugin(ScrollTrigger);
+
+  declare global {
+    interface Window {
+      __cHeadingSeparatorTriggers?: ScrollTrigger[];
+    }
+  }
+
+  const getSeparatorTriggers = (): ScrollTrigger[] => {
+    if (!window.__cHeadingSeparatorTriggers) window.__cHeadingSeparatorTriggers = [];
+    return window.__cHeadingSeparatorTriggers;
+  };
+
+  const separatorTriggerProgress = new Map<ScrollTrigger, number>();
+
+  const disableSeparatorTriggers = (): void => {
+    getSeparatorTriggers().forEach((t) => {
+      separatorTriggerProgress.set(t, t.progress);
+      t.disable(false);
+    });
+  };
+
+  const enableSeparatorTriggers = (): void => {
+    getSeparatorTriggers().forEach((t) => {
+      t.enable();
+      const p = separatorTriggerProgress.get(t);
+      if (typeof p === 'number' && t.animation) {
+        t.animation.progress(p);
+      }
+      t.update();
+    });
+
+    requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+    });
+  };
+
+  document.addEventListener('articles-modal:open', disableSeparatorTriggers);
+  document.addEventListener('articles-modal:close', enableSeparatorTriggers);
+
+  class CHeading extends BaseComponent {
+    constructor(nodeInDOM: HTMLElement) {
+      super(nodeInDOM);
+
+      // Separator is the preceding sibling of the section
+      const separatorWrapper = this.nodeInDOM.previousElementSibling;
+      const separator = separatorWrapper?.classList.contains('js-title-separator')
+        ? separatorWrapper.querySelector('.js-title-separator-track')
+        : null;
+
+      if (!separator) return;
+
+      const tween = gsap.fromTo(
+        separator,
+        { x: 0 },
+        {
+          x: -700,
+          ease: "none",
+          scrollTrigger: {
+            trigger: separator,
+            start: "top bottom",
+            end: "top top",
+            scrub: 1,
+          },
+        }
+      );
+
+      if (tween.scrollTrigger) {
+        getSeparatorTriggers().push(tween.scrollTrigger);
+      }
+    }
+  }
+
+  function initHeading() {
+    BaseComponent.mountAll(".js-c-heading", CHeading);
+  }
+
+  document.addEventListener("astro:page-load", initHeading);
+</script>

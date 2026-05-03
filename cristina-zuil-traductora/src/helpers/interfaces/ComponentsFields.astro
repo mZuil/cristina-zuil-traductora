@@ -20,7 +20,6 @@ const renderers: Record<string, Renderer> = {
     Component: CTitle,
     props: (block) => ({
       title: block.title,
-      hasSeparator: block.hasSeparator ?? true,
     }),
   },
   'components.c-heading': {

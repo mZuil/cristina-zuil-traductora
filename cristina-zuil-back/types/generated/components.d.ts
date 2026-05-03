@@ -37,7 +37,6 @@ export interface ComponentsCTitle extends Struct.ComponentSchema {
     icon: 'code';
   };
   attributes: {
-    hasSeparator: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     title: Schema.Attribute.String & Schema.Attribute.Required;
   };
 }

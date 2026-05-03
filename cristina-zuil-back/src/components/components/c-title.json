@@ -9,10 +9,6 @@
     "title": {
       "type": "string",
       "required": true
-    },
-    "hasSeparator": {
-      "type": "boolean",
-      "default": true
     }
   },
   "config": {}
