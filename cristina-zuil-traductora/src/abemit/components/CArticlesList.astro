@@ -2,6 +2,7 @@
 import CustomContainer from "../../helpers/structure/CustomContainer/CustomContainer.astro";
 import CustomColumn from "../../helpers/structure/CustomColumn/CustomColumn.astro";
 import AText from "../atoms/AText.astro";
+import AButton from "../atoms/AButton.astro";
 import AImage from "../atoms/AImage.astro";
 import type { StrapiImage } from "../../helpers/interfaces/StrapiImage";
 import { uiT } from "../../config/strings-ui";
@@ -163,13 +164,16 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
+      border-radius: 30px;
+
+      background-color: var(--color-white);
+    }
+
+    &__two-column-layout {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
       padding: var(--grid-gutter);
-      border-radius: 30px;
-
-      background-color: var(--color-white);
     }
 
     &__dialog-image {
@@ -198,43 +202,28 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
       color: var(--color-blue-dark);
     }
 
-    &__dialog-actions {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      margin-top: 6px;
-    }
-
     &__dialog-close {
-      @include use-font('small-text');
-
-      border: 2px solid var(--color-blue-light);
-      background: transparent;
-      color: var(--color-blue-dark);
-      border-radius: 999px;
-      padding: 8px 12px;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 3px 4px 0 4px;
+      background-color: var(--color-blue-default);
+      color: var(--color-white);
+      border: none;
+      border-radius: 50%;
       cursor: pointer;
+      pointer-events: all;
+      transition: background-color 0.3s ease-in-out;
 
       &:hover {
-        border-color: var(--color-blue-dark);
+        background-color: var(--color-blue-dark);
       }
     }
 
     &__dialog-link {
-      @include use-font('small-text');
-
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: var(--color-blue-default);
-      color: var(--color-white);
-      text-decoration: none;
-
-      &:hover {
-        background: var(--color-blue-dark);
-      }
+      width: fit-content;
+      padding: 10px 28px !important;
+      margin-top: 8px;
     }
   }
 </style>
@@ -262,20 +251,21 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
 
   <dialog class="c-articles-list__dialog js-articles-dialog" data-dialog aria-label={uiT(locale, "articleItem")}>
     <div class="c-articles-list__dialog-inner">
-      <div class="c-articles-list__dialog-media">
-        <img class="c-articles-list__dialog-image" data-dialog-image alt="" />
-      </div>
-      <div class="c-articles-list__dialog-body">
-        <div class="c-articles-list__dialog-title" data-dialog-title></div>
-        <div class="c-articles-list__dialog-description" data-dialog-description></div>
-        <div class="c-articles-list__dialog-actions">
-          <a class="c-articles-list__dialog-link" data-dialog-link href="#" target="_blank" rel="noopener noreferrer">
-            {uiT(locale, "readMore")}
-          </a>
-          <button type="button" class="c-articles-list__dialog-close" data-dialog-close>
-            Cerrar
-          </button>
+      <button type="button" class="c-articles-list__dialog-close" data-dialog-close>
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+      </button>
+      <div class="c-articles-list__two-column-layout">
+        <div class="c-articles-list__dialog-media">
+          <img class="c-articles-list__dialog-image" data-dialog-image alt="" />
         </div>
+        <div class="c-articles-list__dialog-body">
+          <div class="c-articles-list__dialog-title" data-dialog-title></div>
+          <div class="c-articles-list__dialog-description" data-dialog-description></div>
+          <AButton as="a" href="#" target="_blank" size="menu-item" variant="primary" class="c-articles-list__dialog-link" data-dialog-link>
+            {uiT(locale, "readMore")}
+          </AButton>
+        </div>
+      </div>
       </div>
     </div>
   </dialog>

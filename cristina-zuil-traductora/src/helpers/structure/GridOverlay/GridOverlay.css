@@ -13,6 +13,10 @@ grid-overlay.active {
   display: block;
 }
 
+grid-overlay custom-container {
+  flex-wrap: nowrap;
+}
+
 /* Style the grid columns */
 grid-overlay .grid-column {
   position: relative;

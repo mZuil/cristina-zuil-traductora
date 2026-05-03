@@ -118,7 +118,7 @@ export const designTokens = {
           fontFamily: 'secondary',
           fontSize: '20px',
           fontWeight: 400,
-          lineHeight: 1,
+          lineHeight: 1.2,
           letterSpacing: '0',
         },
         md: {},
