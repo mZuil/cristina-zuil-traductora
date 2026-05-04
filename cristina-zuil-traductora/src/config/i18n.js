@@ -38,26 +38,35 @@ export function isHomePage(page) {
 }
 
 export async function fetchPagesByLocale(locale) {
-  const url = `${i18nConfig.strapi.url}/api/pages?locale=${locale}&populate=*`;
+  
+  const query = new URLSearchParams({
+    locale,
+    'populate[content][on][components.c-title][populate]': '*',
+    'populate[content][on][components.c-heading][populate]': '*',
+    'populate[content][on][components.c-featured-data][populate]': '*',
+    'populate[content][on][components.c-logos][populate][publishers][populate]': '*',
+  });
+
+  const url = `${i18nConfig.strapi.url}/api/pages?${query}`;
 
   console.log(`Fetching pages from: ${url}`);
-    
+
   try {
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       console.error(`Failed to fetch pages for locale ${locale}:`, response.status, response.statusText);
       return [];
     }
-    
+
     const result = await response.json();
     const { data } = result;
-    
+
     if (!data) {
       console.error('No "data" field in response');
       return [];
     }
-        
+
     return data || [];
   } catch (error) {
     console.error(`Error fetching pages for locale ${locale}:`, error);

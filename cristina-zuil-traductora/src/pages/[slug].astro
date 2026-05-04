@@ -68,10 +68,6 @@ interface Props {
 const { page, templateData } = Astro.props as Props;
 const { title, content, slug, localizations, template } = page;
 
-const getLocaleLabel = (loc: string) => {
-  return i18nConfig.localeLabels[loc as keyof typeof i18nConfig.localeLabels] || loc.toUpperCase();
-};
-
 // Determine content type based on template
 const contentType = template === 'archive-books' || template === 'archive-articles' 
   ? 'CollectionPage' 

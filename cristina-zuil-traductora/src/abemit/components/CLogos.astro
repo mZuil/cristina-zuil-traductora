@@ -1,0 +1,116 @@
+---
+import type { Publisher } from "../../helpers/interfaces/Publisher.astro";
+import AImage from "../atoms/AImage.astro";
+import type { StrapiImage } from "../../helpers/interfaces/StrapiImage";
+
+interface Props {
+    publishers: Publisher[];
+}
+
+const { publishers = [] } = Astro.props as Props;
+
+const STRAPI_URL = import.meta.env.PUBLIC_STRAPI_URL ?? "";
+
+const getStrapiImageFromLogo = (logo: Publisher['logo']): StrapiImage | null => {
+  if (!logo || typeof logo === 'string') return null;
+
+  const imgAttr =
+    (logo as any)?.data?.attributes ??
+    (logo as any)?.attributes ??
+    logo;
+
+  if (!imgAttr) return null;
+  if (typeof imgAttr?.url !== 'string' || !imgAttr.url) return null;
+  if (typeof imgAttr?.width !== 'number' || typeof imgAttr?.height !== 'number') return null;
+  if (typeof imgAttr?.mime !== 'string' || !imgAttr.mime) return null;
+  return imgAttr as StrapiImage;
+};
+
+const getAbsoluteUrl = (raw: string): string => {
+  if (!raw) return '';
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  return `${STRAPI_URL}${raw}`;
+};
+---
+
+<style lang="scss">
+    @use "../../styles/mixins" as *;
+
+    .c-logos {
+        position: relative;
+        display: flex;
+        flex-direction: row;
+        gap: 52px;
+        background-color: var(--color-white);
+        z-index: 1;
+    }
+
+    .c-logos__item {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        width: 156px;
+        text-decoration: none;
+    }
+
+    .c-logos__item :global(img),
+    .c-logos__item :global(.a-image) {
+        height: 150px;
+        width: auto;
+        max-width: 156px;
+        object-fit: contain;
+        display: block;
+    }
+
+    .c-logos__item p {
+        width: 100%;
+        text-align: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 200ms ease;
+    }
+
+    .c-logos__item:hover p,
+    .c-logos__item:focus-visible p {
+        opacity: 1;
+        visibility: visible;
+    }
+
+</style>
+
+<section class="c-logos js-c-logos">
+    {
+        publishers.map((publisher) => {
+            const logoImage = getStrapiImageFromLogo(publisher.logo);
+            const logoUrl = typeof publisher.logo === 'string' ? publisher.logo : '';
+            const absoluteUrl = logoUrl ? getAbsoluteUrl(logoUrl) : '';
+
+            return (
+            <a href={publisher.link?.url || ''} target="_blank" class="c-logos__item">
+                {logoImage ? (
+                  <AImage image={logoImage} sizes="156px" loading="lazy" />
+                ) : (
+                  <img src={absoluteUrl} alt={publisher.name} />
+                )}
+                <p>{publisher.name}</p>
+            </a>
+            );
+        })
+    }
+</section>
+
+<script>
+  import { BaseComponent } from "../../helpers/base/BaseComponent";
+
+  class CLogos extends BaseComponent {
+    constructor(nodeInDOM: HTMLElement) {
+      super(nodeInDOM);
+    }
+  }
+
+  function initLogos() {
+    BaseComponent.mountAll(".js-c-logos", CLogos);
+  }
+
+  document.addEventListener("astro:page-load", initLogos);
+</script>

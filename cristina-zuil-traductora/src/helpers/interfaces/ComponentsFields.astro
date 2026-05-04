@@ -2,6 +2,7 @@
 import CTitle from '../../abemit/components/CTitle.astro';
 import CFeaturedData from '../../abemit/components/CFeaturedData.astro';
 import CHeading from '../../abemit/components/CHeading.astro';
+import CLogos from '../../abemit/components/CLogos.astro';
 
 interface Props {
   content: any;
@@ -41,6 +42,12 @@ const renderers: Record<string, Renderer> = {
       dateNumber: block.dateNumber ? new Date(block.dateNumber) : new Date(),
       awardsText: block.awardsText,
       awardsNumber: block.awardsNumber,
+    }),
+  },
+  'components.c-logos': {
+    Component: CLogos,
+    props: (block) => ({
+      publishers: block.publishers,
     }),
   },
 };

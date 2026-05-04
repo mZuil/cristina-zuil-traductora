@@ -1,0 +1,13 @@
+---
+import type { Link } from "./Link.astro";
+import type { StrapiImage } from "./StrapiImage";
+
+export interface Publisher {
+    name: string;
+    slug: string;
+    logo: string | StrapiImage;
+    publisherComment: string;
+    commentBgImage: string;
+    link?: Link;
+}
+---

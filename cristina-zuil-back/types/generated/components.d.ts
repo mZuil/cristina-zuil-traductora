@@ -30,6 +30,20 @@ export interface ComponentsCHeading extends Struct.ComponentSchema {
   };
 }
 
+export interface ComponentsCLogos extends Struct.ComponentSchema {
+  collectionName: 'components_components_c_logos';
+  info: {
+    displayName: 'CLogos';
+    icon: 'code';
+  };
+  attributes: {
+    publishers: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::publisher.publisher'
+    >;
+  };
+}
+
 export interface ComponentsCTitle extends Struct.ComponentSchema {
   collectionName: 'components_components_c_titles';
   info: {
@@ -94,6 +108,7 @@ declare module '@strapi/strapi' {
     export interface ComponentSchemas {
       'components.c-featured-data': ComponentsCFeaturedData;
       'components.c-heading': ComponentsCHeading;
+      'components.c-logos': ComponentsCLogos;
       'components.c-title': ComponentsCTitle;
       'links.link': LinksLink;
       'seo.seo': SeoSeo;

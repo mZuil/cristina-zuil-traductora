@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_components_c_logos",
+  "info": {
+    "displayName": "CLogos",
+    "icon": "code"
+  },
+  "options": {},
+  "attributes": {
+    "publishers": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::publisher.publisher"
+    }
+  },
+  "config": {}
+}
