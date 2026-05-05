@@ -12,25 +12,29 @@ const { publishers = [] } = Astro.props as Props;
 
 const STRAPI_URL = import.meta.env.PUBLIC_STRAPI_URL ?? "";
 
-const getStrapiImageFromLogo = (logo: Publisher['logo']): StrapiImage | null => {
-  if (!logo || typeof logo === 'string') return null;
+const getStrapiImageFromLogo = (
+    logo: Publisher["logo"],
+): StrapiImage | null => {
+    if (!logo || typeof logo === "string") return null;
 
-  const imgAttr =
-    (logo as any)?.data?.attributes ??
-    (logo as any)?.attributes ??
-    logo;
+    const imgAttr =
+        (logo as any)?.data?.attributes ?? (logo as any)?.attributes ?? logo;
 
-  if (!imgAttr) return null;
-  if (typeof imgAttr?.url !== 'string' || !imgAttr.url) return null;
-  if (typeof imgAttr?.width !== 'number' || typeof imgAttr?.height !== 'number') return null;
-  if (typeof imgAttr?.mime !== 'string' || !imgAttr.mime) return null;
-  return imgAttr as StrapiImage;
+    if (!imgAttr) return null;
+    if (typeof imgAttr?.url !== "string" || !imgAttr.url) return null;
+    if (
+        typeof imgAttr?.width !== "number" ||
+        typeof imgAttr?.height !== "number"
+    )
+        return null;
+    if (typeof imgAttr?.mime !== "string" || !imgAttr.mime) return null;
+    return imgAttr as StrapiImage;
 };
 
 const getAbsoluteUrl = (raw: string): string => {
-  if (!raw) return '';
-  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-  return `${STRAPI_URL}${raw}`;
+    if (!raw) return "";
+    if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+    return `${STRAPI_URL}${raw}`;
 };
 ---
 
@@ -38,15 +42,43 @@ const getAbsoluteUrl = (raw: string): string => {
     @use "../../styles/mixins" as *;
 
     .c-logos {
-
         $self: &;
 
         position: relative;
-        display: flex;
-        flex-direction: row;
-        gap: 52px;
+        overflow: hidden;
+        padding-block: 125px 140px;
         background-color: var(--color-white);
         z-index: 1;
+
+        //Fade edges
+        &::before,
+        &::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 150px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        &::before {
+            left: 0;
+            background: linear-gradient(to right, var(--color-white), transparent);
+        }
+
+        &::after {
+            right: 0;
+            background: linear-gradient(to left, var(--color-white), transparent);
+        }
+
+        &__track {
+            display: flex;
+            flex-direction: row;
+            gap: 52px;
+            width: max-content;
+            will-change: transform;
+        }
 
         &__item {
             display: inline-flex;
@@ -54,23 +86,12 @@ const getAbsoluteUrl = (raw: string): string => {
             align-items: center;
             width: 156px;
             text-decoration: none;
-            position: relative; // needed for the pseudo-element
+            flex-shrink: 0;
 
-            // Tint overlay
-            &::after {
-                content: '';
-                position: absolute;
-                inset: 0;
-                background-color: var(--color-blue-dark); // use your brand blue
-                mix-blend-mode: color; //replaces hue, keeps luminosity
-                pointer-events: none; //so clicks still reach the <a>
-                opacity: 1;
-                transition: opacity 200ms ease-in-out;
-            }
-
-            &:hover, &:focus-visible {
-                &::after {
-                    opacity: 0; // reveal original color on hover (optional)
+            &:hover,
+            &:focus-visible {
+                :global(.c-logos__item-image)::after {
+                    opacity: 0;
                 }
 
                 #{$self}__item-text {
@@ -80,17 +101,34 @@ const getAbsoluteUrl = (raw: string): string => {
             }
         }
 
-        &__item-text {
-           width: 100%;
-           opacity: 0;
-           visibility: hidden;
-           text-align: center;
-           text-decoration: none;
-           font-weight: 700;
-           padding-top: 20px;
-           color: var(--color-blue-dark);
+        :global(.c-logos__item-image) {
+            position: relative;
+            display: block;
+            background-color: var(--color-white);
+            border: 1px solid var(--color-white);
 
-           transition: opacity 200ms ease-in-out;
+            &::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background-color: var(--color-blue-dark);
+                mix-blend-mode: color;
+                pointer-events: none;
+                opacity: 1;
+                transition: opacity 200ms ease-in-out;
+            }
+        }
+
+        &__item-text {
+            width: 100%;
+            opacity: 0;
+            visibility: hidden;
+            text-align: center;
+            text-decoration: none;
+            font-weight: 700;
+            padding-top: 20px;
+            color: var(--color-blue-dark);
+            transition: opacity 200ms ease-in-out;
         }
     }
 
@@ -100,47 +138,179 @@ const getAbsoluteUrl = (raw: string): string => {
         height: 150px;
         max-width: 156px;
         object-fit: contain;
-
         display: block;
     }
-
 </style>
 
 <section class="c-logos js-c-logos">
-    {
-        publishers.map((publisher) => {
-            const logoImage = getStrapiImageFromLogo(publisher.logo);
-            const logoUrl = typeof publisher.logo === 'string' ? publisher.logo : '';
-            const absoluteUrl = logoUrl ? getAbsoluteUrl(logoUrl) : '';
+    <div class="c-logos__track js-logos-track">
+        {
+            publishers.map((publisher) => {
+                const logoImage = getStrapiImageFromLogo(publisher.logo);
 
-            return (
-            <a href={publisher.link?.url || ''} target="_blank" class="c-logos__item">
-                {logoImage ? (
-                  <AImage image={logoImage} sizes="156px" loading="lazy" />
-                ) : (
-                  <img src={absoluteUrl} alt={publisher.name} />
-                )}
-                <AText tag="p" size="small-text" class="c-logos__item-text">
-                  {publisher.name}
-                </AText>
-            </a>
-            );
-        })
-    }
+                return (
+                    <a href={publisher.link?.url || ""} target="_blank" class="c-logos__item | js-logo-item">
+                        {logoImage && (
+                            <AImage image={logoImage} sizes="156px" loading="lazy" withWrapper wrapperClass="c-logos__item-image" />
+                        )}
+                        <AText tag="p" size="small-text" class="c-logos__item-text">
+                            {publisher.name}
+                        </AText>
+                    </a>
+                );
+            })
+        }
+    </div>
 </section>
 
 <script>
-  import { BaseComponent } from "../../helpers/base/BaseComponent";
+    import gsap from "gsap";
+    import { BaseComponent } from "../../helpers/base/BaseComponent";
 
-  class CLogos extends BaseComponent {
-    constructor(nodeInDOM: HTMLElement) {
-      super(nodeInDOM);
+    class CLogos extends BaseComponent {
+        private track: HTMLElement;
+        private tl: gsap.core.Timeline | null = null;
+        private resetTimeout: ReturnType<typeof setTimeout> | null = null;
+        private lenisInstance: any = null;
+        private onLenisScroll: ((e: any) => void) | null = null;
+        private hoverBound = false;
+
+        constructor(nodeInDOM: HTMLElement) {
+            super(nodeInDOM);
+            this.track = this.nodeInDOM.querySelector<HTMLElement>(".js-logos-track")!;
+            this.setupLogosSlider();
+        }
+
+        private setupLogosSlider(): void {
+            if (this.tl) {
+                this.tl.kill();
+                this.tl = null;
+            }
+
+            const originalItems = Array.from(this.track.children) as HTMLElement[];
+            const containerWidth = window.innerWidth;
+
+            if (originalItems.length === 0) return;
+
+            if (!this.track.dataset.cloned) {
+                let totalWidth = this.track.scrollWidth;
+
+                while (totalWidth < containerWidth * 2) {
+                    originalItems.forEach((item) => {
+                        const clone = item.cloneNode(true) as HTMLElement;
+                        clone.setAttribute("aria-hidden", "true");
+                        this.track.appendChild(clone);
+                    });
+
+                    totalWidth = this.track.scrollWidth;
+                }
+
+                this.track.dataset.cloned = "true";
+            }
+
+            gsap.set(this.track, { x: 0 });
+
+            const loopWidth = this.getLoopWidth(originalItems.length);
+            if (!loopWidth) return;
+
+            const SPEED_PX_PER_SEC = 80;
+            let duration = loopWidth / SPEED_PX_PER_SEC;
+            if (window.innerWidth < 768) duration *= 1.5;
+
+            this.tl = gsap.timeline({ repeat: -1 });
+            this.tl.fromTo(this.track, { x: 0 }, { x: -loopWidth, duration, ease: "none" });
+
+            this.setupLenis();
+            this.setupHoverPause();
+        }
+
+        private getLoopWidth(originalCount: number): number {
+            const children = Array.from(this.track.children) as HTMLElement[];
+            if (children.length <= originalCount) return 0;
+
+            const first = children[0];
+            const firstClone = children[originalCount];
+
+            const w = firstClone.offsetLeft - first.offsetLeft;
+            return w > 0 ? w : 0;
+        }
+
+        private setupLenis(): void {
+            const lenis = (window as any).__lenis;
+            if (!lenis?.on) return;
+
+            if (this.lenisInstance?.off && this.onLenisScroll) {
+                this.lenisInstance.off("scroll", this.onLenisScroll);
+            }
+
+            this.lenisInstance = lenis;
+
+            this.onLenisScroll = ({ velocity }: { velocity: number }) => {
+                if (!this.tl) return;
+
+                if (this.resetTimeout) clearTimeout(this.resetTimeout);
+
+                //Negative velocity  = scrolling up  → reverse (timeScale < 0)
+                //Positive velocity  = scrolling down → forward (timeScale > 0)
+                //Magnitude drives speed, capped at 4× so it never goes wild
+                const direction = velocity >= 0 ? 1 : -1;
+                const speed = 1 + Math.min(Math.abs(velocity) * 0.3, 3);
+
+                gsap.to(this.tl, {
+                    timeScale: direction * speed,
+                    duration: 0.3,
+                    ease: "power2.out",
+                    overwrite: true,
+                });
+
+                // Smoothly drift back to normal speed once scrolling stops
+                this.resetTimeout = setTimeout(() => {
+                    gsap.to(this.tl, {
+                        timeScale: 1,
+                        duration: 0.8,
+                        ease: "power2.out",
+                        overwrite: true,
+                    });
+                }, 150);
+            };
+
+            lenis.on("scroll", this.onLenisScroll);
+        }
+
+        private setupHoverPause(): void {
+            if (this.hoverBound) return;
+            this.hoverBound = true;
+            this.nodeInDOM.addEventListener("mouseenter", () => this.tl?.pause());
+            this.nodeInDOM.addEventListener("mouseleave", () => this.tl?.resume());
+            this.nodeInDOM.addEventListener("touchstart", () => this.tl?.pause(), { passive: true });
+            this.nodeInDOM.addEventListener("touchend", () => this.tl?.resume(), { passive: true });
+        }
+
+        destroy(): void {
+            if (this.tl) {
+                this.tl.kill();
+                this.tl = null;
+            }
+
+            if (this.resetTimeout) {
+                clearTimeout(this.resetTimeout);
+                this.resetTimeout = null;
+            }
+
+            if (this.lenisInstance?.off && this.onLenisScroll) {
+                this.lenisInstance.off("scroll", this.onLenisScroll);
+            }
+
+            this.lenisInstance = null;
+            this.onLenisScroll = null;
+        }
     }
-  }
 
-  function initLogos() {
-    BaseComponent.mountAll(".js-c-logos", CLogos);
-  }
+    function initLogos() {
+        const instances = BaseComponent.mountAll(".js-c-logos", CLogos);
+        const cleanup = () => instances.forEach((i) => (i as any).destroy?.());
+        document.addEventListener("astro:before-swap", cleanup, { once: true });
+    }
 
-  document.addEventListener("astro:page-load", initLogos);
+    document.addEventListener("astro:page-load", initLogos);
 </script>
