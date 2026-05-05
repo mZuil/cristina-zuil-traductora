@@ -2,6 +2,7 @@
 import type { Publisher } from "../../helpers/interfaces/Publisher.astro";
 import AImage from "../atoms/AImage.astro";
 import type { StrapiImage } from "../../helpers/interfaces/StrapiImage";
+import AText from "../atoms/AText.astro";
 
 interface Props {
     publishers: Publisher[];
@@ -37,43 +38,70 @@ const getAbsoluteUrl = (raw: string): string => {
     @use "../../styles/mixins" as *;
 
     .c-logos {
+
+        $self: &;
+
         position: relative;
         display: flex;
         flex-direction: row;
         gap: 52px;
         background-color: var(--color-white);
         z-index: 1;
-    }
 
-    .c-logos__item {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        width: 156px;
-        text-decoration: none;
+        &__item {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            width: 156px;
+            text-decoration: none;
+            position: relative; // needed for the pseudo-element
+
+            // Tint overlay
+            &::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background-color: var(--color-blue-dark); // use your brand blue
+                mix-blend-mode: color; //replaces hue, keeps luminosity
+                pointer-events: none; //so clicks still reach the <a>
+                opacity: 1;
+                transition: opacity 200ms ease-in-out;
+            }
+
+            &:hover, &:focus-visible {
+                &::after {
+                    opacity: 0; // reveal original color on hover (optional)
+                }
+
+                #{$self}__item-text {
+                    opacity: 1;
+                    visibility: visible;
+                }
+            }
+        }
+
+        &__item-text {
+           width: 100%;
+           opacity: 0;
+           visibility: hidden;
+           text-align: center;
+           text-decoration: none;
+           font-weight: 700;
+           padding-top: 20px;
+           color: var(--color-blue-dark);
+
+           transition: opacity 200ms ease-in-out;
+        }
     }
 
     .c-logos__item :global(img),
     .c-logos__item :global(.a-image) {
-        height: 150px;
         width: auto;
+        height: 150px;
         max-width: 156px;
         object-fit: contain;
+
         display: block;
-    }
-
-    .c-logos__item p {
-        width: 100%;
-        text-align: center;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 200ms ease;
-    }
-
-    .c-logos__item:hover p,
-    .c-logos__item:focus-visible p {
-        opacity: 1;
-        visibility: visible;
     }
 
 </style>
@@ -92,7 +120,9 @@ const getAbsoluteUrl = (raw: string): string => {
                 ) : (
                   <img src={absoluteUrl} alt={publisher.name} />
                 )}
-                <p>{publisher.name}</p>
+                <AText tag="p" size="small-text" class="c-logos__item-text">
+                  {publisher.name}
+                </AText>
             </a>
             );
         })
