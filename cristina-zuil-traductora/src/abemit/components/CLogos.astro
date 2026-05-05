@@ -10,8 +10,6 @@ interface Props {
 
 const { publishers = [] } = Astro.props as Props;
 
-const STRAPI_URL = import.meta.env.PUBLIC_STRAPI_URL ?? "";
-
 const getStrapiImageFromLogo = (
     logo: Publisher["logo"],
 ): StrapiImage | null => {
@@ -30,12 +28,6 @@ const getStrapiImageFromLogo = (
     if (typeof imgAttr?.mime !== "string" || !imgAttr.mime) return null;
     return imgAttr as StrapiImage;
 };
-
-const getAbsoluteUrl = (raw: string): string => {
-    if (!raw) return "";
-    if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
-    return `${STRAPI_URL}${raw}`;
-};
 ---
 
 <style lang="scss">
@@ -50,7 +42,7 @@ const getAbsoluteUrl = (raw: string): string => {
         z-index: 1;
 
         &__container {
-            margin-block: 50px 140px;
+            margin-block: 50px 0px;
         }
 
         //Fade edges

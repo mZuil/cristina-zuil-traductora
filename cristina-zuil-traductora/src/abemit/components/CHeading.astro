@@ -7,9 +7,10 @@ interface Props {
   titleInDark: string;
   titleInBlue: string;
   subheading?: string;
+  hasSeparator?: boolean;
 }
 
-const { titleInDark, titleInBlue, subheading } = Astro.props;
+const { titleInDark, titleInBlue, subheading, hasSeparator = true } = Astro.props;
 ---
 
 <style lang="scss">
@@ -55,9 +56,12 @@ const { titleInDark, titleInBlue, subheading } = Astro.props;
   }
 </style>
 
-<div class="c-heading__separator js-title-separator">
-  <div class="c-heading__separator-track js-title-separator-track"></div>
-</div>
+
+{ hasSeparator && (
+  <div class="c-heading__separator js-title-separator">
+    <div class="c-heading__separator-track js-title-separator-track"></div>
+  </div>
+)}
 
 <section class="c-heading js-c-heading">
   <CustomContainer>

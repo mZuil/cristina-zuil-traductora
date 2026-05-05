@@ -24,6 +24,7 @@ export interface ComponentsCHeading extends Struct.ComponentSchema {
     icon: 'code';
   };
   attributes: {
+    hasSeparator: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     subheading: Schema.Attribute.String;
     titleInBlue: Schema.Attribute.String;
     titleInDark: Schema.Attribute.String;
