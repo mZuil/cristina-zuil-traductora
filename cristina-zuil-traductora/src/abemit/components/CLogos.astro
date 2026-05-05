@@ -46,9 +46,12 @@ const getAbsoluteUrl = (raw: string): string => {
 
         position: relative;
         overflow: hidden;
-        padding-block: 125px 140px;
         background-color: var(--color-white);
         z-index: 1;
+
+        &__container {
+            margin-block: 50px 140px;
+        }
 
         //Fade edges
         &::before,
@@ -143,23 +146,25 @@ const getAbsoluteUrl = (raw: string): string => {
 </style>
 
 <section class="c-logos js-c-logos">
-    <div class="c-logos__track js-logos-track">
-        {
-            publishers.map((publisher) => {
-                const logoImage = getStrapiImageFromLogo(publisher.logo);
+    <div class="c-logos__container js-track-wrapper">
+        <div class="c-logos__track js-logos-track">
+            {
+                publishers.map((publisher) => {
+                    const logoImage = getStrapiImageFromLogo(publisher.logo);
 
-                return (
-                    <a href={publisher.link?.url || ""} target="_blank" class="c-logos__item | js-logo-item">
-                        {logoImage && (
-                            <AImage image={logoImage} sizes="156px" loading="lazy" withWrapper wrapperClass="c-logos__item-image" />
-                        )}
-                        <AText tag="p" size="small-text" class="c-logos__item-text">
-                            {publisher.name}
-                        </AText>
-                    </a>
-                );
-            })
-        }
+                    return (
+                        <a href={publisher.link?.url || ""} target="_blank" class="c-logos__item | js-logo-item">
+                            {logoImage && (
+                                <AImage image={logoImage} sizes="156px" loading="lazy" withWrapper wrapperClass="c-logos__item-image" />
+                            )}
+                            <AText tag="p" size="small-text" class="c-logos__item-text">
+                                {publisher.name}
+                            </AText>
+                        </a>
+                    );
+                })
+            }
+        </div>
     </div>
 </section>
 
@@ -174,10 +179,12 @@ const getAbsoluteUrl = (raw: string): string => {
         private lenisInstance: any = null;
         private onLenisScroll: ((e: any) => void) | null = null;
         private hoverBound = false;
+        private trackWrapper: HTMLElement | null = null;
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
             this.track = this.nodeInDOM.querySelector<HTMLElement>(".js-logos-track")!;
+            this.trackWrapper = this.nodeInDOM.querySelector<HTMLElement>(".js-track-wrapper")!;
             this.setupLogosSlider();
         }
 
@@ -280,10 +287,10 @@ const getAbsoluteUrl = (raw: string): string => {
         private setupHoverPause(): void {
             if (this.hoverBound) return;
             this.hoverBound = true;
-            this.nodeInDOM.addEventListener("mouseenter", () => this.tl?.pause());
-            this.nodeInDOM.addEventListener("mouseleave", () => this.tl?.resume());
-            this.nodeInDOM.addEventListener("touchstart", () => this.tl?.pause(), { passive: true });
-            this.nodeInDOM.addEventListener("touchend", () => this.tl?.resume(), { passive: true });
+            this.trackWrapper?.addEventListener("mouseenter", () => this.tl?.pause());
+            this.trackWrapper?.addEventListener("mouseleave", () => this.tl?.resume());
+            this.trackWrapper?.addEventListener("touchstart", () => this.tl?.pause(), { passive: true });
+            this.trackWrapper?.addEventListener("touchend", () => this.tl?.resume(), { passive: true });
         }
 
         destroy(): void {
