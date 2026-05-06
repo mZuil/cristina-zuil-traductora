@@ -2,12 +2,16 @@
 import CustomContainer from "../../helpers/structure/CustomContainer/CustomContainer.astro";
 import CustomColumn from "../../helpers/structure/CustomColumn/CustomColumn.astro";
 import AText from "../atoms/AText.astro";
+import type { Text } from "../../helpers/interfaces/Text.astro";
 
 interface Props {
     title: string;
+    hasPoem: boolean;
+    poemStanzas?: Text[];
+    images?: string[];
 }
 
-const { title } = Astro.props;
+const { title, hasPoem, poemStanzas, images } = Astro.props;
 
 let titleText = "";
 
@@ -29,10 +33,25 @@ if (!title) {
     .c-title {
         @include use-font(menu-item);
 
-        position: sticky;
-        top: 0;
+        position: relative;
+        overflow: clip;
         background-color: var(--color-blue-light);
         z-index: 0;
+
+        &.is-frozen {
+            position: fixed;
+            left: 0;
+            right: 0;
+            z-index: 0;
+
+            &.--aling-top {
+                top: 0;
+            }
+
+            &.--aling-bottom {
+                bottom: 0;
+            }
+        }
 
         &__background {
             position: absolute;
@@ -60,6 +79,47 @@ if (!title) {
                 color: var(--color-blue-default);
             }
         }
+
+        //POEM
+
+        &__poem {
+            position: relative;
+            height: 100dvh;
+        }
+
+        &__poem-wrapper {
+            width: 100%;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        &__stanza-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s linear;
+
+            &.is-active {
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
+
+        &__poem-line {
+            text-align: center;
+        }
     }
 </style>
 
@@ -68,41 +128,41 @@ if (!title) {
         <div class="c-title__background">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 1440 294" class="c-title__background-svg">
                 <g fill="#fff" opacity=".22">
-                    <path d="M-76 122.191c0-22.091 17.909-40 40-40h210.278v43.663c0 22.091-17.908 40-40 40H-36c-22.091 0-40-17.909-40-40z" />
-                    <path d="M114.722 106.652c0-13.51 10.951-24.46 24.461-24.46h201.356c13.51 0 24.461 10.95 24.461 24.46 0 13.509-10.951 24.461-24.461 24.461H139.183c-13.51 0-24.461-10.952-24.461-24.461" />
-                    <path d="M49.494 52c0-22.091 17.908-40 40-40h156.098c22.091 0 40 17.909 40 40v37.99H49.494z" />
-                    <path d="M49.848 63.757c-2.661 12.692-7.974 16.714-23.752 18.789h23.752z" />
-                    <path d="M168 150c2.913-14.185 8.729-18.68 26-21h-26z" />
-                    <path d="M304.026 84.319c-12.692-2.662-16.714-7.975-18.789-23.752v23.752z" />
+                    <path d="M-76 122.191c0-22.091 17.909-40 40-40h210.278v43.663c0 22.091-17.908 40-40 40H-36c-22.091 0-40-17.909-40-40z"></path>
+                    <path d="M114.722 106.652c0-13.51 10.951-24.46 24.461-24.46h201.356c13.51 0 24.461 10.95 24.461 24.46 0 13.509-10.951 24.461-24.461 24.461H139.183c-13.51 0-24.461-10.952-24.461-24.461"></path>
+                    <path d="M49.494 52c0-22.091 17.908-40 40-40h156.098c22.091 0 40 17.909 40 40v37.99H49.494z"></path>
+                    <path d="M49.848 63.757c-2.661 12.692-7.974 16.714-23.752 18.789h23.752z"></path>
+                    <path d="M168 150c2.913-14.185 8.729-18.68 26-21h-26z"></path>
+                    <path d="M304.026 84.319c-12.692-2.662-16.714-7.975-18.789-23.752v23.752z"></path>
                 </g>
                 <g fill="#fff" opacity=".2">
-                    <path d="M148.931 223.159c1.71 8.152 5.123 10.736 15.257 12.069h-15.257z" />
-                    <path d="M15.486 247.069C13.776 238.917 10.363 236.333.228 235h15.258z" />
-                    <path d="M148.931 219.413c0-16.797-13.616-30.413-30.413-30.413H-23c-12.702 0-23 10.297-23 23s10.298 23 23 23h171.931z" />
-                    <path d="M232.277 258c0-12.703-10.297-23-23-23H15.485v15.587c0 16.797 13.617 30.413 30.413 30.413h163.379c12.703 0 23-10.297 23-23" />
+                    <path d="M148.931 223.159c1.71 8.152 5.123 10.736 15.257 12.069h-15.257z"></path>
+                    <path d="M15.486 247.069C13.776 238.917 10.363 236.333.228 235h15.258z"></path>
+                    <path d="M148.931 219.413c0-16.797-13.616-30.413-30.413-30.413H-23c-12.702 0-23 10.297-23 23s10.298 23 23 23h171.931z"></path>
+                    <path d="M232.277 258c0-12.703-10.297-23-23-23H15.485v15.587c0 16.797 13.617 30.413 30.413 30.413h163.379c12.703 0 23-10.297 23-23"></path>
                 </g>
                 <g fill="#fff" opacity=".28">
-                    <path d="M1143.56 51.33c0-10.123 8.21-18.33 18.33-18.33h134.01c12.09 0 21.89 9.803 21.89 21.896v14.766h-155.9c-10.12 0-18.33-8.207-18.33-18.331" />
-                    <path d="M1209.99 69.299h188.63c12.1 0 21.9 9.803 21.9 21.896v.855c0 12.093-9.8 21.896-21.9 21.896h-166.74c-12.09 0-21.89-9.803-21.89-21.896z" />
-                    <rect width="217.793" height="32.669" x="1100" y="86.359" rx="16.334" />
-                    <path d="M1232.49 113.22h108.534v36.662H1232.49z" />
-                    <rect width="203.999" height="34.484" x="1187.12" y="134.274" rx="17.242" />
-                    <path d="M1341.02 123.565c1.37-6.497 4.09-8.556 12.16-9.619h-12.16z" />
-                    <path d="M1210.17 76.921c-1.37 6.498-4.09 8.557-12.16 9.62h12.16z" />
-                    <path d="M1200.55 69.662c6.5 1.362 8.55 4.082 9.62 12.16v-12.16zM1350.64 134.456c-6.49-1.363-8.55-4.083-9.62-12.161v12.161zM1232.49 125.018c-1.36 6.497-4.08 8.556-12.16 9.619h12.16z" />
-                    <path d="M1223.05 118.665c6.5 1.363 8.56 4.083 9.62 12.16v-12.16zM1327.41 69.843c-6.5-1.362-8.55-4.082-9.62-12.16v12.16z" />
+                    <path d="M1143.56 51.33c0-10.123 8.21-18.33 18.33-18.33h134.01c12.09 0 21.89 9.803 21.89 21.896v14.766h-155.9c-10.12 0-18.33-8.207-18.33-18.331"></path>
+                    <path d="M1209.99 69.299h188.63c12.1 0 21.9 9.803 21.9 21.896v.855c0 12.093-9.8 21.896-21.9 21.896h-166.74c-12.09 0-21.89-9.803-21.89-21.896z"></path>
+                    <rect width="217.793" height="32.669" x="1100" y="86.359" rx="16.334"></rect>
+                    <path d="M1232.49 113.22h108.534v36.662H1232.49z"></path>
+                    <rect width="203.999" height="34.484" x="1187.12" y="134.274" rx="17.242"></rect>
+                    <path d="M1341.02 123.565c1.37-6.497 4.09-8.556 12.16-9.619h-12.16z"></path>
+                    <path d="M1210.17 76.921c-1.37 6.498-4.09 8.557-12.16 9.62h12.16z"></path>
+                    <path d="M1200.55 69.662c6.5 1.362 8.55 4.082 9.62 12.16v-12.16zM1350.64 134.456c-6.49-1.363-8.55-4.083-9.62-12.161v12.161zM1232.49 125.018c-1.36 6.497-4.08 8.556-12.16 9.619h12.16z"></path>
+                    <path d="M1223.05 118.665c6.5 1.363 8.56 4.083 9.62 12.16v-12.16zM1327.41 69.843c-6.5-1.362-8.55-4.082-9.62-12.16v12.16z"></path>
                 </g>
                 <g fill="#fff" opacity=".15">
-                    <path d="M475.346 34.159c-1.709 8.152-5.122 10.736-15.257 12.069h15.257z" />
-                    <path d="M608.792 58.07c1.709-8.153 5.122-10.737 15.257-12.07h-15.257z" />
-                    <path d="M475.346 30.413C475.346 13.616 488.963 0 505.759 0h141.518c12.703 0 23 10.298 23 23s-10.297 23-23 23H475.346z" />
-                    <path d="M392 69c0-12.702 10.297-23 23-23h193.792v15.587c0 16.797-13.616 30.413-30.413 30.413H415c-12.703 0-23-10.297-23-23" />
+                    <path d="M475.346 34.159c-1.709 8.152-5.122 10.736-15.257 12.069h15.257z"></path>
+                    <path d="M608.792 58.07c1.709-8.153 5.122-10.737 15.257-12.07h-15.257z"></path>
+                    <path d="M475.346 30.413C475.346 13.616 488.963 0 505.759 0h141.518c12.703 0 23 10.298 23 23s-10.297 23-23 23H475.346z"></path>
+                    <path d="M392 69c0-12.702 10.297-23 23-23h193.792v15.587c0 16.797-13.616 30.413-30.413 30.413H415c-12.703 0-23-10.297-23-23"></path>
                 </g>
                 <g fill="#fff" opacity=".18">
-                    <path d="M1433.93 236.159c1.71 8.152 5.12 10.736 15.26 12.069h-15.26z" />
-                    <path d="M1300.49 260.069c-1.71-8.152-5.13-10.736-15.26-12.069h15.26z" />
-                    <path d="M1433.93 232.413c0-16.797-13.62-30.413-30.41-30.413H1262c-12.7 0-23 10.297-23 23s10.3 23 23 23h171.93z" />
-                    <path d="M1517.28 271c0-12.703-10.3-23-23-23h-193.79v15.587c0 16.797 13.61 30.413 30.41 30.413h163.38c12.7 0 23-10.297 23-23" />
+                    <path d="M1433.93 236.159c1.71 8.152 5.12 10.736 15.26 12.069h-15.26z"></path>
+                    <path d="M1300.49 260.069c-1.71-8.152-5.13-10.736-15.26-12.069h15.26z"></path>
+                    <path d="M1433.93 232.413c0-16.797-13.62-30.413-30.41-30.413H1262c-12.7 0-23 10.297-23 23s10.3 23 23 23h171.93z"></path>
+                    <path d="M1517.28 271c0-12.703-10.3-23-23-23h-193.79v15.587c0 16.797 13.61 30.413 30.41 30.413h163.38c12.7 0 23-10.297 23-23"></path>
                 </g>
             </svg>
         </div>
@@ -112,21 +172,122 @@ if (!title) {
             </CustomColumn>
         </CustomContainer>
     </div>
+
+    {
+        hasPoem && (
+            <div class="c-title__poem | js-poem">
+                <CustomContainer>
+                    <CustomColumn lg="12" md="8" sm="4">
+                        <div class="c-title__poem-wrapper">
+                            {poemStanzas?.map((stanza) => (
+                                <div class="c-title__stanza-wrapper | js-stanza-wrapper">
+                                    {stanza.text.map((block) => (
+                                        <AText size="headline-1" class="c-title__poem-line">
+                                            {block.children
+                                                .map((child) => child.text)
+                                                .join("")}
+                                        </AText>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    </CustomColumn>
+                </CustomContainer>
+            </div>
+        )
+    }
 </section>
 
 <script>
-  import { BaseComponent } from "../../helpers/base/BaseComponent";
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import { BaseComponent } from "../../helpers/base/BaseComponent";
 
-  class CTitle extends BaseComponent {
-    constructor(nodeInDOM: HTMLElement) {
-      super(nodeInDOM);
-      // Separator animation has moved to CHeading
+    gsap.registerPlugin(ScrollTrigger);
+
+    class CTitle extends BaseComponent {
+        private freezeScrollY = 0;
+        private poemTrigger?: ScrollTrigger;
+        private activeStanzaIndex = -1;
+
+        constructor(nodeInDOM: HTMLElement) {
+            super(nodeInDOM);
+            this.setupScrollFreeze();
+            this.setupPoemScroll();
+        }
+
+        private setupScrollFreeze() {
+            const el = this.nodeInDOM;
+            if (el.getBoundingClientRect().height > window.innerHeight) {
+                el.classList.add("--aling-bottom");
+            } else {
+                el.classList.add("--aling-top");
+            }
+
+            // Placeholder holds the layout space when CTitle goes fixed
+            const placeholder = document.createElement("div");
+            el.after(placeholder);
+
+            const UNFREEZE_BUFFER = 10; // px of scroll-back needed before unfreezing
+
+            const onScroll = () => {
+                const isFrozen = el.classList.contains("is-frozen");
+
+                if (!isFrozen) {
+                    if (
+                        el.getBoundingClientRect().bottom <= window.innerHeight
+                    ) {
+                        this.freezeScrollY = window.scrollY;
+                        placeholder.style.height = `${el.offsetHeight}px`;
+                        el.classList.add("is-frozen");
+                    }
+                } else {
+                    // ← require scrolling back a few px before unfreezing
+                    if (window.scrollY < this.freezeScrollY - UNFREEZE_BUFFER) {
+                        placeholder.style.height = "0";
+                        el.classList.remove("is-frozen");
+                    }
+                }
+            };
+
+            window.addEventListener("scroll", onScroll, { passive: true });
+        }
+
+        private setupPoemScroll() {
+            const poem = this.nodeInDOM.querySelector<HTMLElement>(".js-poem");
+            if (!poem) return;
+
+            const stanzas = Array.from(poem.querySelectorAll<HTMLElement>(".js-stanza-wrapper"));
+            if (stanzas.length === 0) return;
+
+            const setActive = (index: number) => {
+                if (index === this.activeStanzaIndex) return;
+                this.activeStanzaIndex = index;
+                stanzas.forEach((el, i) => {
+                    el.classList.toggle("is-active", i === index);
+                });
+            };
+
+            setActive(0);
+
+            this.poemTrigger = ScrollTrigger.create({
+                trigger: poem,
+                start: "top top",
+                end: () => `+=${stanzas.length * window.innerHeight}`,
+                pin: true,
+                scrub: true,
+                onUpdate: (self) => {
+                    const rawIndex = Math.floor(self.progress * stanzas.length);
+                    const index = Math.min(stanzas.length - 1, Math.max(0, rawIndex));
+                    setActive(index);
+                },
+            });
+        }
     }
-  }
 
-  function initTitle() {
-    BaseComponent.mountAll(".js-c-title", CTitle);
-  }
+    function initTitle() {
+        BaseComponent.mountAll(".js-c-title", CTitle);
+    }
 
-  document.addEventListener("astro:page-load", initTitle);
+    document.addEventListener("astro:page-load", initTitle);
 </script>

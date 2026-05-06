@@ -1,0 +1,14 @@
+---
+export interface RichTextChild {
+  text: string;
+}
+
+export interface RichTextBlock {
+  type: string;
+  children: RichTextChild[];
+}
+
+export interface Text {
+  text: RichTextBlock[];
+}
+---

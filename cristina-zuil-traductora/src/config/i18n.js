@@ -41,7 +41,7 @@ export async function fetchPagesByLocale(locale) {
   
   const query = new URLSearchParams({
     locale,
-    'populate[content][on][components.c-title][populate]': '*',
+    'populate[content][on][components.c-title][populate][poemStanzas][populate]': '*',
     'populate[content][on][components.c-heading][populate]': '*',
     'populate[content][on][components.c-featured-data][populate]': '*',
     'populate[content][on][components.c-logos][populate][publishers][populate]': '*',

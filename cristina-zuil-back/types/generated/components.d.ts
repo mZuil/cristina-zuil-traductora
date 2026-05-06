@@ -52,6 +52,12 @@ export interface ComponentsCTitle extends Struct.ComponentSchema {
     icon: 'code';
   };
   attributes: {
+    hasPoem: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    images: Schema.Attribute.Media<
+      'images' | 'files' | 'videos' | 'audios',
+      true
+    >;
+    poemStanzas: Schema.Attribute.Component<'texts.text-block', true>;
     title: Schema.Attribute.String & Schema.Attribute.Required;
   };
 }
@@ -104,6 +110,17 @@ export interface SeoSeo extends Struct.ComponentSchema {
   };
 }
 
+export interface TextsTextBlock extends Struct.ComponentSchema {
+  collectionName: 'components_texts_text_blocks';
+  info: {
+    displayName: 'textBlock';
+    icon: 'bold';
+  };
+  attributes: {
+    text: Schema.Attribute.Blocks;
+  };
+}
+
 declare module '@strapi/strapi' {
   export module Public {
     export interface ComponentSchemas {
@@ -113,6 +130,7 @@ declare module '@strapi/strapi' {
       'components.c-title': ComponentsCTitle;
       'links.link': LinksLink;
       'seo.seo': SeoSeo;
+      'texts.text-block': TextsTextBlock;
     }
   }
 }

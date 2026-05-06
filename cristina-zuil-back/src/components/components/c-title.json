@@ -9,6 +9,45 @@
     "title": {
       "type": "string",
       "required": true
+    },
+    "hasPoem": {
+      "type": "boolean",
+      "default": false
+    },
+    "poemStanzas": {
+      "type": "component",
+      "conditions": {
+        "visible": {
+          "==": [
+            {
+              "var": "hasPoem"
+            },
+            true
+          ]
+        }
+      },
+      "component": "texts.text-block",
+      "repeatable": true
+    },
+    "images": {
+      "type": "media",
+      "conditions": {
+        "visible": {
+          "==": [
+            {
+              "var": "hasPoem"
+            },
+            true
+          ]
+        }
+      },
+      "multiple": true,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
     }
   },
   "config": {}

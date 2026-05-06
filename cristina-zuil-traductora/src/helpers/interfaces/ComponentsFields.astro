@@ -21,6 +21,9 @@ const renderers: Record<string, Renderer> = {
     Component: CTitle,
     props: (block) => ({
       title: block.title,
+      hasPoem: block.hasPoem,
+      poemStanzas: block.poemStanzas,
+      images: block.images,
     }),
   },
   'components.c-heading': {
