@@ -3,12 +3,14 @@ import CustomContainer from "../../helpers/structure/CustomContainer/CustomConta
 import CustomColumn from "../../helpers/structure/CustomColumn/CustomColumn.astro";
 import AText from "../atoms/AText.astro";
 import type { Text } from "../../helpers/interfaces/Text.astro";
+import type { StrapiImage } from "../../helpers/interfaces/StrapiImage";
+import AImage from "../atoms/AImage.astro";
 
 interface Props {
     title: string;
     hasPoem: boolean;
     poemStanzas?: Text[];
-    images?: string[];
+    images?: StrapiImage[];
 }
 
 const { title, hasPoem, poemStanzas, images } = Astro.props;
@@ -80,8 +82,7 @@ if (!title) {
             }
         }
 
-        //POEM
-
+        // POEM
         &__poem {
             position: relative;
             height: 100dvh;
@@ -95,10 +96,7 @@ if (!title) {
             justify-content: center;
             align-items: center;
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
         }
 
         &__stanza-wrapper {
@@ -107,18 +105,34 @@ if (!title) {
             left: 50%;
             transform: translate(-50%, -50%);
             width: 100%;
-            opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s linear;
 
             &.is-active {
-                opacity: 1;
                 pointer-events: auto;
             }
         }
 
         &__poem-line {
             text-align: center;
+        }
+
+        // IMAGES
+
+        &__poem-image {
+            position: absolute;
+            top: calc(50% - 125px); // half of height, avoids transform conflict with GSAP
+            width: 200px;
+            height: 250px;
+            object-fit: cover;
+            pointer-events: none;
+
+            &.--left {
+                left: 0;
+            }
+
+            &.--right {
+                right: 0;
+            }
         }
     }
 </style>
@@ -179,17 +193,25 @@ if (!title) {
                 <CustomContainer>
                     <CustomColumn lg="12" md="8" sm="4">
                         <div class="c-title__poem-wrapper">
+
+                            {/* Stanzas */}
                             {poemStanzas?.map((stanza) => (
                                 <div class="c-title__stanza-wrapper | js-stanza-wrapper">
                                     {stanza.text.map((block) => (
                                         <AText size="headline-1" class="c-title__poem-line">
-                                            {block.children
-                                                .map((child) => child.text)
-                                                .join("")}
+                                            {block.children.map((child) => child.text).join("")}
                                         </AText>
                                     ))}
                                 </div>
                             ))}
+
+                            {/* Images as an independent layer, alternating sides */}
+                            {images?.map((image, i) => {
+                                return (
+                                    <AImage image={image} class={`c-title__poem-image js-poem-image ${i % 2 === 0 ? "--left" : "--right"}`} />
+                                );
+                            })}
+
                         </div>
                     </CustomColumn>
                 </CustomContainer>
@@ -208,7 +230,6 @@ if (!title) {
     class CTitle extends BaseComponent {
         private freezeScrollY = 0;
         private poemTrigger?: ScrollTrigger;
-        private activeStanzaIndex = -1;
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
@@ -224,25 +245,21 @@ if (!title) {
                 el.classList.add("--aling-top");
             }
 
-            // Placeholder holds the layout space when CTitle goes fixed
             const placeholder = document.createElement("div");
             el.after(placeholder);
 
-            const UNFREEZE_BUFFER = 10; // px of scroll-back needed before unfreezing
+            const UNFREEZE_BUFFER = 10;
 
             const onScroll = () => {
                 const isFrozen = el.classList.contains("is-frozen");
 
                 if (!isFrozen) {
-                    if (
-                        el.getBoundingClientRect().bottom <= window.innerHeight
-                    ) {
+                    if (el.getBoundingClientRect().bottom <= window.innerHeight) {
                         this.freezeScrollY = window.scrollY;
                         placeholder.style.height = `${el.offsetHeight}px`;
                         el.classList.add("is-frozen");
                     }
                 } else {
-                    // ← require scrolling back a few px before unfreezing
                     if (window.scrollY < this.freezeScrollY - UNFREEZE_BUFFER) {
                         placeholder.style.height = "0";
                         el.classList.remove("is-frozen");
@@ -258,29 +275,74 @@ if (!title) {
             if (!poem) return;
 
             const stanzas = Array.from(poem.querySelectorAll<HTMLElement>(".js-stanza-wrapper"));
+            const images = Array.from(poem.querySelectorAll<HTMLElement>(".js-poem-image"));
+
             if (stanzas.length === 0) return;
 
-            const setActive = (index: number) => {
-                if (index === this.activeStanzaIndex) return;
-                this.activeStanzaIndex = index;
-                stanzas.forEach((el, i) => {
-                    el.classList.toggle("is-active", i === index);
+            //Set initial states
+            gsap.set(stanzas, { autoAlpha: 0, scale: 0.8 });
+            gsap.set(images, { autoAlpha: 0, y: 80 });
+
+            const scrollTimeline = gsap.timeline({ paused: true });
+
+            // ── Stanzas ──────────────────────────────────────────────
+            stanzas.forEach((stanza, i) => {
+                const isLast = i === stanzas.length - 1;
+
+                scrollTimeline.fromTo(
+                    stanza,
+                    { autoAlpha: 0, scale: 0.8 },
+                    { autoAlpha: 1, scale: 1, duration: 1, ease: "power2.out" }
+                );
+
+                // Last stanza stays visible — no exit tween
+                if (!isLast) {
+                    scrollTimeline.to(stanza, {
+                        autoAlpha: 0,
+                        scale: 1.1,
+                        duration: 1,
+                        ease: "power2.in",
+                    });
+                }
+            });
+
+            // ── Images ───────────────────────────────────────────────
+            // Distributed homogeneously across the full stanza timeline.
+            // Each image occupies an equal slot; enter + exit fit within that slot.
+            if (images.length > 0) {
+                const totalDuration = scrollTimeline.duration();
+                const enterDur = 0.35;
+                const exitDur = 0.35;
+                const imageSpan = enterDur + exitDur;
+
+                images.forEach((img, i) => {
+                    // Center each image in its own equal slot
+                    const slotCenter = ((i + 0.5) / images.length) * totalDuration;
+                    const startTime = Math.max(0, slotCenter - imageSpan / 2);
+
+                    scrollTimeline
+                        .fromTo(
+                            img,
+                            { autoAlpha: 0, y: 80 },
+                            { autoAlpha: 1, y: 0, duration: enterDur, ease: "power2.out" },
+                            startTime
+                        )
+                        .to(
+                            img,
+                            { autoAlpha: 0, y: -40, duration: exitDur, ease: "power2.in" },
+                            startTime + enterDur
+                        );
                 });
-            };
+            }
 
-            setActive(0);
-
+            // ── ScrollTrigger ─────────────────────────────────────────
             this.poemTrigger = ScrollTrigger.create({
                 trigger: poem,
+                animation: scrollTimeline,
                 start: "top top",
                 end: () => `+=${stanzas.length * window.innerHeight}`,
                 pin: true,
-                scrub: true,
-                onUpdate: (self) => {
-                    const rawIndex = Math.floor(self.progress * stanzas.length);
-                    const index = Math.min(stanzas.length - 1, Math.max(0, rawIndex));
-                    setActive(index);
-                },
+                scrub: 0.5,
             });
         }
     }
