@@ -73,6 +73,10 @@ if (!title) {
             padding-block: 215px 145px;
             text-align: center;
 
+            &.--poem {
+                padding-block: 215px 0;
+            }
+
             :global(.c-title__text-part.--first) {
                 color: var(--color-blue-dark);
             }
@@ -125,6 +129,80 @@ if (!title) {
             pointer-events: none;
             border-radius: 15px;
         }
+
+        //MOUSE
+        &__mouse-scroll {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        &__mouse {
+            width: clamp(18px, 1.5vw, 26px);
+            height: clamp(30px, 2.4vw, 44px);
+            border: 2px solid var(--color-grey);
+            border-radius: clamp(12px, 1.1vw, 18px);
+            position: relative;
+        }
+
+        &__wheel {
+            width: clamp(2px, 0.2vw, 3px);
+            height: clamp(6px, 0.55vw, 8px);
+            background: var(--color-grey);
+            border-radius: 2px;
+            position: absolute;
+            top: clamp(5px, 0.45vw, 7px);
+            left: 50%;
+            transform: translateX(-50%);
+            animation: scroll 3s infinite;
+        }
+
+        @keyframes scroll {
+            0%, 100% {
+                top: clamp(5px, 0.45vw, 7px);
+            }
+            50% {
+                top: clamp(14px, 1.1vw, 18px);
+            }
+        }
+
+        &__scroll-arrow {
+            display: block;
+            rotate: 45deg;
+            
+            width: clamp(10px, 0.85vw, 14px);
+            height: clamp(10px, 0.85vw, 14px);
+
+            border-right: clamp(1px, 0.1vw, 2px) solid var(--color-grey);
+            border-bottom: clamp(1px, 0.1vw, 2px) solid var(--color-grey);
+            margin: 0 0 2px 1px;
+            
+            &.--first {
+                animation: bounce 2.5s infinite 0.2s;
+            }
+            
+            &.--second {
+                animation: bounce 2.5s infinite 0.4s;
+            }
+            
+            &.--third {
+                animation: bounce 2.5s infinite 0.6s;
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translate(0, 0);
+            }
+            50% {
+                transform: translate(clamp(-4px, -0.35vw, -6px), clamp(-4px, -0.35vw, -6px));
+            }
+        }
     }
 </style>
 
@@ -170,7 +248,7 @@ if (!title) {
         </div>
         <CustomContainer>
             <CustomColumn lg="12" md="8" sm="4" class="c-title__column">
-                <AText as="h1" size="display-1" html={titleText} class="c-title__text" aria-label={title} />
+                <AText as="h1" size="display-1" html={titleText} class={`c-title__text ${hasPoem ? "--poem" : ""}`} aria-label={title} />
             </CustomColumn>
         </CustomContainer>
     </div>
@@ -203,6 +281,17 @@ if (!title) {
                         </div>
                     </CustomColumn>
                 </CustomContainer>
+            </div>
+
+            <div class="c-title__mouse-scroll js-scroll-arrow">
+                <div class="c-title__mouse">
+                    <div class="c-title__wheel"></div>
+                </div>
+                <div>
+                    <span class="c-title__scroll-arrow --first"></span>
+                    <span class="c-title__scroll-arrow --second"></span>
+                    <span class="c-title__scroll-arrow --third"></span>
+                </div>
             </div>
         )
     }
@@ -274,6 +363,9 @@ if (!title) {
             gsap.set(images, { autoAlpha: 0, translateY: '70vh' });
 
             const scrollTimeline = gsap.timeline({ paused: true });
+
+            //Make the mouse disappear when scrolling
+            scrollTimeline.to(this.nodeInDOM.querySelector<HTMLElement>(".js-scroll-arrow"), { autoAlpha: 0, duration: 0.5 });
 
             // ── Stanzas ──────────────────────────────────────────────
             stanzas.forEach((stanza, i) => {
