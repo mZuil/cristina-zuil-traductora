@@ -90,6 +90,8 @@ if (!title) {
         &__poem {
             position: relative;
             height: 100dvh;
+            opacity: 0;
+            visibility: hidden;
         }
 
         &__poem-wrapper {
@@ -311,6 +313,9 @@ if (!title) {
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
 
+            //When everything is ready, make the poem visible
+            gsap.set(this.nodeInDOM.querySelector(".js-poem") as HTMLElement, { autoAlpha: 1 });
+
             this.setupBackground();
             this.setupScrollFreeze();
             this.setupPoemScroll();
@@ -328,22 +333,28 @@ if (!title) {
             el.after(placeholder);
 
             const UNFREEZE_BUFFER = 10;
+            let lastScrollY = window.scrollY;
 
             const onScroll = () => {
+                const currentScrollY = window.scrollY;
+                const isScrollingDown = currentScrollY > lastScrollY;
+                const rect = el.getBoundingClientRect();
                 const isFrozen = el.classList.contains("is-frozen");
 
                 if (!isFrozen) {
-                    if (el.getBoundingClientRect().bottom <= window.innerHeight) {
-                        this.freezeScrollY = window.scrollY;
+                    if (isScrollingDown && rect.bottom <= window.innerHeight && rect.bottom > 0) {
+                        this.freezeScrollY = currentScrollY;
                         placeholder.style.height = `${el.offsetHeight}px`;
                         el.classList.add("is-frozen");
                     }
                 } else {
-                    if (window.scrollY < this.freezeScrollY - UNFREEZE_BUFFER) {
+                    if (!isScrollingDown && currentScrollY < this.freezeScrollY - UNFREEZE_BUFFER) {
                         placeholder.style.height = "0";
                         el.classList.remove("is-frozen");
                     }
                 }
+
+                lastScrollY = currentScrollY;
             };
 
             window.addEventListener("scroll", onScroll, { passive: true });
