@@ -335,6 +335,15 @@ if (!title) {
             const UNFREEZE_BUFFER = 10;
             let lastScrollY = window.scrollY;
 
+            if (el.classList.contains("--aling-top") && window.scrollY <= 1) {
+                const rect = el.getBoundingClientRect();
+                if (rect.bottom <= window.innerHeight && rect.bottom > 0) {
+                    this.freezeScrollY = window.scrollY;
+                    placeholder.style.height = `${el.offsetHeight}px`;
+                    el.classList.add("is-frozen");
+                }
+            }
+
             const onScroll = () => {
                 const currentScrollY = window.scrollY;
                 const isScrollingDown = currentScrollY > lastScrollY;
