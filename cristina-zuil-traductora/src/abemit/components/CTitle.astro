@@ -89,7 +89,6 @@ if (!title) {
         }
 
         &__poem-wrapper {
-            width: 100%;
             height: 100dvh;
             display: flex;
             flex-direction: column;
@@ -104,7 +103,6 @@ if (!title) {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 100%;
             pointer-events: none;
 
             &.is-active {
@@ -117,7 +115,6 @@ if (!title) {
         }
 
         // IMAGES
-
         &__poem-image {
             position: absolute;
             top: calc(50% - 125px); // half of height, avoids transform conflict with GSAP
@@ -125,14 +122,7 @@ if (!title) {
             height: 250px;
             object-fit: cover;
             pointer-events: none;
-
-            &.--left {
-                left: 0;
-            }
-
-            &.--right {
-                right: 0;
-            }
+            left: 0;
         }
     }
 </style>
@@ -281,7 +271,7 @@ if (!title) {
 
             //Set initial states
             gsap.set(stanzas, { autoAlpha: 0, scale: 0.8 });
-            gsap.set(images, { autoAlpha: 0, y: 80 });
+            gsap.set(images, { autoAlpha: 0, translateY: '70vh' });
 
             const scrollTimeline = gsap.timeline({ paused: true });
 
@@ -307,35 +297,72 @@ if (!title) {
             });
 
             // ── Images ───────────────────────────────────────────────
-            // Distributed homogeneously across the full stanza timeline.
-            // Each image occupies an equal slot; enter + exit fit within that slot.
             if (images.length > 0) {
                 const totalDuration = scrollTimeline.duration();
-                const enterDur = 0.35;
-                const exitDur = 0.35;
-                const imageSpan = enterDur + exitDur;
+                const enterDur  = 1.2;
+                const exitDur   = 1.2;
+                const holdDur   = 1.0;
+                const imageSpan = enterDur + holdDur + exitDur;
+                const stagger   = totalDuration / images.length;
 
                 images.forEach((img, i) => {
-                    // Center each image in its own equal slot
-                    const slotCenter = ((i + 0.5) / images.length) * totalDuration;
-                    const startTime = Math.max(0, slotCenter - imageSpan / 2);
+                    const startTime = i * stagger;
 
-                    scrollTimeline
-                        .fromTo(
-                            img,
-                            { autoAlpha: 0, y: 80 },
-                            { autoAlpha: 1, y: 0, duration: enterDur, ease: "power2.out" },
-                            startTime
-                        )
-                        .to(
-                            img,
-                            { autoAlpha: 0, y: -40, duration: exitDur, ease: "power2.in" },
-                            startTime + enterDur
-                        );
+                    scrollTimeline.fromTo(
+                        img,
+                        { translateY: '70vh' },
+                        { translateY: '-70vh', duration: imageSpan, ease: "none" },
+                        startTime
+                    );
+
+                    scrollTimeline.fromTo(
+                        img,
+                        { autoAlpha: 0 },
+                        { autoAlpha: 1, duration: enterDur, ease: "power2.out" },
+                        startTime
+                    );
+
+                    scrollTimeline.to(
+                        img,
+                        { autoAlpha: 0, duration: exitDur, ease: "power2.in" },
+                        startTime + imageSpan - exitDur
+                    );
                 });
             }
 
             // ── ScrollTrigger ─────────────────────────────────────────
+            let maxStanzaWidth = 0;
+
+            const computeMaxStanzaWidth = () => {
+                maxStanzaWidth = stanzas.reduce((max, stanza) => {
+                    return Math.max(max, stanza.getBoundingClientRect().width);
+                }, 0);
+            };
+
+            computeMaxStanzaWidth();
+
+            const updateImagePositions = () => {
+                const vw           = window.innerWidth;
+                const imgWFallback = 200;
+                const stanzaLeft   = vw / 2 - maxStanzaWidth / 2;
+                const stanzaRight  = vw / 2 + maxStanzaWidth / 2;
+
+                images.forEach((img) => {
+                    const imgW = img.getBoundingClientRect().width || img.offsetWidth || imgWFallback;
+                    img.style.right = "";
+
+                    if (img.classList.contains("--left")) {
+                        const centerX = stanzaLeft / 2;
+                        img.style.left = `${Math.max(0, centerX - imgW / 2)}px`;
+                    }
+
+                    if (img.classList.contains("--right")) {
+                        const centerX = (stanzaRight + vw) / 2;
+                        img.style.left = `${Math.min(vw - imgW, centerX - imgW / 2)}px`;
+                    }
+                });
+            };
+
             this.poemTrigger = ScrollTrigger.create({
                 trigger: poem,
                 animation: scrollTimeline,
@@ -343,7 +370,20 @@ if (!title) {
                 end: () => `+=${stanzas.length * window.innerHeight}`,
                 pin: true,
                 scrub: 0.5,
+                invalidateOnRefresh: true,
+                onUpdate: () => {
+                    updateImagePositions();
+                },
+                onRefresh: () => {
+                    computeMaxStanzaWidth();
+                    updateImagePositions();
+                },
             });
+
+            // Ensure correct positioning on first paint
+            updateImagePositions();
+
+            window.addEventListener("resize", updateImagePositions, { passive: true });
         }
     }
 
