@@ -129,7 +129,7 @@ if (!title) {
 </style>
 
 <section class="c-title js-c-title">
-    <div class="c-title__blue-container">
+    <div class="c-title__blue-container | js-blue-container">
         <div class="c-title__background">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 1440 461" class="c-title__background-svg | js-background-svg">
                 <g fill="#fff" opacity=".22">
@@ -221,6 +221,7 @@ if (!title) {
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
+
             this.setupBackground();
             this.setupScrollFreeze();
             this.setupPoemScroll();
@@ -389,8 +390,13 @@ if (!title) {
             const svg = this.nodeInDOM.querySelector<SVGSVGElement>('.js-background-svg');
             if (!svg) return;
 
+            const blueContainer = this.nodeInDOM.querySelector<HTMLElement>('.js-blue-container');
+            const poem = this.nodeInDOM.querySelector<HTMLElement>('.js-poem');
+            const stanzas = poem ? poem.querySelectorAll('.js-stanza-wrapper').length : 0;
+
             const TILE_HEIGHT = 461; // matches the original viewBox height
-            const totalHeight = this.nodeInDOM.offsetHeight;
+            const totalHeight = (blueContainer?.offsetHeight ?? 0) + (stanzas * window.innerHeight);
+            console.log('totalHeight', totalHeight);
             const repetitions = Math.ceil(totalHeight / TILE_HEIGHT);
 
             // Grab the original groups before we start cloning
