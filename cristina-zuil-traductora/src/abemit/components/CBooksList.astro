@@ -33,7 +33,7 @@ const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
       display: grid;
       grid-template-columns: repeat(4, calc(var(--width-col) * 3 + var(--grid-gutter) * 2));
       column-gap: var(--grid-gutter);
-      row-gap: 24px;
+      row-gap: 30px;
     }
 
     /* Book item */
@@ -47,10 +47,12 @@ const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
 
     :global(.c-books-list__book-container:hover .c-books-list__book-cover) {
       transform: rotateY(-23deg);
+      z-index: 3;
     }
 
     :global(.c-books-list__book-container.is-open .c-books-list__book-cover) {
       transform: rotateY(-83deg);
+      z-index: 3;
     }
 
     :global(.c-books-list__book-scene) {

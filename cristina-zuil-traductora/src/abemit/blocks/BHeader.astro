@@ -51,6 +51,11 @@ contactText = headerMenu.contactText;
             margin-block: 5px;
         }
 
+        &__logo-button {
+            display: inline-flex;
+            margin-block: auto;
+        }
+
         // Never display:none — stays in flex flow at all times.
         // width:0 + overflow:hidden hides content.
         // margin-inline: calc(var(--nav-gap) / -2) cancels the extra gap on each side
@@ -123,7 +128,7 @@ contactText = headerMenu.contactText;
             }
         </ul>
 
-        <AButton as="a" href="/" aria-label="Ir a la página principal">
+        <AButton as="a" href="/" class="b-header__logo-button" aria-label="Ir a la página principal">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52" width="52" height="52" class="b-header__logo">
                 <ellipse style="fill: rgb(170, 229, 236); stroke-width: 1;" cx="26.003" cy="25.903" rx="26.006" ry="26.006"></ellipse>
                 <g transform="matrix(0.241492, 0, 0, 0.241492, -40.57221, -5.483411)" style="">

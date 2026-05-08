@@ -158,18 +158,18 @@ if (!title) {
             background: var(--color-grey);
             border-radius: 2px;
             position: absolute;
-            top: clamp(5px, 0.45vw, 7px);
+            top: clamp(14px, 1.1vw, 18px);
             left: 50%;
             transform: translateX(-50%);
-            animation: scroll 3s infinite;
+            animation: scroll 2.5s infinite;
         }
 
         @keyframes scroll {
             0%, 100% {
-                top: clamp(5px, 0.45vw, 7px);
+                top: clamp(14px, 1.1vw, 18px);
             }
             50% {
-                top: clamp(14px, 1.1vw, 18px);
+                top: clamp(5px, 0.45vw, 7px);
             }
         }
 
@@ -177,8 +177,8 @@ if (!title) {
             display: block;
             rotate: 45deg;
             
-            width: clamp(10px, 0.85vw, 14px);
-            height: clamp(10px, 0.85vw, 14px);
+            width: clamp(10px, 0.65vw, 14px);
+            height: clamp(10px, 0.65vw, 14px);
 
             border-right: clamp(1px, 0.1vw, 2px) solid var(--color-grey);
             border-bottom: clamp(1px, 0.1vw, 2px) solid var(--color-grey);
@@ -321,22 +321,37 @@ if (!title) {
             this.setupPoemScroll();
         }
 
+        /**
+         * Sets up scroll freeze behavior for the title section.
+         * When scrolling down and the element's bottom reaches the viewport bottom,
+         * the element becomes "frozen" (fixed in place) while a placeholder maintains
+         * the document flow. Scrolling up past a buffer threshold unfreezes it.
+         */
         private setupScrollFreeze() {
             const el = this.nodeInDOM;
+
+            // Determine vertical alignment based on element height vs viewport
+            // If element is taller than viewport, align to bottom; otherwise align to top
             if (el.getBoundingClientRect().height > window.innerHeight) {
                 el.classList.add("--aling-bottom");
             } else {
                 el.classList.add("--aling-top");
             }
 
+            // Create a placeholder element to maintain document height when element is frozen
             const placeholder = document.createElement("div");
             el.after(placeholder);
 
-            const UNFREEZE_BUFFER = 10;
+            // Buffer zone (in pixels) user must scroll up before unfreezing
+            const UNFREEZE_BUFFER = 100;
+            // Track last scroll position to determine scroll direction
             let lastScrollY = window.scrollY;
 
+            // Initial freeze check: if element is top-aligned and page is at the top,
+            // check if element should start in frozen state
             if (el.classList.contains("--aling-top") && window.scrollY <= 1) {
                 const rect = el.getBoundingClientRect();
+                // If element bottom is visible and within viewport, freeze it immediately
                 if (rect.bottom <= window.innerHeight && rect.bottom > 0) {
                     this.freezeScrollY = window.scrollY;
                     placeholder.style.height = `${el.offsetHeight}px`;
@@ -344,6 +359,7 @@ if (!title) {
                 }
             }
 
+            // Scroll event handler to manage freeze/unfreeze states
             const onScroll = () => {
                 const currentScrollY = window.scrollY;
                 const isScrollingDown = currentScrollY > lastScrollY;
@@ -351,21 +367,30 @@ if (!title) {
                 const isFrozen = el.classList.contains("is-frozen");
 
                 if (!isFrozen) {
+                    // FREEZE CONDITION: Scrolling down and element bottom reaches viewport bottom
                     if (isScrollingDown && rect.bottom <= window.innerHeight && rect.bottom > 0) {
+                        // Store the scroll position where we froze
                         this.freezeScrollY = currentScrollY;
+                        // Set placeholder height to maintain document flow
                         placeholder.style.height = `${el.offsetHeight}px`;
+                        // Apply frozen state (CSS handles fixed positioning)
                         el.classList.add("is-frozen");
                     }
                 } else {
+                    // UNFREEZE CONDITION: Scrolling up past the freeze point minus buffer
                     if (!isScrollingDown && currentScrollY < this.freezeScrollY - UNFREEZE_BUFFER) {
+                        // Remove placeholder height
                         placeholder.style.height = "0";
+                        // Remove frozen state, element returns to normal flow
                         el.classList.remove("is-frozen");
                     }
                 }
 
+                // Update last scroll position for next comparison
                 lastScrollY = currentScrollY;
             };
 
+            // Attach scroll listener with passive flag for better performance
             window.addEventListener("scroll", onScroll, { passive: true });
         }
 
