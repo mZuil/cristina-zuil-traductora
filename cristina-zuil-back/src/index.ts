@@ -2,6 +2,9 @@ import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs';
 
+// Disable Sharp's input cache — prevents stale file handles on Windows
+sharp.cache(false);
+
 const BREAKPOINTS: Record<string, number> = {
   lqip:      12,
   thumbnail: 156,
@@ -12,10 +15,23 @@ const BREAKPOINTS: Record<string, number> = {
   xlarge:    1920,
 };
 
-const FORMATS = [
-  { ext: 'avif' as const, options: { quality: 60, effort: 4 } },
-  { ext: 'webp' as const, options: { quality: 75 } },
-];
+const FORMAT_OPTIONS: Record<string, object> = {
+  avif: { quality: 60, effort: 4 },
+  webp: { quality: 75 },
+  jpg:  { quality: 82, mozjpeg: true },
+};
+
+function toSharpMethod(ext: string): 'avif' | 'webp' | 'jpeg' {
+  return ext === 'jpg' ? 'jpeg' : ext as 'avif' | 'webp';
+}
+
+function getOutputFormats(mime: string): string[] {
+  switch (mime) {
+    case 'image/webp': return ['avif', 'jpg'];
+    case 'image/avif': return ['webp', 'jpg'];
+    default:           return ['avif', 'webp'];
+  }
+}
 
 function isProcessableImage(mime: string): boolean {
   return mime?.startsWith('image/') && mime !== 'image/svg+xml';
@@ -28,7 +44,6 @@ export default {
 
       async afterCreate(event: any) {
         const file = event.result;
-
         if (!isProcessableImage(file.mime)) return;
 
         const uploadDir = path.join(process.cwd(), 'public', 'uploads');
@@ -39,22 +54,25 @@ export default {
           return;
         }
 
-        strapi.log.info(`[image-optimizer] Processing: ${file.name}`);
+        strapi.log.info(`[image-optimizer] Processing: ${file.name} (${file.mime})`);
 
         try {
-          const meta = await sharp(filePath).metadata();
+          // Read into buffer once — Sharp never holds a file-system handle
+          const sourceBuffer = fs.readFileSync(filePath);
+
+          const meta = await sharp(sourceBuffer).metadata();
           const originalWidth = meta.width ?? 9999;
+          const formats = getOutputFormats(file.mime);
 
           for (const [breakpointName, maxWidth] of Object.entries(BREAKPOINTS)) {
-            // Skip breakpoints larger than the original
             if (maxWidth > originalWidth) continue;
 
-            for (const { ext, options } of FORMATS) {
+            for (const ext of formats) {
               const outputPath = path.join(uploadDir, `${breakpointName}_${file.hash}.${ext}`);
 
-              await sharp(filePath)
+              await sharp(sourceBuffer)
                 .resize({ width: maxWidth, withoutEnlargement: true })
-                [ext](options as any)
+                [toSharpMethod(ext)](FORMAT_OPTIONS[ext] as any)
                 .toFile(outputPath);
 
               strapi.log.info(`[image-optimizer] ✓ ${breakpointName}_${file.hash}.${ext}`);
@@ -72,9 +90,10 @@ export default {
         if (!isProcessableImage(file.mime)) return;
 
         const uploadDir = path.join(process.cwd(), 'public', 'uploads');
+        const formats = getOutputFormats(file.mime);
 
         for (const breakpointName of Object.keys(BREAKPOINTS)) {
-          for (const { ext } of FORMATS) {
+          for (const ext of formats) {
             const filePath = path.join(uploadDir, `${breakpointName}_${file.hash}.${ext}`);
             if (fs.existsSync(filePath)) {
               fs.unlinkSync(filePath);
