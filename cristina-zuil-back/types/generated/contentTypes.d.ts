@@ -719,6 +719,7 @@ export interface ApiPagePage extends Struct.CollectionTypeSchema {
         'components.c-heading',
         'components.c-featured-data',
         'components.c-logos',
+        'components.c-reviews',
       ]
     > &
       Schema.Attribute.SetPluginOptions<{

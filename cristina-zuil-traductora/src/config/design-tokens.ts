@@ -101,6 +101,18 @@ export const designTokens = {
         lg: {},
       },
 
+      'subheading-2': {
+        sm: {
+          fontFamily: 'secondary',
+          fontSize: '20px',
+          fontWeight: 400,
+          lineHeight: 1.21,
+          letterSpacing: '0.03em',
+        },
+        md: {},
+        lg: {},
+      },
+
       'menu-item': {
         sm: {
           fontFamily: 'secondary',

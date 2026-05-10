@@ -46,6 +46,7 @@ export async function fetchPagesByLocale(locale) {
     'populate[content][on][components.c-heading][populate]': '*',
     'populate[content][on][components.c-featured-data][populate]': '*',
     'populate[content][on][components.c-logos][populate][publishers][populate]': '*',
+    'populate[content][on][components.c-reviews][populate][publishers][populate]': '*',
   });
 
   const url = `${i18nConfig.strapi.url}/api/pages?${query}`;

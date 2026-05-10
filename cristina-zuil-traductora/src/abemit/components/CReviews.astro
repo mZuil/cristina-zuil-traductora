@@ -1,0 +1,308 @@
+---
+import type { Publisher } from "../../helpers/interfaces/Publisher.astro";
+import type { StrapiImage } from "../../helpers/interfaces/StrapiImage";
+import AImage from "../atoms/AImage.astro";
+import AText from "../atoms/AText.astro";
+
+interface Props {
+    publishers: Publisher[];
+}
+
+const { publishers = [] } = Astro.props as Props;
+---
+
+<style lang="scss">
+    @use "../../styles/mixins" as *;
+
+    .c-reviews {
+        // Card dimensions defined once, reused for both sizing and positioning
+        --card-height: min(
+            calc(clamp(280px, 32vw, 450px) * 68 / 50),
+            calc(100lvh - 15rem)
+        );
+        --card-width: calc(var(--card-height) * 50 / 68);
+
+        position: relative;
+        min-height: 100lvh;
+        background-color: var(--color-white);
+        overflow: hidden;
+        z-index: 1;
+
+        // Absolutely positioned so it doesn't affect card centering
+        &__current-publisher {
+            position: absolute;
+            inset-block: 0;
+            left: 0;
+            width: 33%;
+            z-index: 2; // sits above cards as they slide under
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-inline: clamp(2rem, 5vw, 10rem);
+        }
+
+        &__publisher-name {
+            text-wrap: balance;
+            text-align: left;
+        }
+
+        // First card mathematically centered at 50vw
+        &__reviews-list {
+            position: absolute;
+            left: calc(50% - var(--card-width) / 2);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: var(--grid-gutter);
+        }
+
+        // Height-driven: ratio is always preserved
+        &__review {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            flex: 0 0 var(--card-width);
+            width: var(--card-width);
+            height: var(--card-height);
+            aspect-ratio: 50 / 68;
+            will-change: transform;
+            backface-visibility: hidden;
+
+            &::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(
+                    0deg,
+                    rgba(6, 12, 22, 0.95) 0%,
+                    rgba(6, 12, 22, 0.75) 22%,
+                    rgba(6, 12, 22, 0.25) 64%,
+                    rgba(6, 12, 22, 0) 100%
+                );
+                border-radius: 30px;
+            }
+        }
+
+        &__background-img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 30px;
+        }
+
+        &__text {
+            position: relative;
+            padding: 27px 24px;
+            margin-top: auto;
+            z-index: 2;
+            color: var(--color-white);
+        }
+    }
+
+    // @include breakpoint-down(md) {
+        //     flex-direction: column;
+        //     padding-left: 0;
+
+        //     &__current-publisher {
+        //         flex: unset;
+        //         max-width: 100%;
+        //         width: 100%;
+        //         padding-inline: var(--container-margin);
+        //     }
+
+        //     &__reviews-list {
+        //         width: 100%;
+        //         max-height: none;
+        //         overflow-x: scroll;
+        //         overflow-y: hidden;
+        //         scrollbar-width: none;
+        //         scroll-snap-type: x mandatory;
+        //         scroll-padding: var(--container-margin);
+        //         padding-inline: var(--container-margin);
+        //         padding-block: 1.5rem;
+        //     }
+
+        //     &__review {
+        //         width: 80vw;
+        //         flex: 0 0 80vw;
+        //         scroll-snap-align: center;
+        //     }
+        // }
+</style>
+
+<section class="c-reviews js-c-reviews">
+    <div class="c-reviews__current-publisher">
+        <AText size="headline-1" class="c-reviews__publisher-name | js-publisher-name">
+            {publishers[0]?.name}
+        </AText>
+        <div class="c-reviews__publisher-logo"></div>
+    </div>
+    <div class="c-reviews__reviews-list | js-reviews-list">
+        {
+            publishers.map((publisher) => (
+                <div
+                    class="c-reviews__review | js-review-item"
+                    data-publisher={publisher?.name}
+                    data-logo={publisher?.logo?.url}
+                >
+                    <AImage
+                        image={publisher?.commentBgImage as StrapiImage}
+                        class="c-reviews__background-img"
+                    />
+                    <AText size="subheading-2" class="c-reviews__text">
+                        {publisher?.publisherComment}
+                    </AText>
+                </div>
+            ))
+        }
+    </div>
+</section>
+
+<script>
+    import { gsap } from "gsap";
+    import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import { BaseComponent } from "../../helpers/base/BaseComponent";
+
+    gsap.registerPlugin(ScrollTrigger);
+
+    class CReviews extends BaseComponent {
+        private st?: ScrollTrigger;
+        private tl?: gsap.core.Timeline;
+        private activeIndex = -1;
+        private publisherNameTween: gsap.core.Tween | null = null;
+
+        constructor(nodeInDOM: HTMLElement) {
+            super(nodeInDOM);
+            this.initScrollCards();
+        }
+
+        private getItemOffset(
+            track: HTMLElement,
+            firstItem: HTMLElement,
+        ): number {
+            const gap = parseFloat(
+                getComputedStyle(track).columnGap ||
+                    getComputedStyle(track).gap ||
+                    "0",
+            );
+            return firstItem.offsetWidth + gap;
+        }
+
+        initScrollCards() {
+            const track =
+                this.nodeInDOM.querySelector<HTMLElement>(".js-reviews-list");
+            if (!track) return;
+
+            const publisherNameEl = this.nodeInDOM.querySelector<HTMLElement>(".js-publisher-name");
+
+            const items = Array.from(
+                track.querySelectorAll<HTMLElement>(".js-review-item"),
+            );
+            if (items.length <= 1) return;
+
+            items.forEach((item, i) => {
+                item.style.zIndex = String(i + 1);
+            });
+
+            const setActive = (index: number) => {
+                const next = Math.max(0, Math.min(index, items.length - 1));
+                if (next === this.activeIndex) return;
+                this.activeIndex = next;
+
+                items.forEach((el, i) => {
+                    el.classList.toggle("is-active", i === next);
+                });
+
+                if (publisherNameEl) {
+                    const nextName = items[next]?.dataset.publisher ?? "";
+
+                    this.publisherNameTween?.kill();
+                    this.publisherNameTween = gsap.to(publisherNameEl, {
+                        autoAlpha: 0,
+                        duration: 0.2,
+                        overwrite: true,
+                        onComplete: () => {
+                            publisherNameEl.textContent = nextName;
+                            this.publisherNameTween = gsap.fromTo(
+                                publisherNameEl,
+                                { autoAlpha: 0 },
+                                { autoAlpha: 1, duration: 0.25, overwrite: true },
+                            );
+                        },
+                    });
+                }
+            };
+
+            if (publisherNameEl) {
+                publisherNameEl.textContent = items[0]?.dataset.publisher ?? publisherNameEl.textContent ?? "";
+                gsap.set(publisherNameEl, { autoAlpha: 1 });
+            }
+
+            setActive(0);
+
+            this.tl?.kill();
+            this.tl = gsap.timeline({ paused: true });
+
+            items.forEach((item, i) => {
+                if (i === 0) return;
+                this.tl!.to(
+                    item,
+                    {
+                        x: () => -(i * this.getItemOffset(track, items[0])),
+                        ease: "none",
+                        duration: i,
+                    },
+                    0,
+                );
+            });
+
+            this.st?.kill(true);
+            this.st = ScrollTrigger.create({
+                trigger: this.nodeInDOM,
+                start: "center center",
+                end: () =>
+                    `+=${(items.length - 1) * this.getItemOffset(track, items[0])}`,
+                animation: this.tl,
+                pin: true,
+                pinSpacing: true,
+                anticipatePin: 1,
+                scrub: true,
+                invalidateOnRefresh: true,
+                markers: true,
+                onUpdate: () => {
+                    if (!this.tl) return;
+                    const t = this.tl.time();
+                    const idx = Math.min(items.length - 1, Math.floor(t + 1e-6));
+                    setActive(idx);
+                },
+                onRefresh: () => {
+                    if (!this.tl) return;
+                    const t = this.tl.time();
+                    const idx = Math.min(items.length - 1, Math.floor(t + 1e-6));
+                    setActive(idx);
+                },
+            });
+        }
+
+        destroy(): void {
+            this.st?.kill(true);
+            this.st = undefined;
+            this.tl?.kill();
+            this.tl = undefined;
+            this.publisherNameTween?.kill();
+            this.publisherNameTween = null;
+        }
+    }
+
+    function initReviews() {
+        const instances = BaseComponent.mountAll(".js-c-reviews", CReviews);
+        const cleanup = () => instances.forEach((i) => (i as any).destroy?.());
+        document.addEventListener("astro:before-swap", cleanup, { once: true });
+    }
+
+    document.addEventListener("astro:page-load", initReviews);
+</script>
