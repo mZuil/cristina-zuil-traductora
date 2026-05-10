@@ -9,6 +9,25 @@ interface Props {
 }
 
 const { publishers = [] } = Astro.props as Props;
+
+const getStrapiImageFromLogo = (
+    logo: Publisher["logo"],
+): StrapiImage | null => {
+    if (!logo || typeof logo === "string") return null;
+
+    const imgAttr =
+        (logo as any)?.data?.attributes ?? (logo as any)?.attributes ?? logo;
+
+    if (!imgAttr) return null;
+    if (typeof imgAttr?.url !== "string" || !imgAttr.url) return null;
+    if (
+        typeof imgAttr?.width !== "number" ||
+        typeof imgAttr?.height !== "number"
+    )
+        return null;
+    if (typeof imgAttr?.mime !== "string" || !imgAttr.mime) return null;
+    return imgAttr as StrapiImage;
+};
 ---
 
 <style lang="scss">
@@ -28,22 +47,51 @@ const { publishers = [] } = Astro.props as Props;
         overflow: hidden;
         z-index: 1;
 
-        // Absolutely positioned so it doesn't affect card centering
         &__current-publisher {
             position: absolute;
             inset-block: 0;
             left: 0;
             width: 33%;
-            z-index: 2; // sits above cards as they slide under
+            z-index: 2;
             display: flex;
             flex-direction: column;
+            align-items: center; // center name + logo horizontally
             justify-content: center;
             padding-inline: clamp(2rem, 5vw, 10rem);
         }
 
         &__publisher-name {
             text-wrap: balance;
-            text-align: left;
+            text-align: center;
+        }
+
+        &__publisher-logo {
+            // Grid stacking: all children land in the same cell
+            display: grid;
+            grid-template-areas: "logo";
+            margin-top: 28px;
+            width: 160px;
+            height: 80px;
+        }
+
+        &__publisher-logo-item {
+            grid-area: logo;
+            display: none;
+            width: 160px;
+            height: 80px;
+            opacity: 0;
+
+            :global(img) {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                object-position: center;
+            }
+        }
+
+        &__publisher-logo-item.is-active {
+            display: block;
+            opacity: 1;
         }
 
         // First card mathematically centered at 50vw
@@ -104,42 +152,61 @@ const { publishers = [] } = Astro.props as Props;
     }
 
     // @include breakpoint-down(md) {
-        //     flex-direction: column;
-        //     padding-left: 0;
+    //     flex-direction: column;
+    //     padding-left: 0;
 
-        //     &__current-publisher {
-        //         flex: unset;
-        //         max-width: 100%;
-        //         width: 100%;
-        //         padding-inline: var(--container-margin);
-        //     }
+    //     &__current-publisher {
+    //         flex: unset;
+    //         max-width: 100%;
+    //         width: 100%;
+    //         padding-inline: var(--container-margin);
+    //     }
 
-        //     &__reviews-list {
-        //         width: 100%;
-        //         max-height: none;
-        //         overflow-x: scroll;
-        //         overflow-y: hidden;
-        //         scrollbar-width: none;
-        //         scroll-snap-type: x mandatory;
-        //         scroll-padding: var(--container-margin);
-        //         padding-inline: var(--container-margin);
-        //         padding-block: 1.5rem;
-        //     }
+    //     &__reviews-list {
+    //         width: 100%;
+    //         max-height: none;
+    //         overflow-x: scroll;
+    //         overflow-y: hidden;
+    //         scrollbar-width: none;
+    //         scroll-snap-type: x mandatory;
+    //         scroll-padding: var(--container-margin);
+    //         padding-inline: var(--container-margin);
+    //         padding-block: 1.5rem;
+    //     }
 
-        //     &__review {
-        //         width: 80vw;
-        //         flex: 0 0 80vw;
-        //         scroll-snap-align: center;
-        //     }
-        // }
+    //     &__review {
+    //         width: 80vw;
+    //         flex: 0 0 80vw;
+    //         scroll-snap-align: center;
+    //     }
+    // }
 </style>
 
 <section class="c-reviews js-c-reviews">
     <div class="c-reviews__current-publisher">
-        <AText size="headline-1" class="c-reviews__publisher-name | js-publisher-name">
+        <AText
+            size="headline-1"
+            class="c-reviews__publisher-name | js-publisher-name"
+        >
             {publishers[0]?.name}
         </AText>
-        <div class="c-reviews__publisher-logo"></div>
+        <div class="c-reviews__publisher-logo js-publisher-logo">
+            {
+                publishers.map((publisher, idx) => {
+                    const logoImage = getStrapiImageFromLogo(publisher.logo);
+                    return logoImage ? (
+                        <AImage
+                            image={logoImage}
+                            sizes="220px"
+                            loading="lazy"
+                            withWrapper
+                            wrapperClass={`c-reviews__publisher-logo-item js-publisher-logo-item${idx === 0 ? " is-active" : ""}`}
+                            data-index={idx}
+                        />
+                    ) : null;
+                })
+            }
+        </div>
     </div>
     <div class="c-reviews__reviews-list | js-reviews-list">
         {
@@ -174,6 +241,7 @@ const { publishers = [] } = Astro.props as Props;
         private tl?: gsap.core.Timeline;
         private activeIndex = -1;
         private publisherNameTween: gsap.core.Tween | null = null;
+        private publisherLogoTween: gsap.core.Tween | null = null;
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
@@ -197,7 +265,13 @@ const { publishers = [] } = Astro.props as Props;
                 this.nodeInDOM.querySelector<HTMLElement>(".js-reviews-list");
             if (!track) return;
 
-            const publisherNameEl = this.nodeInDOM.querySelector<HTMLElement>(".js-publisher-name");
+            const publisherNameEl =
+                this.nodeInDOM.querySelector<HTMLElement>(".js-publisher-name");
+            const publisherLogoItems = Array.from(
+                this.nodeInDOM.querySelectorAll<HTMLElement>(
+                    ".js-publisher-logo-item",
+                ),
+            );
 
             const items = Array.from(
                 track.querySelectorAll<HTMLElement>(".js-review-item"),
@@ -211,6 +285,7 @@ const { publishers = [] } = Astro.props as Props;
             const setActive = (index: number) => {
                 const next = Math.max(0, Math.min(index, items.length - 1));
                 if (next === this.activeIndex) return;
+                const prev = this.activeIndex;
                 this.activeIndex = next;
 
                 items.forEach((el, i) => {
@@ -219,7 +294,6 @@ const { publishers = [] } = Astro.props as Props;
 
                 if (publisherNameEl) {
                     const nextName = items[next]?.dataset.publisher ?? "";
-
                     this.publisherNameTween?.kill();
                     this.publisherNameTween = gsap.to(publisherNameEl, {
                         autoAlpha: 0,
@@ -230,15 +304,62 @@ const { publishers = [] } = Astro.props as Props;
                             this.publisherNameTween = gsap.fromTo(
                                 publisherNameEl,
                                 { autoAlpha: 0 },
-                                { autoAlpha: 1, duration: 0.25, overwrite: true },
+                                {
+                                    autoAlpha: 1,
+                                    duration: 0.25,
+                                    overwrite: true,
+                                },
                             );
                         },
                     });
                 }
+
+                if (publisherLogoItems.length > 0) {
+                    const nextLogo = publisherLogoItems[next];
+                    const prevLogo =
+                        prev >= 0 ? publisherLogoItems[prev] : null;
+
+                    this.publisherLogoTween?.kill();
+
+                    if (prevLogo && prevLogo !== nextLogo) {
+                        this.publisherLogoTween = gsap.to(prevLogo, {
+                            autoAlpha: 0,
+                            duration: 0.2,
+                            overwrite: true,
+                            onComplete: () => {
+                                gsap.set(prevLogo, { display: "none" });
+                                prevLogo.classList.remove("is-active");
+                                if (nextLogo) {
+                                    nextLogo.classList.add("is-active");
+                                    gsap.set(nextLogo, { display: "block" });
+                                    this.publisherLogoTween = gsap.fromTo(
+                                        nextLogo,
+                                        { autoAlpha: 0 },
+                                        { autoAlpha: 1, duration: 0.25, overwrite: true },
+                                    );
+                                }
+                            },
+                        });
+                    } else if (nextLogo) {
+                        publisherLogoItems.forEach((el, i) => {
+                            const isNext = i === next;
+                            el.classList.toggle("is-active", isNext);
+                            gsap.set(el, { display: isNext ? "block" : "none" });
+                        });
+                        this.publisherLogoTween = gsap.fromTo(
+                            nextLogo,
+                            { autoAlpha: 0 },
+                            { autoAlpha: 1, duration: 0.25, overwrite: true },
+                        );
+                    }
+                }
             };
 
             if (publisherNameEl) {
-                publisherNameEl.textContent = items[0]?.dataset.publisher ?? publisherNameEl.textContent ?? "";
+                publisherNameEl.textContent =
+                    items[0]?.dataset.publisher ??
+                    publisherNameEl.textContent ??
+                    "";
                 gsap.set(publisherNameEl, { autoAlpha: 1 });
             }
 
@@ -272,17 +393,23 @@ const { publishers = [] } = Astro.props as Props;
                 anticipatePin: 1,
                 scrub: true,
                 invalidateOnRefresh: true,
-                markers: true,
+                // markers: true,
                 onUpdate: () => {
                     if (!this.tl) return;
                     const t = this.tl.time();
-                    const idx = Math.min(items.length - 1, Math.floor(t + 1e-6));
+                    const idx = Math.min(
+                        items.length - 1,
+                        Math.floor(t + 1e-6),
+                    );
                     setActive(idx);
                 },
                 onRefresh: () => {
                     if (!this.tl) return;
                     const t = this.tl.time();
-                    const idx = Math.min(items.length - 1, Math.floor(t + 1e-6));
+                    const idx = Math.min(
+                        items.length - 1,
+                        Math.floor(t + 1e-6),
+                    );
                     setActive(idx);
                 },
             });
@@ -295,6 +422,8 @@ const { publishers = [] } = Astro.props as Props;
             this.tl = undefined;
             this.publisherNameTween?.kill();
             this.publisherNameTween = null;
+            this.publisherLogoTween?.kill();
+            this.publisherLogoTween = null;
         }
     }
 
