@@ -167,12 +167,24 @@ const getStrapiImageFromLogo = (
 
     class CLogos extends BaseComponent {
         private track: HTMLElement;
-        private tl: gsap.core.Timeline | null = null;
-        private resetTimeout: ReturnType<typeof setTimeout> | null = null;
+        private trackWrapper: HTMLElement | null = null;
+
+        // Ticker-based state
+        private x = 0;
+        private currentTimeScale = 1;  // 1 = forward (left), -1 = backward (right)
+        private lastDirection = 1;     // tracks last intentional direction
+        private loopWidth = 0;
+        private pxPerMs = 0;
+        private ticker: ((time: number, deltaTime: number) => void) | null = null;
+
+        // Lenis
         private lenisInstance: any = null;
         private onLenisScroll: ((e: any) => void) | null = null;
+
+        // Misc
+        private resetTimeout: ReturnType<typeof setTimeout> | null = null;
         private hoverBound = false;
-        private trackWrapper: HTMLElement | null = null;
+        private isPaused = false;
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
@@ -182,18 +194,20 @@ const getStrapiImageFromLogo = (
         }
 
         private setupLogosSlider(): void {
-            if (this.tl) {
-                this.tl.kill();
-                this.tl = null;
+            // Stop any existing ticker
+            if (this.ticker) {
+                gsap.ticker.remove(this.ticker);
+                this.ticker = null;
             }
 
             const originalItems = Array.from(this.track.children) as HTMLElement[];
-            const containerWidth = window.innerWidth;
 
             if (originalItems.length === 0) return;
 
+            // Clone items until we fill at least 2× the viewport width
             if (!this.track.dataset.cloned) {
                 let totalWidth = this.track.scrollWidth;
+                const containerWidth = window.innerWidth;
 
                 while (totalWidth < containerWidth * 2) {
                     originalItems.forEach((item) => {
@@ -201,24 +215,41 @@ const getStrapiImageFromLogo = (
                         clone.setAttribute("aria-hidden", "true");
                         this.track.appendChild(clone);
                     });
-
                     totalWidth = this.track.scrollWidth;
                 }
 
                 this.track.dataset.cloned = "true";
             }
 
-            gsap.set(this.track, { x: 0 });
-
-            const loopWidth = this.getLoopWidth(originalItems.length);
-            if (!loopWidth) return;
+            this.loopWidth = this.getLoopWidth(originalItems.length);
+            if (!this.loopWidth) return;
 
             const SPEED_PX_PER_SEC = 80;
-            let duration = loopWidth / SPEED_PX_PER_SEC;
-            if (window.innerWidth < 768) duration *= 1.5;
+            const adjustedSpeed = window.innerWidth < 768
+                ? SPEED_PX_PER_SEC / 1.5
+                : SPEED_PX_PER_SEC;
 
-            this.tl = gsap.timeline({ repeat: -1 });
-            this.tl.fromTo(this.track, { x: 0 }, { x: -loopWidth, duration, ease: "none" });
+            this.pxPerMs = adjustedSpeed / 1000;
+            this.x = 0;
+            this.currentTimeScale = 1;
+            this.lastDirection = 1;
+
+            gsap.set(this.track, { x: 0 });
+
+            // Ticker drives position manually — no timeline boundary issues
+            this.ticker = (_time, deltaTime) => {
+                if (this.isPaused) return;
+
+                this.x -= this.pxPerMs * deltaTime * this.currentTimeScale;
+
+                // Wrap in both directions so it loops infinitely regardless of direction
+                if (this.x <= -this.loopWidth) this.x += this.loopWidth;
+                if (this.x > 0) this.x -= this.loopWidth;
+
+                gsap.set(this.track, { x: this.x });
+            };
+
+            gsap.ticker.add(this.ticker);
 
             this.setupLenis();
             this.setupHoverPause();
@@ -239,6 +270,7 @@ const getStrapiImageFromLogo = (
             const lenis = (window as any).__lenis;
             if (!lenis?.on) return;
 
+            // Detach any previous listener
             if (this.lenisInstance?.off && this.onLenisScroll) {
                 this.lenisInstance.off("scroll", this.onLenisScroll);
             }
@@ -246,27 +278,27 @@ const getStrapiImageFromLogo = (
             this.lenisInstance = lenis;
 
             this.onLenisScroll = ({ velocity }: { velocity: number }) => {
-                if (!this.tl) return;
-
                 if (this.resetTimeout) clearTimeout(this.resetTimeout);
 
-                //Negative velocity  = scrolling up  → reverse (timeScale < 0)
-                //Positive velocity  = scrolling down → forward (timeScale > 0)
-                //Magnitude drives speed, capped at 4× so it never goes wild
-                const direction = velocity >= 0 ? 1 : -1;
-                const speed = 1 + Math.min(Math.abs(velocity) * 0.3, 3);
+                const THRESHOLD = 0.05;
 
-                gsap.to(this.tl, {
-                    timeScale: direction * speed,
-                    duration: 0.3,
-                    ease: "power2.out",
-                    overwrite: true,
-                });
+                // Only update direction when velocity is meaningful
+                if (Math.abs(velocity) >= THRESHOLD) {
+                    this.lastDirection = velocity > 0 ? 1 : -1;
+                    const speed = 1 + Math.min(Math.abs(velocity) * 0.3, 3);
 
-                // Smoothly drift back to normal speed once scrolling stops
+                    gsap.to(this, {
+                        currentTimeScale: this.lastDirection * speed,
+                        duration: 0.3,
+                        ease: "power2.out",
+                        overwrite: true,
+                    });
+                }
+
+                // After scrolling stops, return to normal speed in the last direction
                 this.resetTimeout = setTimeout(() => {
-                    gsap.to(this.tl, {
-                        timeScale: 1,
+                    gsap.to(this, {
+                        currentTimeScale: this.lastDirection * 1,
                         duration: 0.8,
                         ease: "power2.out",
                         overwrite: true,
@@ -280,16 +312,38 @@ const getStrapiImageFromLogo = (
         private setupHoverPause(): void {
             if (this.hoverBound) return;
             this.hoverBound = true;
-            this.trackWrapper?.addEventListener("mouseenter", () => this.tl?.pause());
-            this.trackWrapper?.addEventListener("mouseleave", () => this.tl?.resume());
-            this.trackWrapper?.addEventListener("touchstart", () => this.tl?.pause(), { passive: true });
-            this.trackWrapper?.addEventListener("touchend", () => this.tl?.resume(), { passive: true });
+
+            this.trackWrapper?.addEventListener("mouseenter", () => {
+                gsap.to(this, {
+                    currentTimeScale: 0,
+                    duration: 0.3,
+                    ease: "power2.out",
+                    overwrite: true,
+                });
+            });
+
+            this.trackWrapper?.addEventListener("mouseleave", () => {
+                gsap.to(this, {
+                    currentTimeScale: this.lastDirection,
+                    duration: 0.3,
+                    ease: "power2.out",
+                    overwrite: true,
+                });
+            });
+
+            this.trackWrapper?.addEventListener("touchstart", () => {
+                this.isPaused = true;
+            }, { passive: true });
+
+            this.trackWrapper?.addEventListener("touchend", () => {
+                this.isPaused = false;
+            }, { passive: true });
         }
 
         destroy(): void {
-            if (this.tl) {
-                this.tl.kill();
-                this.tl = null;
+            if (this.ticker) {
+                gsap.ticker.remove(this.ticker);
+                this.ticker = null;
             }
 
             if (this.resetTimeout) {
