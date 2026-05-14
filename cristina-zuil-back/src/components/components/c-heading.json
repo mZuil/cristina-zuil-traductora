@@ -18,6 +18,10 @@
     "hasSeparator": {
       "type": "boolean",
       "default": true
+    },
+    "hasContactButton": {
+      "type": "boolean",
+      "default": false
     }
   },
   "config": {}

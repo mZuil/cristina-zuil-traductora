@@ -1,6 +1,9 @@
 ---
+import { uiT } from '../../config/strings-ui';
+import type { Link } from '../../helpers/interfaces/Link.astro';
 import CustomColumn from '../../helpers/structure/CustomColumn/CustomColumn.astro';
 import CustomContainer from '../../helpers/structure/CustomContainer/CustomContainer.astro';
+import AButton from '../atoms/AButton.astro';
 import AText from '../atoms/AText.astro';
 
 interface Props {
@@ -8,9 +11,10 @@ interface Props {
   titleInBlue: string;
   subheading?: string;
   hasSeparator?: boolean;
+  hasContactButton?: boolean;
 }
 
-const { titleInDark, titleInBlue, subheading, hasSeparator = true } = Astro.props;
+const { titleInDark, titleInBlue, subheading, hasSeparator = true, hasContactButton = false } = Astro.props;
 ---
 
 <style lang="scss">
@@ -19,6 +23,10 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true } = Astro.prop
     padding-block: 70px 60px;
     background-color: var(--color-white);
     z-index: 2;
+
+    &.--has-contact-btn {
+      padding-block: 150px 60px;
+    }
 
     &__heading {
       text-align: center;
@@ -53,6 +61,11 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true } = Astro.prop
             will-change: transform;
         }
     }
+    
+    &__contact-button {
+      margin-top: 40px;
+      margin-inline: auto;
+    }
   }
 </style>
 
@@ -63,7 +76,7 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true } = Astro.prop
   </div>
 )}
 
-<section class="c-heading js-c-heading">
+<section class:list={["c-heading", "js-c-heading", hasContactButton && "--has-contact-btn"]}>
   <CustomContainer>
     <CustomColumn lg="12" md="8" sm="4">
       <div class="c-heading__heading">
@@ -80,6 +93,11 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true } = Astro.prop
             <AText as="p" size="body" class="c-heading__subheading">
               {subheading}
             </AText>
+          )
+        }
+        {
+          hasContactButton && (
+            <AButton as="button" onClick="openContactModal()" variant="primary" size="menu-item" class="c-heading__contact-button">{uiT(Astro.currentLocale, 'contactButton')}</AButton>
           )
         }
       </div>
@@ -155,6 +173,7 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true } = Astro.prop
             start: "top bottom",
             end: "top top",
             scrub: 1,
+            invalidateOnRefresh: true,
           },
         }
       );

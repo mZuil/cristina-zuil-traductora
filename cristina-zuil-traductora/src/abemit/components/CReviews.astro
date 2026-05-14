@@ -44,7 +44,6 @@ const getStrapiImageFromLogo = (
         position: relative;
         min-height: 100lvh;
         background-color: var(--color-white);
-        overflow: hidden;
         z-index: 1;
 
         &__current-publisher {
@@ -52,10 +51,11 @@ const getStrapiImageFromLogo = (
             inset-block: 0;
             left: 0;
             width: 33%;
+            height: var(--card-height);
             z-index: 2;
             display: flex;
             flex-direction: column;
-            align-items: center; // center name + logo horizontally
+            align-items: center;
             justify-content: center;
             padding-inline: clamp(2rem, 5vw, 10rem);
         }
@@ -96,10 +96,8 @@ const getStrapiImageFromLogo = (
 
         // First card mathematically centered at 50vw
         &__reviews-list {
-            position: absolute;
-            left: calc(50% - var(--card-width) / 2);
-            top: 50%;
-            transform: translateY(-50%);
+            position: relative;
+            margin-left: calc(50vw - var(--card-width) / 2);
             display: flex;
             flex-direction: row;
             align-items: center;
@@ -151,6 +149,18 @@ const getStrapiImageFromLogo = (
         }
     }
 
+    .u-sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
     // @include breakpoint-down(md) {
     //     flex-direction: column;
     //     padding-left: 0;
@@ -182,8 +192,9 @@ const getStrapiImageFromLogo = (
     // }
 </style>
 
-<section class="c-reviews js-c-reviews">
-    <div class="c-reviews__current-publisher">
+<section class="c-reviews js-c-reviews" aria-label="Publisher testimonials">
+    <!-- purely visual: screen readers use the cards instead -->
+    <div class="c-reviews__current-publisher js-current-publisher" aria-hidden="true">
         <AText
             size="headline-1"
             class="c-reviews__publisher-name | js-publisher-name"
@@ -208,25 +219,34 @@ const getStrapiImageFromLogo = (
             }
         </div>
     </div>
-    <div class="c-reviews__reviews-list | js-reviews-list">
+
+    <ul class="c-reviews__reviews-list | js-reviews-list">
         {
-            publishers.map((publisher) => (
-                <div
-                    class="c-reviews__review | js-review-item"
-                    data-publisher={publisher?.name}
-                    data-logo={publisher?.logo?.url}
-                >
-                    <AImage
-                        image={publisher?.commentBgImage as StrapiImage}
-                        class="c-reviews__background-img"
-                    />
-                    <AText size="subheading-2" class="c-reviews__text">
-                        {publisher?.publisherComment}
-                    </AText>
-                </div>
-            ))
+            publishers.map((publisher, idx) => {
+                const logoImage = getStrapiImageFromLogo(publisher.logo);
+                return (
+                    <li
+                        class="c-reviews__review | js-review-item"
+                        data-publisher={publisher?.name}
+                        data-logo={logoImage?.url ?? ""}
+                        aria-hidden={idx !== 0 ? "true" : "false"}
+                        aria-label={publisher?.name}
+                    >
+                        {/* visually hidden publisher name prefix for screen readers */}
+                        <span class="u-sr-only">{publisher?.name}:</span>
+                        <AImage
+                            image={publisher?.commentBgImage as StrapiImage}
+                            class="c-reviews__background-img"
+                            alt=""
+                        />
+                        <AText size="subheading-2" class="c-reviews__text">
+                            {publisher?.publisherComment}
+                        </AText>
+                    </li>
+                );
+            })
         }
-    </div>
+    </ul>
 </section>
 
 <script>
@@ -238,6 +258,7 @@ const getStrapiImageFromLogo = (
 
     class CReviews extends BaseComponent {
         private st?: ScrollTrigger;
+        private stPanel?: ScrollTrigger;
         private tl?: gsap.core.Timeline;
         private activeIndex = -1;
         private publisherNameTween: gsap.core.Tween | null = null;
@@ -335,7 +356,11 @@ const getStrapiImageFromLogo = (
                                     this.publisherLogoTween = gsap.fromTo(
                                         nextLogo,
                                         { autoAlpha: 0 },
-                                        { autoAlpha: 1, duration: 0.25, overwrite: true },
+                                        {
+                                            autoAlpha: 1,
+                                            duration: 0.25,
+                                            overwrite: true,
+                                        },
                                     );
                                 }
                             },
@@ -344,7 +369,11 @@ const getStrapiImageFromLogo = (
                         publisherLogoItems.forEach((el, i) => {
                             const isNext = i === next;
                             el.classList.toggle("is-active", isNext);
-                            gsap.set(el, { display: isNext ? "block" : "none" });
+                            el.setAttribute("aria-hidden", isNext ? "false" : "true");
+
+                            gsap.set(el, {
+                                display: isNext ? "block" : "none",
+                            });
                         });
                         this.publisherLogoTween = gsap.fromTo(
                             nextLogo,
@@ -381,19 +410,23 @@ const getStrapiImageFromLogo = (
                 );
             });
 
+            const currentPublisher =
+                this.nodeInDOM.querySelector<HTMLElement>(".js-current-publisher");
+
+            const endDistance = () =>
+                `+=${(items.length - 1) * this.getItemOffset(track, items[0]) + window.innerHeight}`;
+
             this.st?.kill(true);
             this.st = ScrollTrigger.create({
-                trigger: this.nodeInDOM,
+                trigger: track,
                 start: "center center",
-                end: () =>
-                    `+=${(items.length - 1) * this.getItemOffset(track, items[0])}`,
+                end: endDistance,
                 animation: this.tl,
-                pin: true,
+                pin: track,
                 pinSpacing: true,
                 anticipatePin: 1,
                 scrub: true,
                 invalidateOnRefresh: true,
-                // markers: true,
                 onUpdate: () => {
                     if (!this.tl) return;
                     const t = this.tl.time();
@@ -413,11 +446,26 @@ const getStrapiImageFromLogo = (
                     setActive(idx);
                 },
             });
+
+            if (currentPublisher) {
+                this.stPanel?.kill(true);
+                this.stPanel = ScrollTrigger.create({
+                    trigger: track,
+                    start: "center center",
+                    end: endDistance,
+                    pin: currentPublisher,
+                    pinSpacing: false,
+                    anticipatePin: 1,
+                    invalidateOnRefresh: true,
+                });
+            }
         }
 
         destroy(): void {
             this.st?.kill(true);
             this.st = undefined;
+            this.stPanel?.kill(true);
+            this.stPanel = undefined;
             this.tl?.kill();
             this.tl = undefined;
             this.publisherNameTween?.kill();

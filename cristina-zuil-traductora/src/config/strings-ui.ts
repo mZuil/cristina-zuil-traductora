@@ -21,6 +21,9 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     //For articles
     articleItem: 'Artículo',
     readMore: 'Leer más',
+
+    //For contact button in Sobre mi page
+    contactButton: 'Contáctame',
   },
   en: {
     //For searching
@@ -42,6 +45,9 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     //For articles
     articleItem: 'Article',
     readMore: 'Read more',
+    
+    //For contact button in Sobre mi page
+    contactButton: 'Contact me',
   },
 };
 
