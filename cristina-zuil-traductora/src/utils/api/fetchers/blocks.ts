@@ -68,6 +68,20 @@ export type ContactResponse = {
   instagramLink: Link;
 };
 
+const toStr = (v: unknown): string => (typeof v === 'string' ? v : '');
+
+const normalizeLink = (v: unknown): Link => {
+  if (v && typeof v === 'object') {
+    const o = v as any;
+    return {
+      url: toStr(o.url),
+      label: toStr(o.label),
+    } as Link;
+  }
+
+  return { url: '', label: '' } as Link;
+};
+
 export async function fetchContact(locale: string): Promise<ContactResponse> {
   const url = new URL(`${i18nConfig.strapi.url}/api/contact`);
   url.searchParams.set('populate', '*');
@@ -86,11 +100,11 @@ export async function fetchContact(locale: string): Promise<ContactResponse> {
     return {
       titleText: contactInfo?.titleText ?? '',
       emailAddress: contactInfo?.emailAddress ?? '',
-      linkedinLink: contactInfo?.linkedinLink ?? [],
-      instagramLink: contactInfo?.instagramLink ?? []
+      linkedinLink: normalizeLink(contactInfo?.linkedinLink),
+      instagramLink: normalizeLink(contactInfo?.instagramLink),
     };
   } catch (err) {
-    console.error('Failed to fetch header menu:', err);
+    console.error('Failed to fetch contact info:', err);
     return { titleText: '', emailAddress: '', linkedinLink: { url: '', label: '' }, instagramLink: { url: '', label: '' } };
   }
 }

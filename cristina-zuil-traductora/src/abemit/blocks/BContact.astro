@@ -15,20 +15,221 @@ const instagramLink = contactInfo.instagramLink;
     @use "../../styles/mixins" as *;
 
     .b-contact {
-        @include use-font(menu-item);
+        &__dialog {
+            border: none;
+            padding: 0;
+            border-radius: 18px;
+            overflow: hidden;
 
-        position: relative;
-        background-color: var(--color-white);
-        z-index: 1;
+            &::backdrop {
+                background: rgba(13, 27, 42, 0.55);
+            }
+        }
 
-        margin-top: auto;
-        margin-bottom: -1px;
+        &__dialog-inner {
+            width: calc(var(--width-col) * 8 + var(--grid-gutter) * 7);
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            border-radius: 30px;
+            background-color: var(--color-white);
+        }
+
+        &__dialog-body {
+            padding: var(--grid-gutter);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        &__dialog-title {
+            @include use-font('headline-1');
+            color: var(--color-blue-dark);
+        }
+
+        &__dialog-text {
+            @include use-font('body');
+            color: var(--color-blue-dark);
+        }
+
+        &__dialog-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        &__dialog-link {
+            @include use-font('menu-item');
+            color: var(--color-blue-default);
+            text-decoration: none;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+
+        &__dialog-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 3px 4px 0 4px;
+            background-color: var(--color-blue-default);
+            color: var(--color-white);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            pointer-events: all;
+            transition: background-color 0.3s ease-in-out;
+
+            &:hover {
+                background-color: var(--color-blue-dark);
+            }
+        }
     }
 </style>
 
-<div class="b-contact js-b-contact">
-  <h2>{titleText}</h2>
-  <p>{emailAddress}</p>
-  <a href={linkedinLink.url}>{linkedinLink.label}</a>
-  <a href={instagramLink.url}>{instagramLink.label}</a>
+<div class="b-contact js-b-contact" data-locale={locale}>
+    <dialog class="b-contact__dialog js-contact-dialog" data-dialog aria-label={titleText}>
+        <div class="b-contact__dialog-inner">
+            <button type="button" class="b-contact__dialog-close" data-dialog-close>
+                <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
+            </button>
+            <div class="b-contact__dialog-body">
+                <div class="b-contact__dialog-title">{titleText}</div>
+                <div class="b-contact__dialog-text">{emailAddress}</div>
+                <div class="b-contact__dialog-links">
+                    <a class="b-contact__dialog-link" href={linkedinLink?.url} target="_blank" rel="noopener noreferrer">{linkedinLink?.label}</a>
+                    <a class="b-contact__dialog-link" href={instagramLink?.url} target="_blank" rel="noopener noreferrer">{instagramLink?.label}</a>
+                </div>
+            </div>
+        </div>
+    </dialog>
 </div>
+
+<script>
+    import { gsap } from "gsap";
+
+    declare global {
+        interface Window {
+            openContactModal?: () => void;
+        }
+    }
+
+    const setBodyScrollLocked = (locked: boolean): void => {
+        const body = document.body;
+        if (!body) return;
+
+        if (locked) {
+            if (body.dataset.scrollY !== undefined) return;
+            const scrollY = window.scrollY;
+            body.style.position = "fixed";
+            body.style.top = `-${scrollY}px`;
+            body.style.left = "0";
+            body.style.right = "0";
+            body.dataset.scrollY = String(scrollY);
+        } else {
+            if (body.dataset.scrollY === undefined) return;
+            const scrollY = Number(body.dataset.scrollY);
+            body.style.position = "";
+            body.style.top = "";
+            body.style.left = "";
+            body.style.right = "";
+            delete body.dataset.scrollY;
+            window.scrollTo(0, scrollY);
+        }
+    };
+
+    const setLenisEnabled = (enabled: boolean): void => {
+        const lenis = (window as any).__lenis as
+            | { stop?: () => void; start?: () => void }
+            | undefined;
+        if (!lenis) return;
+        if (enabled) lenis.start?.();
+        else lenis.stop?.();
+    };
+
+    const initAll = () => {
+        const root = document.querySelector<HTMLElement>(".js-b-contact");
+        if (!root) return;
+        if (root.dataset.contactInit === "1") return;
+        root.dataset.contactInit = "1";
+
+        const dialog = root.querySelector('dialog[data-dialog]');
+        if (!(dialog instanceof HTMLDialogElement)) return;
+
+        const dialogPanel = dialog.querySelector<HTMLElement>(".b-contact__dialog-inner");
+        const closeBtn = dialog.querySelector<HTMLElement>("[data-dialog-close]");
+        if (!dialogPanel) return;
+
+        let dialogTween: gsap.core.Tween | null = null;
+        const killDialogTween = (): void => {
+            dialogTween?.kill();
+            dialogTween = null;
+        };
+
+        const openDialog = (): void => {
+            killDialogTween();
+            if (dialog.open) dialog.close();
+            dialog.showModal();
+
+            document.dispatchEvent(new CustomEvent("articles-modal:open"));
+            setBodyScrollLocked(true);
+            setLenisEnabled(false);
+
+            gsap.set(dialogPanel, {
+                xPercent: -50,
+                yPercent: -50,
+                scale: 0.85,
+                autoAlpha: 0,
+                transformOrigin: "50% 50%",
+            });
+
+            dialogTween = gsap.to(dialogPanel, {
+                scale: 1,
+                autoAlpha: 1,
+                duration: 0.5,
+                ease: "back.out(1.7)",
+            });
+        };
+
+        const closeDialog = (): void => {
+            if (!dialog.open) return;
+            killDialogTween();
+
+            dialogTween = gsap.to(dialogPanel, {
+                scale: 0.85,
+                autoAlpha: 0,
+                duration: 0.3,
+                ease: "back.in(1.7)",
+                onComplete: () => {
+                    dialog.close();
+                    gsap.set(dialogPanel, { clearProps: "all" });
+                    setBodyScrollLocked(false);
+                    setLenisEnabled(true);
+                    document.dispatchEvent(new CustomEvent("articles-modal:close"));
+                },
+            });
+        };
+
+        window.openContactModal = openDialog;
+
+        closeBtn?.addEventListener("click", () => closeDialog());
+        dialog.addEventListener("click", (e) => {
+            if (e.target === dialog) closeDialog();
+        });
+        dialog.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                closeDialog();
+            }
+        });
+        dialog.addEventListener("close", () => {
+            setBodyScrollLocked(false);
+            setLenisEnabled(true);
+            document.dispatchEvent(new CustomEvent("articles-modal:close"));
+        });
+    };
+
+    initAll();
+    document.addEventListener("astro:page-load", initAll);
+</script>

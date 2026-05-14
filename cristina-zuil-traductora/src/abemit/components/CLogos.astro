@@ -171,8 +171,8 @@ const getStrapiImageFromLogo = (
 
         // Ticker-based state
         private x = 0;
-        private currentTimeScale = 1;  // 1 = forward (left), -1 = backward (right)
-        private lastDirection = 1;     // tracks last intentional direction
+        private currentTimeScale = 1;
+        private lastDirection = 1;
         private loopWidth = 0;
         private pxPerMs = 0;
         private ticker: ((time: number, deltaTime: number) => void) | null = null;
@@ -185,6 +185,7 @@ const getStrapiImageFromLogo = (
         private resetTimeout: ReturnType<typeof setTimeout> | null = null;
         private hoverBound = false;
         private isPaused = false;
+        private isHovered = false;
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
@@ -194,7 +195,6 @@ const getStrapiImageFromLogo = (
         }
 
         private setupLogosSlider(): void {
-            // Stop any existing ticker
             if (this.ticker) {
                 gsap.ticker.remove(this.ticker);
                 this.ticker = null;
@@ -204,7 +204,6 @@ const getStrapiImageFromLogo = (
 
             if (originalItems.length === 0) return;
 
-            // Clone items until we fill at least 2× the viewport width
             if (!this.track.dataset.cloned) {
                 let totalWidth = this.track.scrollWidth;
                 const containerWidth = window.innerWidth;
@@ -236,13 +235,11 @@ const getStrapiImageFromLogo = (
 
             gsap.set(this.track, { x: 0 });
 
-            // Ticker drives position manually — no timeline boundary issues
             this.ticker = (_time, deltaTime) => {
                 if (this.isPaused) return;
 
                 this.x -= this.pxPerMs * deltaTime * this.currentTimeScale;
 
-                // Wrap in both directions so it loops infinitely regardless of direction
                 if (this.x <= -this.loopWidth) this.x += this.loopWidth;
                 if (this.x > 0) this.x -= this.loopWidth;
 
@@ -270,7 +267,6 @@ const getStrapiImageFromLogo = (
             const lenis = (window as any).__lenis;
             if (!lenis?.on) return;
 
-            // Detach any previous listener
             if (this.lenisInstance?.off && this.onLenisScroll) {
                 this.lenisInstance.off("scroll", this.onLenisScroll);
             }
@@ -282,27 +278,33 @@ const getStrapiImageFromLogo = (
 
                 const THRESHOLD = 0.05;
 
-                // Only update direction when velocity is meaningful
                 if (Math.abs(velocity) >= THRESHOLD) {
+                    // Always track the last scroll direction, even while hovered
                     this.lastDirection = velocity > 0 ? 1 : -1;
                     const speed = 1 + Math.min(Math.abs(velocity) * 0.3, 3);
 
-                    gsap.to(this, {
-                        currentTimeScale: this.lastDirection * speed,
-                        duration: 0.3,
-                        ease: "power2.out",
-                        overwrite: true,
-                    });
+                    // Don't override the hover pause
+                    if (!this.isHovered) {
+                        gsap.to(this, {
+                            currentTimeScale: this.lastDirection * speed,
+                            duration: 0.3,
+                            ease: "power2.out",
+                            overwrite: true,
+                        });
+                    }
                 }
 
                 // After scrolling stops, return to normal speed in the last direction
                 this.resetTimeout = setTimeout(() => {
-                    gsap.to(this, {
-                        currentTimeScale: this.lastDirection * 1,
-                        duration: 0.8,
-                        ease: "power2.out",
-                        overwrite: true,
-                    });
+                    // Don't override the hover pause
+                    if (!this.isHovered) {
+                        gsap.to(this, {
+                            currentTimeScale: this.lastDirection * 1,
+                            duration: 0.8,
+                            ease: "power2.out",
+                            overwrite: true,
+                        });
+                    }
                 }, 150);
             };
 
@@ -314,6 +316,7 @@ const getStrapiImageFromLogo = (
             this.hoverBound = true;
 
             this.trackWrapper?.addEventListener("mouseenter", () => {
+                this.isHovered = true;
                 gsap.to(this, {
                     currentTimeScale: 0,
                     duration: 0.3,
@@ -323,6 +326,7 @@ const getStrapiImageFromLogo = (
             });
 
             this.trackWrapper?.addEventListener("mouseleave", () => {
+                this.isHovered = false;
                 gsap.to(this, {
                     currentTimeScale: this.lastDirection,
                     duration: 0.3,
