@@ -1,0 +1,34 @@
+---
+import { fetchContact } from "../../utils/api/fetchers/blocks";
+
+const locale = Astro.currentLocale ?? "es";
+
+const contactInfo = await fetchContact(locale);
+const titleText = contactInfo.titleText;
+const emailAddress = contactInfo.emailAddress;
+const linkedinLink = contactInfo.linkedinLink;
+const instagramLink = contactInfo.instagramLink;
+
+---
+
+<style lang="scss">
+    @use "../../styles/mixins" as *;
+
+    .b-contact {
+        @include use-font(menu-item);
+
+        position: relative;
+        background-color: var(--color-white);
+        z-index: 1;
+
+        margin-top: auto;
+        margin-bottom: -1px;
+    }
+</style>
+
+<div class="b-contact js-b-contact">
+  <h2>{titleText}</h2>
+  <p>{emailAddress}</p>
+  <a href={linkedinLink.url}>{linkedinLink.label}</a>
+  <a href={instagramLink.url}>{instagramLink.label}</a>
+</div>

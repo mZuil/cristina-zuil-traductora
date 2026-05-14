@@ -10,6 +10,7 @@ import BHeader from '../abemit/blocks/BHeader.astro';
 import '../styles/global.scss';
 import GridOverlay from '../helpers/structure/GridOverlay/GridOverlay.astro';
 import BFooter from '../abemit/blocks/BFooter.astro';
+import BContact from '../abemit/blocks/BContact.astro';
 
 interface Props {
   content: any; // Strapi content (page, book, article, etc.)
@@ -63,6 +64,7 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
     <slot />
     <BFooter />
 
+    <BContact />
     <GridOverlay />
   </body>
 </html>
