@@ -58,7 +58,7 @@ export const designTokens = {
           fontSize: 'clamp(90px, 10.28vw, 180px)',
           fontWeight: 700,
           lineHeight: 1.05,
-          letterSpacing: '0',
+          letterSpacing: '0.03em',
           textTransform: 'uppercase',
         },
         md: {},
