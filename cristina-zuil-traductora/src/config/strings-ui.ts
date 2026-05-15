@@ -24,6 +24,11 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
 
     //For contact button in Sobre mi page
     contactButton: 'Contáctame',
+
+    //For contact modal
+    contactEmail: 'Correo',
+    linkedin: 'LinkedIn',
+    instagram: 'Instagram',
   },
   en: {
     //For searching
@@ -48,6 +53,11 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     
     //For contact button in Sobre mi page
     contactButton: 'Contact me',
+
+    //For contact modal
+    contactEmail: 'Email',
+    linkedin: 'LinkedIn',
+    instagram: 'Instagram',
   },
 };
 
