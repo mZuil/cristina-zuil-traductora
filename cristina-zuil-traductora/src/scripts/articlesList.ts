@@ -72,7 +72,6 @@ export function initArticlesList(root: HTMLElement): void {
       onComplete: () => {
         dialog.close();
         gsap.set(dialogPanel, { clearProps: 'all' });
-        setBodyScrollLocked(false);  // ← restore scroll here, only once
         setLenisEnabled(true);
 
         document.dispatchEvent(new CustomEvent('articles-modal:close'));
@@ -80,32 +79,7 @@ export function initArticlesList(root: HTMLElement): void {
     });
   };
 
-  // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-  const setBodyScrollLocked = (locked: boolean): void => {
-    const body = document.body;
-    if (!body) return;
-
-    if (locked) {
-      if (body.dataset.scrollY !== undefined) return; // already locked
-      const scrollY = window.scrollY;
-      body.style.position = 'fixed';
-      body.style.top = `-${scrollY}px`;
-      body.style.left = '0';
-      body.style.right = '0';
-      body.dataset.scrollY = String(scrollY);
-    } else {
-      if (body.dataset.scrollY === undefined) return; // already unlocked
-      const scrollY = Number(body.dataset.scrollY);
-      body.style.position = '';
-      body.style.top = '';
-      body.style.left = '';
-      body.style.right = '';
-      delete body.dataset.scrollY;
-      window.scrollTo(0, scrollY);
-    }
-  };
-
+  // ─── Helpers ────────────────────────────────────────────────────────────────
   const setLenisEnabled = (enabled: boolean): void => {
     const lenis = (window as any).__lenis as { stop?: () => void; start?: () => void } | undefined;
     if (!lenis) return;
@@ -197,7 +171,6 @@ export function initArticlesList(root: HTMLElement): void {
 
     // Safety net: clean up body state if dialog closes by any other means
     dialog.addEventListener('close', () => {
-      setBodyScrollLocked(false);
       setLenisEnabled(true);
 
       document.dispatchEvent(new CustomEvent('articles-modal:close'));
@@ -247,7 +220,6 @@ export function initArticlesList(root: HTMLElement): void {
         }
       }
 
-      setBodyScrollLocked(true);
       setLenisEnabled(false);
       openDialog();
     });

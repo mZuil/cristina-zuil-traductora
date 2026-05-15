@@ -22,7 +22,7 @@ const instagramLink = contactInfo.instagramLink;
             overflow: hidden;
 
             &::backdrop {
-                background: rgba(13, 27, 42, 0.55);
+                background: rgba(13, 27, 42, 0.88);
             }
         }
 
@@ -115,30 +115,6 @@ const instagramLink = contactInfo.instagramLink;
         }
     }
 
-    const setBodyScrollLocked = (locked: boolean): void => {
-        const body = document.body;
-        if (!body) return;
-
-        if (locked) {
-            if (body.dataset.scrollY !== undefined) return;
-            const scrollY = window.scrollY;
-            body.style.position = "fixed";
-            body.style.top = `-${scrollY}px`;
-            body.style.left = "0";
-            body.style.right = "0";
-            body.dataset.scrollY = String(scrollY);
-        } else {
-            if (body.dataset.scrollY === undefined) return;
-            const scrollY = Number(body.dataset.scrollY);
-            body.style.position = "";
-            body.style.top = "";
-            body.style.left = "";
-            body.style.right = "";
-            delete body.dataset.scrollY;
-            window.scrollTo(0, scrollY);
-        }
-    };
-
     const setLenisEnabled = (enabled: boolean): void => {
         const lenis = (window as any).__lenis as
             | { stop?: () => void; start?: () => void }
@@ -173,7 +149,6 @@ const instagramLink = contactInfo.instagramLink;
             dialog.showModal();
 
             document.dispatchEvent(new CustomEvent("articles-modal:open"));
-            setBodyScrollLocked(true);
             setLenisEnabled(false);
 
             gsap.set(dialogPanel, {
@@ -204,7 +179,6 @@ const instagramLink = contactInfo.instagramLink;
                 onComplete: () => {
                     dialog.close();
                     gsap.set(dialogPanel, { clearProps: "all" });
-                    setBodyScrollLocked(false);
                     setLenisEnabled(true);
                     document.dispatchEvent(new CustomEvent("articles-modal:close"));
                 },
@@ -224,7 +198,6 @@ const instagramLink = contactInfo.instagramLink;
             }
         });
         dialog.addEventListener("close", () => {
-            setBodyScrollLocked(false);
             setLenisEnabled(true);
             document.dispatchEvent(new CustomEvent("articles-modal:close"));
         });
