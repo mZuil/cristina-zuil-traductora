@@ -25,3 +25,9 @@ pnpm-debug.log*
 
 #vs code
 .vscode/
+
+#windsurf
+.windsurf/
+
+#assets
+.assets/

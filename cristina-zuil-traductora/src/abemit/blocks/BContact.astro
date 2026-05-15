@@ -49,13 +49,17 @@ const instagramLink = contactInfo.instagramLink;
             right: var(--dialog-inner-right);
             border-radius: 30px;
             background-color: var(--color-white);
+            max-width: calc(100vw - var(--grid-gutter) * 2);
+            max-height: calc(100vh - var(--grid-gutter) * 2);
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         &__dialog-body {
             padding: var(--grid-gutter);
             display: flex;
             flex-direction: column;
-            gap: 60px;
+            gap: clamp(18px, 2vh, 60px);
         }
 
         &__dialog-close {
@@ -74,14 +78,14 @@ const instagramLink = contactInfo.instagramLink;
         &__dialog-links {
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: clamp(10px, 3vh, 30px);
         }
 
         &__dialog-link {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 30px;
+            gap: clamp(10px, 3vh, 30px);
             padding: 15px;
             background: none;
             border: none;
@@ -99,11 +103,35 @@ const instagramLink = contactInfo.instagramLink;
         &__link-icon {
             width: 100px;
             height: 100px;
-            padding: 18px;
+            padding: clamp(14px, 1.6vw, 18px);
             border-radius: 50%;
             box-sizing: border-box;
             background-color: var(--color-blue-default);
             color: var(--color-white);
+        }
+
+        @media (max-width: 1024px) {
+            &__dialog-inner {
+                right: var(--grid-gutter);
+                left: var(--grid-gutter);
+                width: auto;
+            }
+        }
+
+        @media (max-height: 780px), (max-width: 900px) {
+            &__dialog-link {
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-start;
+                padding: 12px;
+            }
+
+            &__link-icon {
+                width: 72px;
+                height: 72px;
+                padding: 14px;
+                flex: 0 0 auto;
+            }
         }
 
         &__link-text {
