@@ -30,8 +30,16 @@ const instagramLink = contactInfo.instagramLink;
             overflow: hidden;
 
             &::backdrop {
-                background: rgba(13, 27, 42, 0.88);
+                background: transparent;
             }
+        }
+
+        &__dialog-model {
+            position: fixed;
+            inset: 0;
+            background: rgba(13, 27, 42, 0.55);
+            opacity: 0;
+            visibility: hidden;
         }
 
         &__dialog-inner {
@@ -142,6 +150,7 @@ const instagramLink = contactInfo.instagramLink;
         if (!(dialog instanceof HTMLDialogElement)) return;
 
         const dialogPanel = dialog.querySelector<HTMLElement>(".js-dialog-inner");
+        const dialogModel = dialog.querySelector<HTMLElement>(".js-dialog-model");
         const closeBtn = dialog.querySelector<HTMLElement>("[data-dialog-close]");
         if (!dialogPanel) return;
 
@@ -160,6 +169,12 @@ const instagramLink = contactInfo.instagramLink;
             setLenisEnabled(false);
 
             const rightInnerDialog = getComputedStyle(document.documentElement).getPropertyValue("--dialog-inner-right");
+
+            if (dialogModel) {
+                gsap.killTweensOf(dialogModel);
+                gsap.set(dialogModel, { autoAlpha: 0 });
+                gsap.to(dialogModel, { autoAlpha: 1, duration: 0.25, ease: "power1.out" });
+            }
 
             gsap.set(dialogPanel, {
                 x: rightInnerDialog,
@@ -181,6 +196,11 @@ const instagramLink = contactInfo.instagramLink;
             if (!dialog.open) return;
             killDialogTween();
 
+            if (dialogModel) {
+                gsap.killTweensOf(dialogModel);
+                gsap.to(dialogModel, { autoAlpha: 0, duration: 0.2, ease: "power1.in" });
+            }
+
             dialogTween = gsap.to(dialogPanel, {
                 scale: 0.85,
                 autoAlpha: 0,
@@ -189,6 +209,7 @@ const instagramLink = contactInfo.instagramLink;
                 onComplete: () => {
                     dialog.close();
                     gsap.set(dialogPanel, { clearProps: "all" });
+                    if (dialogModel) gsap.set(dialogModel, { autoAlpha: 0, clearProps: "all" });
                     setLenisEnabled(true);
                     document.dispatchEvent(new CustomEvent("articles-modal:close"));
                 },
@@ -198,6 +219,7 @@ const instagramLink = contactInfo.instagramLink;
         window.openContactModal = openDialog;
 
         closeBtn?.addEventListener("click", () => closeDialog());
+        dialogModel?.addEventListener("click", () => closeDialog());
         dialog.addEventListener("click", (e) => {
             if (e.target === dialog) closeDialog();
         });
@@ -208,6 +230,7 @@ const instagramLink = contactInfo.instagramLink;
             }
         });
         dialog.addEventListener("close", () => {
+            if (dialogModel) gsap.set(dialogModel, { autoAlpha: 0, clearProps: "all" });
             setLenisEnabled(true);
             document.dispatchEvent(new CustomEvent("articles-modal:close"));
         });

@@ -21,6 +21,7 @@ export function initArticlesList(root: HTMLElement): void {
   if (!(dialog instanceof HTMLDialogElement)) return;
 
   const dialogPanel = dialog.querySelector<HTMLElement>('.c-articles-list__dialog-inner');
+  const dialogModel = dialog.querySelector<HTMLElement>('.js-dialog-model');
 
   const dialogImg = dialog.querySelector('[data-dialog-image]');
   const dialogTitle = dialog.querySelector('[data-dialog-title]');
@@ -44,6 +45,12 @@ export function initArticlesList(root: HTMLElement): void {
 
     document.dispatchEvent(new CustomEvent('articles-modal:open'));
 
+    if (dialogModel) {
+      gsap.killTweensOf(dialogModel);
+      gsap.set(dialogModel, { autoAlpha: 0 });
+      gsap.to(dialogModel, { autoAlpha: 1, duration: 0.25, ease: 'power1.out' });
+    }
+
     gsap.set(dialogPanel, {
       xPercent: -50,
       yPercent: -50,
@@ -64,6 +71,11 @@ export function initArticlesList(root: HTMLElement): void {
     if (!dialog.open) return;
     killDialogTween();
 
+    if (dialogModel) {
+      gsap.killTweensOf(dialogModel);
+      gsap.to(dialogModel, { autoAlpha: 0, duration: 0.2, ease: 'power1.in' });
+    }
+
     dialogTween = gsap.to(dialogPanel, {
       scale: 0.85,
       autoAlpha: 0,
@@ -72,6 +84,7 @@ export function initArticlesList(root: HTMLElement): void {
       onComplete: () => {
         dialog.close();
         gsap.set(dialogPanel, { clearProps: 'all' });
+        if (dialogModel) gsap.set(dialogModel, { autoAlpha: 0, clearProps: 'all' });
         setLenisEnabled(true);
 
         document.dispatchEvent(new CustomEvent('articles-modal:close'));
@@ -155,6 +168,10 @@ export function initArticlesList(root: HTMLElement): void {
       closeDialog();
     });
 
+    dialogModel?.addEventListener('click', () => {
+      closeDialog();
+    });
+
     dialog.addEventListener('click', (e) => {
       if (e.target === dialog) {
         closeDialog();
@@ -171,6 +188,7 @@ export function initArticlesList(root: HTMLElement): void {
 
     // Safety net: clean up body state if dialog closes by any other means
     dialog.addEventListener('close', () => {
+      if (dialogModel) gsap.set(dialogModel, { autoAlpha: 0, clearProps: 'all' });
       setLenisEnabled(true);
 
       document.dispatchEvent(new CustomEvent('articles-modal:close'));
