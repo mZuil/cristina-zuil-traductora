@@ -60,9 +60,15 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
     <script type="application/ld+json" set:html={JSON.stringify(structuredData, null, 2)} />
   </head>
   <body>
-    <BHeader transition:persist />
-    <slot />
-    <BFooter />
+    <div class="js-page-wrapper">
+        <BHeader/>
+          <slot />
+        <BFooter />
+    </div>
+
+    <svg class="js-transition-svg" transition:persist viewBox="-1 -1 102 102" preserveAspectRatio="xMidYMin slice" aria-hidden="true">
+      <path class="js-transition-path" d="M -1 101 V 101 Q 50 101 101 101 V 101 z" fill="#89DBE6" />
+    </svg>
 
     <BContact />
     <GridOverlay />
@@ -71,6 +77,7 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
 
 <script>
   import '../scripts/lenis.ts';
+  import '../scripts/page-transition.ts';
 
   document.addEventListener("resize", () => ScrollTrigger.refresh());
 </script>
