@@ -39,20 +39,14 @@ const getLocaleLabel = (loc: string) => {
 };
 ---
 
-<Layout 
-  content={page}
-  locale={locale}
-  contentType="WebSite"
->
-  <main>
-    {Array.isArray(content) ? (
-      <div>
-        {content.map((block: any) => (
-          <div set:html={block.body || ''} />
-        ))}
-      </div>
-    ) : (
-      <div set:html={content} />
-    )}
-  </main>
+<Layout content={page} locale={locale} contentType="WebSite">
+  {Array.isArray(content) ? (
+    <div>
+      {content.map((block: any) => (
+        <div set:html={block.body || ''} />
+      ))}
+    </div>
+  ) : (
+    <div set:html={content} />
+  )}
 </Layout>

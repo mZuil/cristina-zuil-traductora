@@ -4,13 +4,15 @@ import SEOHead from '../helpers/seo/SEOHead.astro';
 import DesignTokens from '../helpers/structure/DesignTokens/DesignTokens.astro';
 import { i18nConfig } from '../config/i18n';
 import { getSEOData, getStructuredData } from '../utils/seo';
-import BHeader from '../abemit/blocks/BHeader.astro';
 
 //CSS Styles
 import '../styles/global.scss';
+
 import GridOverlay from '../helpers/structure/GridOverlay/GridOverlay.astro';
+import BHeader from '../abemit/blocks/BHeader.astro';
 import BFooter from '../abemit/blocks/BFooter.astro';
 import BContact from '../abemit/blocks/BContact.astro';
+import PageTransition from '../helpers/page-transition/PageTransition.astro';
 
 interface Props {
   content: any; // Strapi content (page, book, article, etc.)
@@ -39,6 +41,8 @@ const seoData = getSEOData(content, locale, Astro, {
 
 // Get structured data
 const structuredData = getStructuredData(content, contentType, locale, Astro);
+
+const barbaName = content.slug || 'default';
 ---
 
 <!DOCTYPE html>
@@ -56,21 +60,26 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
     
     <DesignTokens />
     <SEOHead seoData={seoData} />
-    <ClientRouter />
     <script type="application/ld+json" set:html={JSON.stringify(structuredData, null, 2)} />
   </head>
-  <body>
-    <BHeader transition:persist />
-    <slot />
-    <BFooter />
+  <body data-barba="wrapper">
+    <div data-barba="container" data-barba-namespace={barbaName} class="container-barba__wrapper">
+      <main class="container-barba__content">
+        <BHeader />
+        <slot />
+        <BFooter />
+      </main>
+    </div>
 
     <BContact />
     <GridOverlay />
+    <PageTransition />
   </body>
 </html>
 
 <script>
   import '../scripts/lenis.ts';
+  import '../scripts/barba.ts';
 
   document.addEventListener("resize", () => ScrollTrigger.refresh());
 </script>

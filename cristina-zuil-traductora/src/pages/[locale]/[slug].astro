@@ -72,27 +72,22 @@ const contentType = template === 'archive-books' || template === 'archive-articl
   : 'WebPage';
 ---
 
-<Layout  content={page}
-  locale={locale}
-  contentType={contentType}
->
-  <main>
-    {template === 'archive-books' && templateData ? (
-      <ArchiveBooks
-        locale={locale}
-        archiveSlug={slug}
-        bookCategory={page.bookCategory || ''}
-        content={page.content}
-        itemsCount={templateData.total}
-      />
-    ) : template === 'archive-articles' && templateData ? (
-      <ArchiveArticles 
-        items={templateData}
-        content={page.content}
-        locale={locale}
-      />
-    ) : (
-      <DefaultPage page={page} />
-    )}
-  </main>
+<Layout  content={page} locale={locale} contentType={contentType}>
+  {template === 'archive-books' && templateData ? (
+    <ArchiveBooks
+      locale={locale}
+      archiveSlug={slug}
+      bookCategory={page.bookCategory || ''}
+      content={page.content}
+      itemsCount={templateData.total}
+    />
+  ) : template === 'archive-articles' && templateData ? (
+    <ArchiveArticles 
+      items={templateData}
+      content={page.content}
+      locale={locale}
+    />
+  ) : (
+    <DefaultPage page={page} />
+  )}
 </Layout>

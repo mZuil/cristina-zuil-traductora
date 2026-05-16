@@ -282,5 +282,16 @@ const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
       initBooksList(root);
     });
   };
-  document.addEventListener("astro:page-load", initAll);
+
+  initAll();
+
+  document.addEventListener("barba:beforeEnter", ((e: Event) => {
+    const detail = (e as CustomEvent<any>).detail;
+    const nextContainer = detail?.next as ParentNode | undefined;
+    const root: ParentNode = nextContainer ?? document;
+
+    root.querySelectorAll<HTMLElement>(".c-books-list").forEach((el) => {
+      initBooksList(el);
+    });
+  }) as EventListener);
 </script>

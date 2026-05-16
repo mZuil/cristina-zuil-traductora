@@ -52,11 +52,13 @@ function destroyLenis() {
 
 initLenis();
 
-document.addEventListener('astro:after-swap', () => {
+document.addEventListener('barba:beforeLeave', () => {
   destroyLenis();
-  initLenis();
 });
 
-document.addEventListener('astro:before-preparation', () => {
-  destroyLenis();
+document.addEventListener('barba:beforeEnter', () => {
+  initLenis();
+
+  const ScrollTrigger = (globalThis as any).ScrollTrigger as { refresh?: () => void } | undefined;
+  ScrollTrigger?.refresh?.();
 });

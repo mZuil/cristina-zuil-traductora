@@ -286,5 +286,14 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
   };
 
   initAll();
-  document.addEventListener("astro:page-load", initAll);
+
+  document.addEventListener("barba:beforeEnter", ((e: Event) => {
+    const detail = (e as CustomEvent<any>).detail;
+    const nextContainer = detail?.next as ParentNode | undefined;
+    const root: ParentNode = nextContainer ?? document;
+
+    root.querySelectorAll<HTMLElement>(".js-articles-list").forEach((el) => {
+      initArticlesList(el);
+    });
+  }) as EventListener);
 </script>

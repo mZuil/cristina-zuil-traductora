@@ -107,5 +107,13 @@ const { locale = 'es' } = Astro.props;
   };
 
   initAll();
-  document.addEventListener('astro:page-load', initAll);
+
+  document.addEventListener('barba:beforeEnter', ((e: Event) => {
+    const detail = (e as CustomEvent<any>).detail;
+    const nextContainer = detail?.next as ParentNode | undefined;
+    const root: ParentNode = nextContainer ?? document;
+
+    root.querySelectorAll<HTMLElement>('.c-filters').forEach(initBooksFilters);
+    root.querySelectorAll<HTMLElement>('[data-select-id]').forEach(initCustomSelect);
+  }) as EventListener);
 </script>

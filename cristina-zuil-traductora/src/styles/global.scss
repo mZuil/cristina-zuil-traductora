@@ -1,5 +1,4 @@
 @import './fonts.css';
-@import './page-transitions.css';
 @import './lenis.css';
 
 /* ============================================
@@ -51,4 +50,17 @@ body {
   &.is-overflow-hidden {
     overflow: hidden;
   }
+}
+
+/* ============================================
+   BARBA STYLES
+   ============================================ */
+.container-barba__wrapper {
+  position: relative;
+  min-height: 100vh;
+}
+
+.container-barba__content {
+  position: relative;
+  z-index: 1;
 }

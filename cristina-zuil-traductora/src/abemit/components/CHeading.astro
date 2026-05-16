@@ -1,6 +1,5 @@
 ---
 import { uiT } from '../../config/strings-ui';
-import type { Link } from '../../helpers/interfaces/Link.astro';
 import CustomColumn from '../../helpers/structure/CustomColumn/CustomColumn.astro';
 import CustomContainer from '../../helpers/structure/CustomContainer/CustomContainer.astro';
 import AButton from '../atoms/AButton.astro';
@@ -153,6 +152,11 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true, hasContactBut
   class CHeading extends BaseComponent {
     constructor(nodeInDOM: HTMLElement) {
       super(nodeInDOM);
+    }
+
+    start(): void {
+      if (this.isStarted) return;
+      super.start();
 
       // Separator is the preceding sibling of the section
       const separatorWrapper = this.nodeInDOM.previousElementSibling;
@@ -188,5 +192,13 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true, hasContactBut
     BaseComponent.mountAll(".js-c-heading", CHeading);
   }
 
-  document.addEventListener("astro:page-load", initHeading);
+  initHeading();
+
+  document.addEventListener("barba:beforeEnter", ((e: Event) => {
+    const detail = (e as CustomEvent<any>).detail;
+    const nextContainer = detail?.next as ParentNode | undefined;
+    const root: ParentNode = nextContainer ?? document;
+
+    BaseComponent.mountAll(".js-c-heading", CHeading, root);
+  }) as EventListener);
 </script>

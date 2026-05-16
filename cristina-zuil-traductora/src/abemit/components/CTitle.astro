@@ -312,6 +312,11 @@ if (!title) {
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
+        }
+
+        start(): void {
+            if (this.isStarted) return;
+            super.start();
 
             const poemTrigger = this.nodeInDOM.querySelector(".js-poem");
 
@@ -561,5 +566,13 @@ if (!title) {
         BaseComponent.mountAll(".js-c-title", CTitle);
     }
     
-    document.addEventListener("astro:page-load", initTitle);
+    initTitle();
+
+    document.addEventListener("barba:beforeEnter", ((e: Event) => {
+        const detail = (e as CustomEvent<any>).detail;
+        const nextContainer = detail?.next as ParentNode | undefined;
+        const root: ParentNode = nextContainer ?? document;
+
+        BaseComponent.mountAll(".js-c-title", CTitle, root);
+    }) as EventListener);
 </script>

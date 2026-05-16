@@ -258,201 +258,212 @@ const getStrapiImageFromLogo = (
 
 <script>
     import { gsap } from "gsap";
-    import { ScrollTrigger } from "gsap/ScrollTrigger";
-    import { BaseComponent } from "../../helpers/base/BaseComponent";
 
-    gsap.registerPlugin(ScrollTrigger);
+        class CReviews extends BaseComponent {
+            private st?: ScrollTrigger;
+            private stPanel?: ScrollTrigger;
+            private tl?: gsap.core.Timeline;
+            private activeIndex = -1;
+            private publisherNameTween: gsap.core.Tween | null = null;
+            private publisherLogoTween: gsap.core.Tween | null = null;
 
-    class CReviews extends BaseComponent {
-        private st?: ScrollTrigger;
-        private stPanel?: ScrollTrigger;
-        private tl?: gsap.core.Timeline;
-        private activeIndex = -1;
-        private publisherNameTween: gsap.core.Tween | null = null;
-        private publisherLogoTween: gsap.core.Tween | null = null;
-
-        constructor(nodeInDOM: HTMLElement) {
-            super(nodeInDOM);
-            this.initScrollCards();
-        }
-
-        private getItemOffset(
-            track: HTMLElement,
-            firstItem: HTMLElement,
-        ): number {
-            const gap = parseFloat(
-                getComputedStyle(track).columnGap ||
-                    getComputedStyle(track).gap ||
-                    "0",
-            );
-            return firstItem.offsetWidth + gap;
-        }
-
-        initScrollCards() {
-            const track =
-                this.nodeInDOM.querySelector<HTMLElement>(".js-reviews-list");
-            if (!track) return;
-
-            const publisherNameEl =
-                this.nodeInDOM.querySelector<HTMLElement>(".js-publisher-name");
-            const publisherLogoItems = Array.from(
-                this.nodeInDOM.querySelectorAll<HTMLElement>(
-                    ".js-publisher-logo-item",
-                ),
-            );
-
-            const items = Array.from(
-                track.querySelectorAll<HTMLElement>(".js-review-item"),
-            );
-            if (items.length <= 1) return;
-
-            items.forEach((item, i) => {
-                item.style.zIndex = String(i + 1);
-            });
-
-            const setActive = (index: number) => {
-                const next = Math.max(0, Math.min(index, items.length - 1));
-                if (next === this.activeIndex) return;
-                this.activeIndex = next;
-
-                items.forEach((el, i) => {
-                    el.classList.toggle("is-active", i === next);
-                });
-
-                if (publisherNameEl) {
-                    const nextName = items[next]?.dataset.publisher ?? "";
-                    this.publisherNameTween?.kill();
-
-                    // Snap text immediately, then animate in — no onComplete needed
-                    gsap.set(publisherNameEl, { autoAlpha: 0 });
-                    publisherNameEl.textContent = nextName;
-
-                    this.publisherNameTween = gsap.to(publisherNameEl, {
-                        autoAlpha: 1,
-                        duration: 0.4,
-                        overwrite: true,
-                    });
-                }
-
-                if (publisherLogoItems.length > 0) {
-                    this.publisherLogoTween?.kill();
-
-                    // Immediately snap all non-active logos to hidden — no waiting for completion
-                    publisherLogoItems.forEach((el, i) => {
-                        if (i === next) return;
-                        gsap.set(el, { autoAlpha: 0 });
-                        el.classList.remove("is-active");
-                    });
-
-                    // Then animate the new one in
-                    const nextLogo = publisherLogoItems[next];
-                    if (nextLogo) {
-                        nextLogo.classList.add("is-active");
-                        this.publisherLogoTween = gsap.fromTo(
-                            nextLogo,
-                            { autoAlpha: 0 },
-                            { autoAlpha: 1, duration: 0.4, overwrite: true },
-                        );
-                    }
-                }
-            };
-
-            if (publisherNameEl) {
-                publisherNameEl.textContent =
-                    items[0]?.dataset.publisher ??
-                    publisherNameEl.textContent ??
-                    "";
-                gsap.set(publisherNameEl, { autoAlpha: 1 });
+            constructor(nodeInDOM: HTMLElement) {
+                super(nodeInDOM);
             }
 
-            setActive(0);
+            start(): void {
+                if (this.isStarted) return;
+                super.start();
+                this.initScrollCards();
+            }
 
-            this.tl?.kill();
-            this.tl = gsap.timeline({ paused: true });
-
-            items.forEach((item, i) => {
-                if (i === 0) return;
-                this.tl!.to(
-                    item,
-                    {
-                        x: () => -(i * this.getItemOffset(track, items[0])),
-                        ease: "none",
-                        duration: i,
-                    },
-                    0,
+            private getItemOffset(
+                track: HTMLElement,
+                firstItem: HTMLElement,
+            ): number {
+                const gap = parseFloat(
+                    getComputedStyle(track).columnGap ||
+                        getComputedStyle(track).gap ||
+                        "0",
                 );
-            });
+                return firstItem.offsetWidth + gap;
+            }
 
-            const currentPublisher =
-                this.nodeInDOM.querySelector<HTMLElement>(".js-current-publisher");
+            initScrollCards() {
+                const track =
+                    this.nodeInDOM.querySelector<HTMLElement>(".js-reviews-list");
+                if (!track) return;
 
-            const endDistance = () =>
-                `+=${(items.length - 1) * this.getItemOffset(track, items[0]) + window.innerHeight}`;
+                const publisherNameEl =
+                    this.nodeInDOM.querySelector<HTMLElement>(".js-publisher-name");
+                const publisherLogoItems = Array.from(
+                    this.nodeInDOM.querySelectorAll<HTMLElement>(
+                        ".js-publisher-logo-item",
+                    ),
+                );
 
-            this.st?.kill(true);
-            this.st = ScrollTrigger.create({
-                trigger: track,
-                start: "center center",
-                end: endDistance,
-                animation: this.tl,
-                pin: track,
-                pinSpacing: true,
-                anticipatePin: 1,
-                scrub: true,
-                invalidateOnRefresh: true,
-                onUpdate: () => {
-                    if (!this.tl) return;
-                    const t = this.tl.time();
-                    const idx = Math.min(
-                        items.length - 1,
-                        Math.floor(t + 1e-6),
+                const items = Array.from(
+                    track.querySelectorAll<HTMLElement>(".js-review-item"),
+                );
+                if (items.length <= 1) return;
+
+                items.forEach((item, i) => {
+                    item.style.zIndex = String(i + 1);
+                });
+
+                const setActive = (index: number) => {
+                    const next = Math.max(0, Math.min(index, items.length - 1));
+                    if (next === this.activeIndex) return;
+                    this.activeIndex = next;
+
+                    items.forEach((el, i) => {
+                        el.classList.toggle("is-active", i === next);
+                    });
+
+                    if (publisherNameEl) {
+                        const nextName = items[next]?.dataset.publisher ?? "";
+                        this.publisherNameTween?.kill();
+
+                        // Snap text immediately, then animate in — no onComplete needed
+                        gsap.set(publisherNameEl, { autoAlpha: 0 });
+                        publisherNameEl.textContent = nextName;
+
+                        this.publisherNameTween = gsap.to(publisherNameEl, {
+                            autoAlpha: 1,
+                            duration: 0.4,
+                            overwrite: true,
+                        });
+                    }
+
+                    if (publisherLogoItems.length > 0) {
+                        this.publisherLogoTween?.kill();
+
+                        // Immediately snap all non-active logos to hidden — no waiting for completion
+                        publisherLogoItems.forEach((el, i) => {
+                            if (i === next) return;
+                            gsap.set(el, { autoAlpha: 0 });
+                            el.classList.remove("is-active");
+                        });
+
+                        // Then animate the new one in
+                        const nextLogo = publisherLogoItems[next];
+                        if (nextLogo) {
+                            nextLogo.classList.add("is-active");
+                            this.publisherLogoTween = gsap.fromTo(
+                                nextLogo,
+                                { autoAlpha: 0 },
+                                { autoAlpha: 1, duration: 0.4, overwrite: true },
+                            );
+                        }
+                    }
+                };
+
+                if (publisherNameEl) {
+                    publisherNameEl.textContent =
+                        items[0]?.dataset.publisher ??
+                        publisherNameEl.textContent ??
+                        "";
+                    gsap.set(publisherNameEl, { autoAlpha: 1 });
+                }
+
+                setActive(0);
+
+                this.tl?.kill();
+                this.tl = gsap.timeline({ paused: true });
+
+                items.forEach((item, i) => {
+                    if (i === 0) return;
+                    this.tl!.to(
+                        item,
+                        {
+                            x: () => -(i * this.getItemOffset(track, items[0])),
+                            ease: "none",
+                            duration: i,
+                        },
+                        0,
                     );
-                    setActive(idx);
-                },
-                onRefresh: () => {
-                    if (!this.tl) return;
-                    const t = this.tl.time();
-                    const idx = Math.min(
-                        items.length - 1,
-                        Math.floor(t + 1e-6),
-                    );
-                    setActive(idx);
-                },
-            });
+                });
 
-            if (currentPublisher) {
-                this.stPanel?.kill(true);
-                this.stPanel = ScrollTrigger.create({
+                const currentPublisher =
+                    this.nodeInDOM.querySelector<HTMLElement>(".js-current-publisher");
+
+                const endDistance = () =>
+                    `+=${(items.length - 1) * this.getItemOffset(track, items[0]) + window.innerHeight}`;
+
+                this.st?.kill(true);
+                this.st = ScrollTrigger.create({
                     trigger: track,
                     start: "center center",
                     end: endDistance,
-                    pin: currentPublisher,
-                    pinSpacing: false,
+                    animation: this.tl,
+                    pin: track,
+                    pinSpacing: true,
                     anticipatePin: 1,
+                    scrub: true,
                     invalidateOnRefresh: true,
+                    onUpdate: () => {
+                        if (!this.tl) return;
+                        const t = this.tl.time();
+                        const idx = Math.min(
+                            items.length - 1,
+                            Math.floor(t + 1e-6),
+                        );
+                        setActive(idx);
+                    },
+                    onRefresh: () => {
+                        if (!this.tl) return;
+                        const t = this.tl.time();
+                        const idx = Math.min(
+                            items.length - 1,
+                            Math.floor(t + 1e-6),
+                        );
+                        setActive(idx);
+                    },
                 });
+
+                if (currentPublisher) {
+                    this.stPanel?.kill(true);
+                    this.stPanel = ScrollTrigger.create({
+                        trigger: track,
+                        start: "center center",
+                        end: endDistance,
+                        pin: currentPublisher,
+                        pinSpacing: false,
+                        anticipatePin: 1,
+                        invalidateOnRefresh: true,
+                    });
+                }
+            }
+
+            destroy(): void {
+                this.st?.kill(true);
+                this.st = undefined;
+                this.stPanel?.kill(true);
+                this.stPanel = undefined;
+                this.tl?.kill();
+                this.tl = undefined;
+                this.publisherNameTween?.kill();
+                this.publisherNameTween = null;
+                this.publisherLogoTween?.kill();
+                this.publisherLogoTween = null;
             }
         }
 
-        destroy(): void {
-            this.st?.kill(true);
-            this.st = undefined;
-            this.stPanel?.kill(true);
-            this.stPanel = undefined;
-            this.tl?.kill();
-            this.tl = undefined;
-            this.publisherNameTween?.kill();
-            this.publisherNameTween = null;
-            this.publisherLogoTween?.kill();
-            this.publisherLogoTween = null;
+        function initReviews() {
+            const instances = BaseComponent.mountAll(".js-c-reviews", CReviews);
+            const cleanup = () => instances.forEach((i) => (i as any).destroy?.());
+            document.addEventListener("barba:beforeLeave", cleanup, { once: true });
         }
-    }
 
-    function initReviews() {
-        const instances = BaseComponent.mountAll(".js-c-reviews", CReviews);
-        const cleanup = () => instances.forEach((i) => (i as any).destroy?.());
-        document.addEventListener("astro:before-swap", cleanup, { once: true });
-    }
+        initReviews();
 
-    document.addEventListener("astro:page-load", initReviews);
-</script>
+        document.addEventListener("barba:beforeEnter", ((e: Event) => {
+            const detail = (e as CustomEvent<any>).detail;
+            const nextContainer = detail?.next as ParentNode | undefined;
+            const root: ParentNode = nextContainer ?? document;
+
+            const instances = BaseComponent.mountAll(".js-c-reviews", CReviews, root);
+            const cleanup = () => instances.forEach((i) => (i as any).destroy?.());
+            document.addEventListener("barba:beforeLeave", cleanup, { once: true });
+        }) as EventListener);
+    </script>

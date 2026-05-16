@@ -1,4 +1,4 @@
-export class BaseComponent {
+export class BaseBlock {
   nodeInDOM: HTMLElement;
   private started = false;
 
@@ -18,7 +18,7 @@ export class BaseComponent {
     return this.started;
   }
 
-  static mountAll<T extends BaseComponent>(
+  static mountAll<T extends BaseBlock>(
     selector: string,
     Ctor: new (nodeInDOM: HTMLElement) => T,
     root: ParentNode = document,

@@ -392,6 +392,14 @@ const instagramLink = contactInfo.instagramLink;
         });
     };
 
-    initAll();
-    document.addEventListener("astro:page-load", initAll);
+    document.addEventListener("barba:beforeEnter", ((e: Event) => {
+        const detail = (e as CustomEvent<any>).detail;
+        const nextContainer = detail?.next as ParentNode | undefined;
+        const root: ParentNode = nextContainer ?? document;
+
+        const nodeInDOM = root.querySelector<HTMLElement>(".js-b-contact") ?? document.querySelector<HTMLElement>(".js-b-contact");
+        if (!nodeInDOM) return;
+
+        initAll();
+    }) as EventListener);
 </script>

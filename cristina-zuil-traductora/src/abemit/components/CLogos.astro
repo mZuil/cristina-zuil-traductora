@@ -166,6 +166,7 @@ const getStrapiImageFromLogo = (
     import { BaseComponent } from "../../helpers/base/BaseComponent";
 
     class CLogos extends BaseComponent {
+
         private track: HTMLElement;
         private trackWrapper: HTMLElement | null = null;
 
@@ -191,6 +192,11 @@ const getStrapiImageFromLogo = (
             super(nodeInDOM);
             this.track = this.nodeInDOM.querySelector<HTMLElement>(".js-logos-track")!;
             this.trackWrapper = this.nodeInDOM.querySelector<HTMLElement>(".js-track-wrapper")!;
+        }
+
+        start(): void {
+            if (this.isStarted) return;
+            super.start();
             this.setupLogosSlider();
         }
 
@@ -367,8 +373,18 @@ const getStrapiImageFromLogo = (
     function initLogos() {
         const instances = BaseComponent.mountAll(".js-c-logos", CLogos);
         const cleanup = () => instances.forEach((i) => (i as any).destroy?.());
-        document.addEventListener("astro:before-swap", cleanup, { once: true });
+        document.addEventListener("barba:beforeLeave", cleanup, { once: true });
     }
 
-    document.addEventListener("astro:page-load", initLogos);
+    initLogos();
+
+    document.addEventListener("barba:beforeEnter", ((e: Event) => {
+        const detail = (e as CustomEvent<any>).detail;
+        const nextContainer = detail?.next as ParentNode | undefined;
+        const root: ParentNode = nextContainer ?? document;
+
+        const instances = BaseComponent.mountAll(".js-c-logos", CLogos, root);
+        const cleanup = () => instances.forEach((i) => (i as any).destroy?.());
+        document.addEventListener("barba:beforeLeave", cleanup, { once: true });
+    }) as EventListener);
 </script>
