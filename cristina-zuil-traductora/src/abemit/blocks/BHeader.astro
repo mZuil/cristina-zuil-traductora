@@ -267,18 +267,19 @@ contactText = headerMenu.contactText;
             const outsideMenu = header.querySelector<HTMLElement>(".js-outside-menu");
             const menuIcon = header.querySelector<SVGPathElement>(".js-menu-icon");
             const menuText = header.querySelector<HTMLElement>(".js-menu-text");
+            const nav = header.querySelector<HTMLElement>(".b-header__nav");
 
             if (!toggle || !menu || !menuText || !menuIcon) return;
             if (header.dataset.headerInit === "1") return;
             header.dataset.headerInit = "1";
 
+            // ── Shared state ─────────────────────────────────────────
+            let isOpen = false;
+
             const mm = gsap.matchMedia();
 
-            // ── Mobile: toggle outside menu ──────────────────────────
+            // ── Mobile ───────────────────────────────────────────────
             mm.add("(max-width: 1190px)", () => {
-                let isOpen = false;
-
-                const nav = header.querySelector<HTMLElement>(".b-header__nav");
 
                 const syncWidth = () => {
                     if (nav && outsideMenu) {
@@ -287,7 +288,6 @@ contactText = headerMenu.contactText;
                 };
 
                 const buildTimeline = () => {
-                    // Measure real height
                     gsap.set(outsideMenu, { maxHeight: "none", visibility: "hidden" });
                     const fullHeight = outsideMenu!.scrollHeight;
                     gsap.set(outsideMenu, { maxHeight: isOpen ? fullHeight : 0, visibility: "" });
@@ -303,23 +303,27 @@ contactText = headerMenu.contactText;
                 };
 
                 syncWidth();
-                gsap.set(outsideMenu, { opacity: 0, marginTop: 0, maxHeight: 0 });
+                gsap.set(outsideMenu, { opacity: isOpen ? 1 : 0, marginTop: isOpen ? 15 : 0 });
 
                 let tl = buildTimeline();
 
+                // Restore visual state if coming from desktop while open
+                if (isOpen) {
+                    outsideMenu?.classList.add("is-open");
+                    tl.progress(1).pause();
+                }
+
+                // Sync icon to current state
+                gsap.set(menuIcon, {
+                    morphSVG: isOpen ? CLOSE_PATH : HAMBURGER_PATH,
+                });
+
                 const onResize = () => {
                     syncWidth();
-
-                    // Rebuild timeline with fresh measurements
-                    const progress = tl.progress();
+                    const wasOpen = isOpen;
                     tl.kill();
                     tl = buildTimeline();
-
-                    // Restore position so open menus don't snap
-                    if (isOpen) {
-                        tl.progress(progress).pause();
-                        tl.play();
-                    }
+                    if (wasOpen) tl.progress(1).pause();
                 };
 
                 const ro = new ResizeObserver(onResize);
@@ -344,19 +348,17 @@ contactText = headerMenu.contactText;
                 return () => {
                     ro.disconnect();
                     toggle.removeEventListener("click", onToggleClick);
-                    isOpen = false;
-                    toggle.setAttribute("aria-expanded", "false");
-                    outsideMenu?.classList.remove("is-open");
-                    tl.pause(0);
+                    // Don't reset isOpen — preserve state for desktop
                     tl.kill();
                     gsap.set(outsideMenu, { maxHeight: 0, opacity: 0, marginTop: 0, width: "" });
+                    outsideMenu?.classList.remove("is-open");
+                    toggle.setAttribute("aria-expanded", "false");
                     gsap.set(menuIcon, { clearProps: "all" });
                 };
             });
 
-            // ── Desktop: animate inline menu ─────────────────────────
+            // ── Desktop ──────────────────────────────────────────────
             mm.add("(min-width: 1191px)", () => {
-                let isOpen = false;
 
                 const tl = gsap.timeline({ paused: true });
 
@@ -371,6 +373,13 @@ contactText = headerMenu.contactText;
 
                 tl.to(menu, { width: "auto", marginInline: 0, duration: 0.5, ease: "back.out(1.5)" }, 0.25);
 
+                // Restore visual state if coming from mobile while open
+                if (isOpen) {
+                    tl.progress(1).pause();
+                }
+
+                toggle.setAttribute("aria-expanded", String(isOpen));
+
                 const onToggleClick = () => {
                     isOpen = !isOpen;
                     toggle.setAttribute("aria-expanded", String(isOpen));
@@ -381,9 +390,7 @@ contactText = headerMenu.contactText;
 
                 return () => {
                     toggle.removeEventListener("click", onToggleClick);
-                    isOpen = false;
-                    toggle.setAttribute("aria-expanded", "false");
-                    tl.pause(0);
+                    // Don't reset isOpen — preserve state for mobile
                     tl.kill();
                     gsap.set(menu, { clearProps: "width,marginInline" });
                     gsap.set(menuText, { clearProps: "opacity,width,paddingLeft,paddingRight" });
