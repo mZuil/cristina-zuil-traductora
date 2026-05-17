@@ -1,3 +1,5 @@
+@use '../../styles/mixins.scss' as *;
+
 .a-button {
     text-decoration: none;
     color: inherit;
@@ -87,7 +89,7 @@
       }
 
       .a-button__inner {
-        padding: 13px 27px;
+        padding: 8px 20px;
         z-index: 2;
         grid-area: 1 / 1;
         display: flex;
@@ -95,10 +97,18 @@
         align-items: center;
         gap: 10px;
         white-space: nowrap;
+
+        @include lg {
+          padding: 13px 27px;
+        }
       }
 
       &.--has-icon .a-button__inner {
-        padding: 13px 27px 13px 20px;
+        padding: 8px 18px 8px 13px;
+        
+        @include lg {
+          padding: 13px 27px 13px 20px;
+        }
       }
     }
 }

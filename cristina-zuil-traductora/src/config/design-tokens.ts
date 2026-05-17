@@ -55,25 +55,29 @@ export const designTokens = {
       'display-1': {
         sm: {
           fontFamily: 'primary',
-          fontSize: 'clamp(90px, 10.28vw, 180px)',
+          fontSize: 'clamp(40px, 10vw, 50px)',
           fontWeight: 700,
           lineHeight: 1.05,
           letterSpacing: '0.03em',
           textTransform: 'uppercase',
         },
-        md: {},
+        md: {
+          fontSize: 'clamp(90px, 10.28vw, 180px)',
+        },
         lg: {},
       },
 
       'headline-1': {
         sm: {
           fontFamily: 'secondary',
-          fontSize: '40px',
+          fontSize: '34px',
           fontWeight: 700,
           lineHeight: 1.1,
           letterSpacing: '0',
         },
-        md: {},
+        md: {
+          fontSize: '40px',
+        },
         lg: {},
       },
 
@@ -116,24 +120,28 @@ export const designTokens = {
       'menu-item': {
         sm: {
           fontFamily: 'secondary',
-          fontSize: '20px',
+          fontSize: '18px',
           fontWeight: 700,
           lineHeight: 1,
           letterSpacing: '0',
         },
-        md: {},
+        md: {
+          fontSize: '20px',
+        },
         lg: {},
       },
 
       'body': {
         sm: {
           fontFamily: 'secondary',
-          fontSize: '20px',
+          fontSize: '18px',
           fontWeight: 400,
           lineHeight: 1.2,
           letterSpacing: '0',
         },
-        md: {},
+        md: {
+          fontSize: '20px',
+        },
         lg: {},
       },
 

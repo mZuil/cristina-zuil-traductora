@@ -37,6 +37,9 @@ for (const key in breakpoints) {
     if ('maxWidth' in value && value.maxWidth) {
       cssVars.push(`  --container-max-width-${key}: ${value.maxWidth};`);
     }
+
+    //Generate also $ properties
+    cssVars.push(`  $breakpoint-${key}: ${value.breakpoint};`);
   }
 }
 

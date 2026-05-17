@@ -1,9 +1,11 @@
-@import './fonts.css';
-@import './page-transitions.scss';
-@import './lenis.css';
+@use 'sass:meta';
+@use './page-transitions';
+@use '../abemit/atoms/a-button';
+
+@include meta.load-css('./fonts.css');
+@include meta.load-css('./lenis.css');
 
 //SCSS that is better to be global
-@import '../abemit/atoms/a-button.scss';
 
 /* ============================================
    DESIGN TOKENS CSS VARIABLES
@@ -18,13 +20,13 @@
   --container-margin: calc((100dvw - min(100dvw - 2 * var(--container-padding-sm), var(--container-max-width))) / 2);
 }
 
-@media (min-width: var(--breakpoint-md)) {
+@media (min-width: var(--breakpoint-md, 610px)) {
   :root {
     --container-margin: calc((100dvw - min(100dvw - 2 * var(--container-padding-md), var(--container-max-width))) / 2);
   }
 }
 
-@media (min-width: var(--breakpoint-lg)) {
+@media (min-width: var(--breakpoint-lg, 1190px)) {
   :root {
     --container-margin: calc((100dvw - min(100dvw - 2 * var(--container-padding-lg), var(--container-max-width))) / 2);
   }

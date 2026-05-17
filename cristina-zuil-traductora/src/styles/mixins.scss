@@ -6,3 +6,21 @@
   letter-spacing: var(--font-style-#{$name}-letter-spacing);
   text-transform: var(--font-style-#{$name}-text-transform);
 }
+
+@mixin sm {
+  @media (min-width: 0px) {
+    @content;
+  }
+}
+
+@mixin md {
+  @media (min-width: var(--breakpoint-md, 610px)) {
+    @content;
+  }
+}
+
+@mixin lg {
+  @media (min-width: 1190px) {
+    @content;
+  }
+}

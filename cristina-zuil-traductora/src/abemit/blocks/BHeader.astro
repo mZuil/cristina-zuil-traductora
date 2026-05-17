@@ -28,12 +28,18 @@ contactText = headerMenu.contactText;
         z-index: 1000;
         
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
-        padding: 1rem 2rem;
+        padding-block: 1rem;
+        padding-inline: var(--container-padding);
+
+        @include lg {
+            padding-block: 1rem;
+        }
 
         &__nav {
-            --nav-gap: 59px;
+            --nav-gap: 30px;
 
             display: flex;
             flex-direction: row;
@@ -45,6 +51,10 @@ contactText = headerMenu.contactText;
             background-color: var(--color-white);
             border-radius: 30px;
             box-shadow: 0 1px 4px rgba(13, 27, 42, 0.08), 0 4px 28px rgba(13, 27, 42, 0.14);
+
+            @include lg {
+                --nav-gap: 59px;
+            }
         }
 
         &__header-button {
@@ -62,7 +72,7 @@ contactText = headerMenu.contactText;
         // so that at width:0 the surrounding items look as if the menu isn't there.
         // GSAP animates width and marginInline together to open/close smoothly.
         &__menu {
-            display: flex;
+            display: none;
             flex-direction: row;
             flex-wrap: nowrap;
             gap: 10px;
@@ -71,6 +81,10 @@ contactText = headerMenu.contactText;
             list-style: none;
             overflow: hidden;
             width: 0;
+
+            @include lg {
+                display: flex;
+            }
         }
 
         &__menu-item {
@@ -99,10 +113,43 @@ contactText = headerMenu.contactText;
         }
 
         &__logo {
+            width: 40px;
+            height: 40px;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.05))
                 drop-shadow(0 8px 8px rgba(0, 0, 0, 0.04))
                 drop-shadow(0 18px 11px rgba(0, 0, 0, 0.03))
                 drop-shadow(0 32px 13px rgba(0, 0, 0, 0.01));
+
+            @include lg {
+                width: 52px;
+                height: 52px;
+            }
+        }
+
+        &__outside-menu {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-wrap: nowrap;
+            margin-top: 15px;
+            border: 2px solid var(--color-grey);
+            border-radius: 30px;
+            list-style: none;
+
+            @include lg {
+                display: none;
+            }
+
+            & li {
+                width: 100%;
+                text-align: center;
+                padding-block: 7px;
+
+                &:not(:last-child) {
+                    border-bottom: 1px solid var(--color-grey);
+                }
+            }
         }
     }
 </style>
@@ -154,6 +201,18 @@ contactText = headerMenu.contactText;
 
         <AButton as="button" onClick="openContactModal()" variant="primary" size="menu-item" class="b-header__header-button">{contactText}</AButton>
     </nav>
+
+    <ul class="b-header__outside-menu | js-outside-menu">
+        {
+            links.map((link: Link) => (
+                <li>
+                    <AButton as="a" href={link.url} size="menu-item" class={`b-header__menu-item`}>
+                        {link.label}
+                    </AButton>
+                </li>
+            ))
+        }
+    </ul>
 </header>
 
 <script>
@@ -167,37 +226,61 @@ contactText = headerMenu.contactText;
     const CLOSE_PATH = "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z";
 
     function initHeader() {
-        document.querySelectorAll(".js-header").forEach((header) => {
-            const toggle = header.querySelector(".js-menu-toggle");
-            const innerToggle = toggle?.querySelector(".a-button__inner");
+        document.querySelectorAll<HTMLElement>(".js-header").forEach((header) => {
+            const toggle = header.querySelector<HTMLElement>(".js-menu-toggle");
+            const innerToggle = toggle?.querySelector<HTMLElement>(".a-button__inner");
             const menu = header.querySelector<HTMLElement>(".b-header__menu");
-            const menuIcon = header.querySelector(".js-menu-icon");
+            const menuIcon = header.querySelector<SVGPathElement>(".js-menu-icon");
             const menuText = header.querySelector<HTMLElement>(".js-menu-text");
 
-            let isOpen = false;
+            if (!toggle || !menu || !menuText || !menuIcon) return;
 
-            // Single paused timeline — play() opens, reverse() closes.
-            // GSAP captures the CSS initial values (width:0, marginInline:-29.5px)
-            // as the "from" state automatically on first play.
-            const tl = gsap.timeline({ paused: true });
+            if (header.dataset.headerInit === "1") return;
+            header.dataset.headerInit = "1";
 
-            tl
-                // Icon and text animate together immediately
-                .to(menuIcon, { morphSVG: CLOSE_PATH, duration: 0.35, ease: "power2.inOut" }, 0)
-                .to(menuText, { opacity: 0, width: 0, paddingLeft: 0, paddingRight: 0, duration: 0.2, ease: "power2.in" }, 0)
-                .to(toggle, { gap: 0, duration: 0.2, ease: "power2.in" }, 0);
+            const mm = gsap.matchMedia();
 
-            if (innerToggle) {
-                tl.to(innerToggle, { paddingLeft: 13, paddingRight: 3, duration: 0.2, ease: "power2.in" }, 0);
-            }
+            mm.add("(min-width: 1191px)", () => {
+                let isOpen = false;
 
-            // Menu expands slightly after, marginInline goes from -29.5px → 0 in sync
-            tl.to(menu, { width: "auto", marginInline: 0, duration: 0.5, ease: "back.out(1.5)" }, 0.25);
+                // Single paused timeline — play() opens, reverse() closes.
+                const tl = gsap.timeline({ paused: true });
 
-            toggle?.addEventListener("click", () => {
-                isOpen = !isOpen;
-                toggle.setAttribute("aria-expanded", String(isOpen));
-                isOpen ? tl.play() : tl.reverse();
+                tl
+                    // Icon and text animate together immediately
+                    .to(menuIcon, { morphSVG: CLOSE_PATH, duration: 0.35, ease: "power2.inOut" }, 0)
+                    .to(menuText, { opacity: 0, width: 0, paddingLeft: 0, paddingRight: 0, duration: 0.2, ease: "power2.in" }, 0)
+                    .to(toggle, { gap: 0, duration: 0.2, ease: "power2.in" }, 0);
+
+                if (innerToggle) {
+                    tl.to(innerToggle, { paddingLeft: 13, paddingRight: 3, duration: 0.2, ease: "power2.in" }, 0);
+                }
+
+                // Menu expands slightly after, marginInline goes from -29.5px → 0 in sync
+                tl.to(menu, { width: "auto", marginInline: 0, duration: 0.5, ease: "back.out(1.5)" }, 0.25);
+
+                const onToggleClick = () => {
+                    isOpen = !isOpen;
+                    toggle.setAttribute("aria-expanded", String(isOpen));
+                    isOpen ? tl.play() : tl.reverse();
+                };
+
+                toggle.addEventListener("click", onToggleClick);
+
+                return () => {
+                    toggle.removeEventListener("click", onToggleClick);
+
+                    isOpen = false;
+                    toggle.setAttribute("aria-expanded", "false");
+
+                    tl.pause(0);
+                    tl.kill();
+
+                    gsap.set(menu, { clearProps: "width,marginInline" });
+                    gsap.set(menuText, { clearProps: "opacity,width,paddingLeft,paddingRight" });
+                    gsap.set(toggle, { clearProps: "gap" });
+                    if (innerToggle) gsap.set(innerToggle, { clearProps: "paddingLeft,paddingRight" });
+                };
             });
         });
     }
