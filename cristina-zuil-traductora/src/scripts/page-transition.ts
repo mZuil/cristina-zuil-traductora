@@ -10,7 +10,7 @@ document.addEventListener('astro:before-preparation', (e) => {
   event.loader = async () => {
     path.style.animation = 'none';
     path.getBoundingClientRect();
-    path.style.animation = 'morph-in 0.8s cubic-bezier(0.76, 0, 0.24, 1) forwards';
+    path.style.animation = 'morph-in 1s cubic-bezier(0.625, 0.05, 0, 1) forwards';
 
     // Wait for animation to complete
     await new Promise<void>(resolve => {
@@ -28,5 +28,5 @@ document.addEventListener('astro:after-swap', () => {
 
   path.style.animation = 'none';
   path.getBoundingClientRect();
-  path.style.animation = 'morph-out 0.8s cubic-bezier(0.76, 0, 0.24, 1) forwards';
+  path.style.animation = 'morph-out 1s cubic-bezier(0.625, 0.05, 0, 1) forwards';
 });
