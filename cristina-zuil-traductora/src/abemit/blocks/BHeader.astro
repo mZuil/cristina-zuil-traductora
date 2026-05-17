@@ -21,6 +21,8 @@ contactText = headerMenu.contactText;
     .b-header {
         @include use-font(menu-item);
 
+        $self: &;
+
         position: fixed;
         top: 0;
         left: 0;
@@ -127,15 +129,23 @@ contactText = headerMenu.contactText;
         }
 
         &__outside-menu {
-            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             flex-wrap: nowrap;
-            margin-top: 15px;
             border: 2px solid var(--color-grey);
             border-radius: 30px;
             list-style: none;
+
+            max-height: 0;
+            overflow: hidden;
+            margin-top: 0;
+            opacity: 0;
+
+            &.is-open {
+                margin-top: 15px;
+                opacity: 1;
+            }
 
             @include lg {
                 display: none;
@@ -144,11 +154,35 @@ contactText = headerMenu.contactText;
             & li {
                 width: 100%;
                 text-align: center;
-                padding-block: 7px;
+                padding-block: 3px;
+
+                opacity: 0;
+                transform: translateY(8px);
+                transition: opacity 0.25s ease, transform 0.25s ease;
 
                 &:not(:last-child) {
                     border-bottom: 1px solid var(--color-grey);
                 }
+
+                @for $i from 1 through 8 {
+                    &:nth-child(#{$i}) {
+                        transition-delay: #{0.1 + $i * 0.04}s;
+                    }
+                }
+
+                & #{$self}__menu-item {
+                    display: block;
+                    width: 100%;
+                }
+            }
+
+            &.is-open li {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            &:not(.is-open) li {
+                transition-delay: 0s !important;
             }
         }
     }
@@ -222,7 +256,7 @@ contactText = headerMenu.contactText;
     gsap.registerPlugin(MorphSVGPlugin);
 
     //Path `d` values
-    //const HAMBURGER_PATH = "M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z";
+    const HAMBURGER_PATH = "M120-240v-80h720v80H120Zm0-200v-80h720v80H120Zm0-200v-80h720v80H120Z";
     const CLOSE_PATH = "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z";
 
     function initHeader() {
@@ -230,24 +264,103 @@ contactText = headerMenu.contactText;
             const toggle = header.querySelector<HTMLElement>(".js-menu-toggle");
             const innerToggle = toggle?.querySelector<HTMLElement>(".a-button__inner");
             const menu = header.querySelector<HTMLElement>(".b-header__menu");
+            const outsideMenu = header.querySelector<HTMLElement>(".js-outside-menu");
             const menuIcon = header.querySelector<SVGPathElement>(".js-menu-icon");
             const menuText = header.querySelector<HTMLElement>(".js-menu-text");
 
             if (!toggle || !menu || !menuText || !menuIcon) return;
-
             if (header.dataset.headerInit === "1") return;
             header.dataset.headerInit = "1";
 
             const mm = gsap.matchMedia();
 
+            // ── Mobile: toggle outside menu ──────────────────────────
+            mm.add("(max-width: 1190px)", () => {
+                let isOpen = false;
+
+                const nav = header.querySelector<HTMLElement>(".b-header__nav");
+
+                const syncWidth = () => {
+                    if (nav && outsideMenu) {
+                        gsap.set(outsideMenu, { width: nav.offsetWidth });
+                    }
+                };
+
+                const buildTimeline = () => {
+                    // Measure real height
+                    gsap.set(outsideMenu, { maxHeight: "none", visibility: "hidden" });
+                    const fullHeight = outsideMenu!.scrollHeight;
+                    gsap.set(outsideMenu, { maxHeight: isOpen ? fullHeight : 0, visibility: "" });
+
+                    return gsap.timeline({ paused: true })
+                        .to(outsideMenu, {
+                            maxHeight: fullHeight,
+                            opacity: 1,
+                            marginTop: 15,
+                            duration: 0.5,
+                            ease: "power2.inOut",
+                        });
+                };
+
+                syncWidth();
+                gsap.set(outsideMenu, { opacity: 0, marginTop: 0, maxHeight: 0 });
+
+                let tl = buildTimeline();
+
+                const onResize = () => {
+                    syncWidth();
+
+                    // Rebuild timeline with fresh measurements
+                    const progress = tl.progress();
+                    tl.kill();
+                    tl = buildTimeline();
+
+                    // Restore position so open menus don't snap
+                    if (isOpen) {
+                        tl.progress(progress).pause();
+                        tl.play();
+                    }
+                };
+
+                const ro = new ResizeObserver(onResize);
+                ro.observe(document.documentElement);
+
+                const onToggleClick = () => {
+                    isOpen = !isOpen;
+                    toggle.setAttribute("aria-expanded", String(isOpen));
+                    outsideMenu?.classList.toggle("is-open", isOpen);
+
+                    gsap.to(menuIcon, {
+                        morphSVG: isOpen ? CLOSE_PATH : HAMBURGER_PATH,
+                        duration: 0.35,
+                        ease: "power2.inOut",
+                    });
+
+                    isOpen ? tl.play() : tl.reverse();
+                };
+
+                toggle.addEventListener("click", onToggleClick);
+
+                return () => {
+                    ro.disconnect();
+                    toggle.removeEventListener("click", onToggleClick);
+                    isOpen = false;
+                    toggle.setAttribute("aria-expanded", "false");
+                    outsideMenu?.classList.remove("is-open");
+                    tl.pause(0);
+                    tl.kill();
+                    gsap.set(outsideMenu, { maxHeight: 0, opacity: 0, marginTop: 0, width: "" });
+                    gsap.set(menuIcon, { clearProps: "all" });
+                };
+            });
+
+            // ── Desktop: animate inline menu ─────────────────────────
             mm.add("(min-width: 1191px)", () => {
                 let isOpen = false;
 
-                // Single paused timeline — play() opens, reverse() closes.
                 const tl = gsap.timeline({ paused: true });
 
                 tl
-                    // Icon and text animate together immediately
                     .to(menuIcon, { morphSVG: CLOSE_PATH, duration: 0.35, ease: "power2.inOut" }, 0)
                     .to(menuText, { opacity: 0, width: 0, paddingLeft: 0, paddingRight: 0, duration: 0.2, ease: "power2.in" }, 0)
                     .to(toggle, { gap: 0, duration: 0.2, ease: "power2.in" }, 0);
@@ -256,7 +369,6 @@ contactText = headerMenu.contactText;
                     tl.to(innerToggle, { paddingLeft: 13, paddingRight: 3, duration: 0.2, ease: "power2.in" }, 0);
                 }
 
-                // Menu expands slightly after, marginInline goes from -29.5px → 0 in sync
                 tl.to(menu, { width: "auto", marginInline: 0, duration: 0.5, ease: "back.out(1.5)" }, 0.25);
 
                 const onToggleClick = () => {
@@ -269,13 +381,10 @@ contactText = headerMenu.contactText;
 
                 return () => {
                     toggle.removeEventListener("click", onToggleClick);
-
                     isOpen = false;
                     toggle.setAttribute("aria-expanded", "false");
-
                     tl.pause(0);
                     tl.kill();
-
                     gsap.set(menu, { clearProps: "width,marginInline" });
                     gsap.set(menuText, { clearProps: "opacity,width,paddingLeft,paddingRight" });
                     gsap.set(toggle, { clearProps: "gap" });
