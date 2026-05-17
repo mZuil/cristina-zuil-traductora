@@ -1,20 +1,4 @@
 ---
-/**
- * AButton
- *
- * A polymorphic button/link component.
- *
- * `as` prop:
- *   - 'button' → <button> element, use `onClick` (inline string handler)
- *   - 'a'      → <a> element, use `href` + optional `target`.
- *                Automatically adds aria-current="page" and `is-active` class
- *                when `href` matches the current URL — no separate "link" type needed.
- *
- * ⚠️  Astro components are server-rendered, so you cannot pass a JS function
- *     as a prop. For `onClick`, pass an inline string handler (e.g. onClick="doSomething()")
- *     or add a <script> / data-* attribute in the parent and use event delegation.
- */
-
 interface Props {
   as?: 'button' | 'a';
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'outline';
@@ -43,13 +27,19 @@ const {
   ...rest
 } = Astro.props;
 
-const isActive = as === 'a' && href ? Astro.url.pathname === href || Astro.url.pathname.startsWith(href + '/'): false;
+const isActive =
+  as === 'a' && href
+    ? Astro.url.pathname === href || Astro.url.pathname.startsWith(href + '/')
+    : false;
+
+const isPrimary = variant === 'primary';
 
 const elementClasses = [
   'a-button',
-  variant  ? `--${variant}` : '',
-  size     ? `v-font-${size}`        : '',
-  isActive ? 'is-active'             : '',
+  variant  ? `--${variant}`   : '',
+  size     ? `v-font-${size}` : '',
+  isActive ? 'is-active'      : '',
+  isPrimary ? 'a-button--ripple' : '',
   className,
 ]
   .filter(Boolean)
@@ -61,64 +51,243 @@ const wrapperClasses = ['b-button-wrapper', wrapperClass]
 ---
 
 <style lang="scss">
-    .a-button {
+  .a-button {
+    text-decoration: none;
+    color: inherit;
 
-        text-decoration: none;
-        color: inherit;
-        
-        &.--primary {
-            display: flex;
-            flex-direction: row;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
+    &.--primary {
+      display: inline-grid;
+      position: relative;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+      outline-style: none;
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      line-height: 1;
+      background-color: transparent;
+      color: var(--color-white);
+      transition: color 0.25s ease-out;
 
-            padding: 13px 27px;
-            background-color: var(--color-blue-default);
-            color: var(--color-white);
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: background-color 0.2s ease-in-out;
+      &::after {
+        content: '';
+        display: block;
+        position: absolute;
+        inset: -0.125em;
+        border-radius: 30px;
+        transition: box-shadow 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+        pointer-events: none;
+        z-index: 1;
+      }
 
-            &:hover {
-                background-color: var(--color-blue-dark);
-            }
+      &:focus-visible::after {
+        box-shadow: 0 0 0 0.125em var(--color-white);
+      }
 
-            &:focus-visible {
-                outline: 2px solid var(--color-blue-dark);
-                outline-offset: 2px;
-            }
+      .a-button__bg {
+        background-color: var(--color-blue-default);
+        border-radius: 30px;
+        grid-area: 1 / 1;
+        width: 100%;
+        height: 100%;
+        transition:
+          background-color 0.25s ease-out,
+          transform        0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      }
 
-            &.--has-icon {
-                padding: 13px 27px 13px 20px;
-            }
-        }
+      &:active .a-button__bg {
+        transform: scale(0.955, 0.925);
+      }
+
+      &:focus-visible .a-button__bg {
+        background-color: var(--color-blue-dark) !important;
+      }
+
+      .a-button__bg-circle {
+        z-index: 1;
+        border-radius: 30px;
+        grid-area: 1 / 1;
+        place-self: center;
+        width: calc(100% + 1px);
+        height: calc(100% + 1px);
+        position: relative;
+        overflow: clip;
+        transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      &:active .a-button__bg-circle {
+        transform: scale(0.955, 0.925);
+      }
+
+      .a-button__circle-wrap {
+        transform-origin: 0 0;
+        will-change: transform;
+        position: absolute;
+        inset: 0;
+        transform: scale(0);
+      }
+
+      .a-button__circle {
+        aspect-ratio: 1;
+        background-color: var(--color-blue-dark);
+        border-radius: 50%;
+        width: 200%;
+        display: block;
+        position: absolute;
+        inset: 0 auto auto 0;
+        transform: translate(-50%, -50%);
+      }
+
+      .a-button__inner {
+        padding: 13px 27px;
+        z-index: 2;
+        grid-area: 1 / 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+      }
+
+      &.--has-icon .a-button__inner {
+        padding: 13px 27px 13px 20px;
+      }
     }
+  }
 </style>
 
-{withWrapper ? (
-  <div class={wrapperClasses}>
-    {as === 'a' ? (
-      <a class={elementClasses} href={href} target={target} rel={target === '_blank' ? 'noopener noreferrer' : undefined} aria-current={isActive ? 'page' : undefined} {...rest}>
+{(() => {
+  const inner = isPrimary ? (
+    <>
+      <span class="a-button__bg" aria-hidden="true"></span>
+      <span class="a-button__bg-circle" aria-hidden="true">
+        <span data-ripple-circle class="a-button__circle-wrap">
+          <span class="a-button__circle"></span>
+        </span>
+      </span>
+      <span class="a-button__inner">
         <slot />
-      </a>
-    ) : (
-      <button class={elementClasses} type={type} onclick={onClick} {...rest}>
-        <slot />
-      </button>
-    )}
-  </div>
-) : (
-  <>
-    {as === 'a' ? (
-      <a class={elementClasses} href={href} target={target} rel={target === '_blank' ? 'noopener noreferrer' : undefined} aria-current={isActive ? 'page' : undefined} {...rest}>
-        <slot />
-      </a>
-    ) : (
-      <button type={type} class={elementClasses} onclick={onClick} {...rest}>
-        <slot />
-      </button>
-    )}
-  </>
+      </span>
+    </>
+  ) : (
+    <slot />
+  );
+
+  const sharedAProps = {
+    class: elementClasses,
+    href,
+    target,
+    rel: target === '_blank' ? 'noopener noreferrer' : undefined,
+    'aria-current': isActive ? ('page' as const) : undefined,
+    ...rest,
+  };
+
+  const sharedBtnProps = {
+    class: elementClasses,
+    type,
+    onclick: onClick,
+    ...rest,
+  };
+
+  if (withWrapper) {
+    return (
+      <div class={wrapperClasses}>
+        {as === 'a'
+          ? <a {...sharedAProps}>{inner}</a>
+          : <button {...sharedBtnProps}>{inner}</button>
+        }
+      </div>
+    );
+  }
+
+  return as === 'a'
+    ? <a {...sharedAProps}>{inner}</a>
+    : <button {...sharedBtnProps}>{inner}</button>;
+})()}
+
+{isPrimary && (
+  <script>
+    import { gsap } from "gsap";
+    import { CustomEase } from "gsap/CustomEase";
+
+    gsap.registerPlugin(CustomEase);
+    CustomEase.create('btn-ease', '0.32, 0.72, 0, 1');
+
+    function initRipple(): void {
+      const mm = gsap.matchMedia();
+
+      document.querySelectorAll<HTMLElement>('.a-button--ripple').forEach((button) => {
+        const circle = button.querySelector<HTMLElement>('[data-ripple-circle]');
+        if (!circle) return;
+
+        mm.add(
+          '(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)',
+          () => {
+            const xSet = gsap.quickSetter(circle, 'xPercent') as (value: number) => void;
+            const ySet = gsap.quickSetter(circle, 'yPercent') as (value: number) => void;
+
+            function getXY(e: PointerEvent): { x: number; y: number } {
+              const { left, top, width, height } = button.getBoundingClientRect();
+              const xT = gsap.utils.pipe(
+                gsap.utils.mapRange(0, width,  0, 100),
+                gsap.utils.clamp(0, 100)
+              ) as (value: number) => number;
+              const yT = gsap.utils.pipe(
+                gsap.utils.mapRange(0, height, 0, 100),
+                gsap.utils.clamp(0, 100)
+              ) as (value: number) => number;
+              return { x: xT(e.clientX - left), y: yT(e.clientY - top) };
+            }
+
+            function onEnter(e: PointerEvent): void {
+              const { x, y } = getXY(e);
+              xSet(x);
+              ySet(y);
+              gsap.to(circle, { scale: 1, duration: 1.25, ease: 'btn-ease', overwrite: 'auto' });
+            }
+
+            function onLeave(e: PointerEvent): void {
+              const { x, y } = getXY(e);
+              gsap.killTweensOf(circle);
+              gsap.to(circle, {
+                xPercent: x > 90 ? x + 25 : x < 12.5 ? x - 25 : x,
+                yPercent: y > 90 ? y + 25 : y < 12.5 ? y - 25 : y,
+                scale: 0,
+                duration: 0.45,
+                ease: 'btn-ease',
+                overwrite: 'auto',
+              });
+            }
+
+            function onMove(e: PointerEvent): void {
+              const { x, y } = getXY(e);
+              gsap.to(circle, {
+                xPercent: x,
+                yPercent: y,
+                duration: 0.5,
+                ease: 'power1',
+                overwrite: 'auto',
+              });
+            }
+
+            button.addEventListener('pointerenter', onEnter);
+            button.addEventListener('pointerleave', onLeave);
+            button.addEventListener('pointermove',  onMove);
+
+            return (): void => {
+              button.removeEventListener('pointerenter', onEnter);
+              button.removeEventListener('pointerleave', onLeave);
+              button.removeEventListener('pointermove',  onMove);
+            };
+          }
+        );
+      });
+    }
+
+    // astro:page-load fires on first load AND after every View Transition navigation
+    document.addEventListener('astro:page-load', () => {
+      document.fonts.ready.then(initRipple);
+    });
+  </script>
 )}

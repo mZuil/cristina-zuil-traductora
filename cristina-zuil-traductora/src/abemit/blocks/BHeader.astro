@@ -169,6 +169,7 @@ contactText = headerMenu.contactText;
     function initHeader() {
         document.querySelectorAll(".js-header").forEach((header) => {
             const toggle = header.querySelector(".js-menu-toggle");
+            const innerToggle = toggle?.querySelector(".a-button__inner");
             const menu = header.querySelector<HTMLElement>(".b-header__menu");
             const menuIcon = header.querySelector(".js-menu-icon");
             const menuText = header.querySelector<HTMLElement>(".js-menu-text");
@@ -184,9 +185,14 @@ contactText = headerMenu.contactText;
                 // Icon and text animate together immediately
                 .to(menuIcon, { morphSVG: CLOSE_PATH, duration: 0.35, ease: "power2.inOut" }, 0)
                 .to(menuText, { opacity: 0, width: 0, paddingLeft: 0, paddingRight: 0, duration: 0.2, ease: "power2.in" }, 0)
-                .to(toggle, { paddingLeft: 13, paddingRight: 13, gap: 0, duration: 0.2, ease: "power2.in" }, 0)
-                // Menu expands slightly after, marginInline goes from -29.5px → 0 in sync
-                .to(menu, { width: "auto", marginInline: 0, duration: 0.5, ease: "back.out(1.5)" }, 0.25);
+                .to(toggle, { gap: 0, duration: 0.2, ease: "power2.in" }, 0);
+
+            if (innerToggle) {
+                tl.to(innerToggle, { paddingLeft: 13, paddingRight: 3, duration: 0.2, ease: "power2.in" }, 0);
+            }
+
+            // Menu expands slightly after, marginInline goes from -29.5px → 0 in sync
+            tl.to(menu, { width: "auto", marginInline: 0, duration: 0.5, ease: "back.out(1.5)" }, 0.25);
 
             toggle?.addEventListener("click", () => {
                 isOpen = !isOpen;

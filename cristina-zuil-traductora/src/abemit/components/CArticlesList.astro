@@ -212,10 +212,9 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
     }
 
     &__dialog-close {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      padding: 3px 4px 0 4px;
+      position: absolute !important;
+      top: 15px;
+      right: 15px;
       background-color: var(--color-blue-default);
       color: var(--color-white);
       border: none;
@@ -231,9 +230,12 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
 
     &__dialog-link {
       width: fit-content;
-      padding: 10px 28px !important;
       margin-top: 8px;
     }
+  }
+
+  :global(.c-articles-list__dialog-close .a-button__inner) {
+    padding: 8px !important;
   }
 </style>
 
@@ -256,9 +258,9 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
   <dialog class="c-articles-list__dialog js-articles-dialog" data-dialog aria-label={uiT(locale, "articleItem")}>
     <div class="c-articles-list__dialog-model | js-dialog-model"></div>
     <div class="c-articles-list__dialog-inner">
-      <button type="button" class="c-articles-list__dialog-close" data-dialog-close>
+      <AButton type="button" variant="primary" class="c-articles-list__dialog-close" data-dialog-close>
         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
-      </button>
+      </AButton>
       <div class="c-articles-list__two-column-layout">
         <div class="c-articles-list__dialog-media">
           <img class="c-articles-list__dialog-image" data-dialog-image alt="" />

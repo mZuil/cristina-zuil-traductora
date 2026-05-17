@@ -355,7 +355,6 @@ export function initBooksList(root: HTMLElement): void {
 
       const buttonSection = linkUrl
         ? `
-
               <a href="${esc(linkUrl)}" target="_blank" rel="noopener noreferrer" class="c-books-list__button">${uiT(locale, 'visitShop')}</a>`
         : '';
 
