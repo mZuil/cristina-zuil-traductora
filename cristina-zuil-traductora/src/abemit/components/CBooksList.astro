@@ -169,26 +169,26 @@ const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
       @include use-font("small-text");
     }
 
-    :global(.c-books-list__button) {
+    :global(.c-books-list__shop-button) {
       @include use-font("small-text");
 
       margin-top: 20px;
-      padding: 6px 8px;
       color: var(--color-white);
       background-color: var(--color-blue-default);
-      border-radius: 20px;
+      border-radius: 30px;
       text-decoration: none;
       text-align: center;
       font-weight: 700 !important;
       transition: background-color 0.2s ease-in-out;
       pointer-events: none;
+      z-index: 1;
 
       &:hover {
         background-color: var(--color-blue-dark);
       }
     }
 
-    :global(.c-books-list__book-container.is-open .c-books-list__button) {
+    :global(.c-books-list__book-container.is-open .c-books-list__shop-button) {
       pointer-events: auto;
     }
 

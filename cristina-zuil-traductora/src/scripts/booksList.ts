@@ -2,6 +2,7 @@ import { uiT } from '../config/strings-ui';
 import type { BooksFiltersDetail } from './booksFilters';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { initRipple } from './ripple';
 
 let gsapPluginsRegistered = false;
 function ensureGsapPlugins(): void {
@@ -205,6 +206,7 @@ export function initBooksList(root: HTMLElement): void {
 
     await waitForCoversReady(cards, nonce);
     if (Number((root as any).__booksListRenderNonce ?? 0) !== nonce) return;
+    initRipple();
 
     const tween = gsap.to(cards, {
       autoAlpha: 1,
@@ -354,9 +356,16 @@ export function initBooksList(root: HTMLElement): void {
         : '';
 
       const buttonSection = linkUrl
-        ? `
-              <a href="${esc(linkUrl)}" target="_blank" rel="noopener noreferrer" class="c-books-list__button">${uiT(locale, 'visitShop')}</a>`
-        : '';
+      ? `<a href="${esc(linkUrl)}" target="_blank" rel="noopener noreferrer" class="a-button --primary v-font-body a-button--ripple c-books-list__shop-button">
+            <span class="a-button__bg" aria-hidden="true"></span>
+            <span class="a-button__bg-circle" aria-hidden="true">
+              <span data-ripple-circle class="a-button__circle-wrap">
+                <span class="a-button__circle"></span>
+              </span>
+            </span>
+            <span class="a-button__inner">${uiT(locale, 'visitShop')}</span>
+          </a>`
+      : '';
 
       return `
         <div class="c-books-list__book-container" data-index="${i}">

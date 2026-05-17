@@ -2,6 +2,9 @@
 @import './page-transitions.scss';
 @import './lenis.css';
 
+//SCSS that is better to be global
+@import '../abemit/atoms/a-button.scss';
+
 /* ============================================
    DESIGN TOKENS CSS VARIABLES
    Auto-generated from design-tokens.ts via DesignTokens.astro component
