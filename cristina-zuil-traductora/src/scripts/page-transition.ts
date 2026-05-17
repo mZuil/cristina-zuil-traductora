@@ -1,6 +1,6 @@
 import type { TransitionBeforePreparationEvent } from "astro:transitions/client";
 
-const DURATION = 900; // ms
+const DURATION = 650; // ms
 const EASING = 'cubic-bezier(0.7, 0, 0.3, 1)';
 
 function getEls() {
