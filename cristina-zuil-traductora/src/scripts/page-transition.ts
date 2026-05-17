@@ -1,32 +1,47 @@
 import type { TransitionBeforePreparationEvent } from "astro:transitions/client";
 
+const DURATION = 900; // ms
+const EASING = 'cubic-bezier(0.7, 0, 0.3, 1)';
+
+function getEls() {
+  return {
+    panel:  document.querySelector<HTMLElement>('.js-transition-panel'),
+    top:    document.querySelector<HTMLElement>('.js-transition-panel-top'),
+    bottom: document.querySelector<HTMLElement>('.js-transition-panel-bottom'),
+  };
+}
+
 document.addEventListener('astro:before-preparation', (e) => {
   const event = e as TransitionBeforePreparationEvent;
-  const path = document.querySelector<SVGPathElement>('.js-transition-path');
-  if (!path) return;
-
-  // Hold navigation until morph-in finishes
   const originalLoader = event.loader;
+
   event.loader = async () => {
-    path.style.animation = 'none';
-    path.getBoundingClientRect();
-    path.style.animation = 'morph-in 1s cubic-bezier(0.625, 0.05, 0, 1) forwards';
+    const { panel, top } = getEls();
+    if (!panel || !top) { await originalLoader(); return; }
 
-    // Wait for animation to complete
-    await new Promise<void>(resolve => {
-      path.addEventListener('animationend', () => resolve(), { once: true });
-    });
+    // Reset
+    panel.style.animation = 'none';
+    top.style.animation = 'none';
+    panel.getBoundingClientRect();
 
-    // Now let Astro continue with the navigation
+    // Slide panel up from below + expand top circle
+    panel.style.animation = `panel-in ${DURATION}ms ${EASING} forwards`;
+    top.style.animation   = `top-in  ${DURATION}ms ${EASING} forwards`;
+
+    await new Promise<void>(resolve => setTimeout(resolve, DURATION));
     await originalLoader();
   };
 });
 
 document.addEventListener('astro:after-swap', () => {
-  const path = document.querySelector<SVGPathElement>('.js-transition-path');
-  if (!path) return;
+  const { panel, bottom } = getEls();
+  if (!panel || !bottom) return;
 
-  path.style.animation = 'none';
-  path.getBoundingClientRect();
-  path.style.animation = 'morph-out 1s cubic-bezier(0.625, 0.05, 0, 1) forwards';
+  panel.style.animation  = 'none';
+  bottom.style.animation = 'none';
+  panel.getBoundingClientRect();
+
+  // Continue sliding up out of view + collapse bottom circle
+  panel.style.animation  = `panel-out  ${DURATION}ms ${EASING} forwards`;
+  bottom.style.animation = `bottom-out ${DURATION}ms ${EASING} forwards`;
 });

@@ -11,6 +11,7 @@ import '../styles/global.scss';
 import GridOverlay from '../helpers/structure/GridOverlay/GridOverlay.astro';
 import BFooter from '../abemit/blocks/BFooter.astro';
 import BContact from '../abemit/blocks/BContact.astro';
+import PageTransition from '../helpers/page-transition/PageTransition.astro';
 
 interface Props {
   content: any; // Strapi content (page, book, article, etc.)
@@ -66,9 +67,7 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
         <BFooter />
     </div>
 
-    <svg class="js-transition-svg" transition:persist viewBox="-1 -1 102 102" preserveAspectRatio="xMidYMin slice" aria-hidden="true">
-      <path class="js-transition-path" d="M -1 101 V 101 Q 50 101 101 101 V 101 z" fill="#89DBE6" />
-    </svg>
+    <PageTransition />
 
     <BContact />
     <GridOverlay />

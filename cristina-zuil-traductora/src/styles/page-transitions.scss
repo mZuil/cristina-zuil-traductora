@@ -1,0 +1,81 @@
+.transition {
+  &__wrap {
+    z-index: 9999;
+    pointer-events: none;
+    position: fixed;
+    inset: 0;
+    overflow: clip;
+  }
+
+  &__panel {
+    background-color: var(--color-blue-default);
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 100%;  /* resting state: hidden below */
+    left: 0;
+  }
+
+  &__panel-top {
+    transform-origin: bottom;
+    width: 100%;
+    height: 25vw;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    position: absolute;
+    bottom: calc(100% - 1px);
+    left: 0;
+    overflow: hidden;
+    transform: scaleY(0);
+  }
+
+  &__panel-bottom {
+    transform-origin: top;
+    width: 100%;
+    height: 20vw;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    position: absolute;
+    top: calc(100% - 1px);
+    left: 0;
+    overflow: hidden;
+    transform: scaleY(1);
+  }
+
+  &__circle {
+    background-color: var(--color-blue-default);
+    border-radius: 50%;
+    width: 150%;
+    padding-bottom: 150%;
+    flex-shrink: 0;
+    position: relative;
+  }
+}
+
+/* Keyframes */
+@keyframes panel-in {
+  from { transform: translateY(0%); }
+  to   { transform: translateY(-100%); }
+}
+
+@keyframes panel-out {
+  from { transform: translateY(-100%); }
+  to   { transform: translateY(-200%); }
+}
+
+@keyframes top-in {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+@keyframes bottom-out {
+  from { transform: scaleY(1); }
+  to   { transform: scaleY(0); }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}

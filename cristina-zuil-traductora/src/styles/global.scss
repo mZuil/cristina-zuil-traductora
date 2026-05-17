@@ -1,5 +1,5 @@
 @import './fonts.css';
-@import './page-transitions.css';
+@import './page-transitions.scss';
 @import './lenis.css';
 
 /* ============================================
@@ -51,16 +51,4 @@ body {
   &.is-overflow-hidden {
     overflow: hidden;
   }
-}
-
-
-//For page transition
-.js-transition-svg {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 99999;
-  pointer-events: none;
-  overflow: visible;
 }
