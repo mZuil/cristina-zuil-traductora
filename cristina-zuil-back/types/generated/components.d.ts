@@ -47,6 +47,15 @@ export interface ComponentsCLogos extends Struct.ComponentSchema {
   };
 }
 
+export interface ComponentsCModel extends Struct.ComponentSchema {
+  collectionName: 'components_components_c_models';
+  info: {
+    displayName: 'CModel';
+    icon: 'code';
+  };
+  attributes: {};
+}
+
 export interface ComponentsCReviews extends Struct.ComponentSchema {
   collectionName: 'components_components_c_reviews';
   info: {
@@ -143,6 +152,7 @@ declare module '@strapi/strapi' {
       'components.c-featured-data': ComponentsCFeaturedData;
       'components.c-heading': ComponentsCHeading;
       'components.c-logos': ComponentsCLogos;
+      'components.c-model': ComponentsCModel;
       'components.c-reviews': ComponentsCReviews;
       'components.c-title': ComponentsCTitle;
       'links.link': LinksLink;
