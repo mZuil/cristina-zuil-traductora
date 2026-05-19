@@ -649,32 +649,10 @@ const instagramLink = contactInfo.instagramLink;
         // ── Email copy to clipboard ───────────────────────────────────────────
         const emailBtn = nodeInDOM.querySelector<HTMLElement>("[data-copy-email]");
         if (emailBtn) {
-            const emailToCopy = emailBtn.dataset.copyEmail ?? "";
-            const copyIcon = emailBtn.querySelector<SVGElement>(".b-contact__copy-icon");
-
-            emailBtn.addEventListener("click", async () => {
-                try {
-                    await navigator.clipboard.writeText(emailToCopy);
-
-                    if (copyIcon) {
-                        gsap.killTweensOf(copyIcon);
-                        gsap.to(copyIcon, {
-                            color: "var(--color-blue-default)",
-                            duration: 0.15,
-                            ease: "power1.out",
-                            onComplete: () => {
-                                gsap.to(copyIcon, {
-                                    color: "var(--color-grey)",
-                                    duration: 0.4,
-                                    delay: 0.8,
-                                    ease: "power1.in",
-                                });
-                            },
-                        });
-                    }
-                } catch (err) {
-                    console.warn("[BContact] Clipboard write failed:", err);
-                }
+            emailBtn.addEventListener("click", () => {
+                const email = emailBtn.dataset.copyEmail ?? "";
+                if (!email) return;
+                window.location.href = `mailto:${encodeURIComponent(email)}`;
             });
         }
 
