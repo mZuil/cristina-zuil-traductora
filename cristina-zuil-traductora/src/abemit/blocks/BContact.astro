@@ -245,8 +245,7 @@ const instagramLink = contactInfo.instagramLink;
         }
     }
 
-    const MORPH_TARGET =
-        "M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z";
+    const MORPH_TARGET = "M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z";
 
     const setLenisEnabled = (enabled: boolean): void => {
         const lenis = (window as any).__lenis as
@@ -278,13 +277,22 @@ const instagramLink = contactInfo.instagramLink;
         let renderer: THREE.WebGLRenderer | null = null;
         let scene: THREE.Scene | null = null;
         let camera: THREE.PerspectiveCamera | null = null;
+        let mailboxPivot: THREE.Object3D | null = null;
         let mailbox: THREE.Object3D | null = null;
         let mixer: THREE.AnimationMixer | null = null;
         let clickClip: THREE.AnimationClip | null = null;
+        let clickAction: THREE.AnimationAction | null = null;
         let clock: THREE.Clock | null = null;
         let frameId: number | null = null;
         let ro: ResizeObserver | null = null;
         let clickAnimation: gsap.core.Timeline | null = null;
+
+        let onModelPointerMove: ((e: PointerEvent) => void) | null = null;
+        let onModelPointerLeave: (() => void) | null = null;
+        let onWindowPointerMove: ((e: PointerEvent) => void) | null = null;
+        let onWindowPointerReset: (() => void) | null = null;
+        const basePivotRot = new THREE.Vector2(0, 0);
+        const targetPivotRot = new THREE.Vector2(0, 0);
 
         const stopRenderLoop = (): void => {
             if (frameId != null) {
@@ -297,7 +305,13 @@ const instagramLink = contactInfo.instagramLink;
             if (!renderer || !scene || !camera) return;
             const delta = clock?.getDelta() ?? 0;
             mixer?.update(delta);
-            if (mailbox) mailbox.rotation.y += 0.006;
+
+            if (mailboxPivot) {
+                const lerpFactor = 0.08;
+                mailboxPivot.rotation.x += (targetPivotRot.x - mailboxPivot.rotation.x) * lerpFactor;
+                mailboxPivot.rotation.y += (targetPivotRot.y - mailboxPivot.rotation.y) * lerpFactor;
+            }
+
             renderer.render(scene, camera);
             frameId = requestAnimationFrame(renderThree);
         };
@@ -355,9 +369,47 @@ const instagramLink = contactInfo.instagramLink;
             mailbox = gltf.scene;
             mailbox.position.y = 0.15;
             mailbox.rotation.x = Math.PI / 8;
+            mailbox.rotation.y = Math.PI / 2 + Math.PI / 8;
             mailbox.scale.set(0.2, 0.2, 0.2);
-            scene.add(mailbox);
+
+            mailboxPivot = new THREE.Object3D();
+            mailboxPivot.add(mailbox);
+            scene.add(mailboxPivot);
+
+            basePivotRot.set(mailboxPivot.rotation.x, mailboxPivot.rotation.y);
+            targetPivotRot.set(mailboxPivot.rotation.x, mailboxPivot.rotation.y);
+
             camera.lookAt(0, 1, 0);
+
+            clock = new THREE.Clock();
+
+            if (gltf.animations && gltf.animations.length > 0) {
+                clickClip = gltf.animations[0];
+                mixer = new THREE.AnimationMixer(mailbox);
+                clickAction = mixer.clipAction(clickClip);
+                clickAction.loop = THREE.LoopOnce;
+                clickAction.clampWhenFinished = true;
+            }
+
+            // Mouse-follow rotation is driven by window pointer events while the dialog is open.
+            onWindowPointerMove = (e: PointerEvent) => {
+                if (!mailboxPivot) return;
+                const w = Math.max(1, window.innerWidth);
+                const h = Math.max(1, window.innerHeight);
+                const nx = (e.clientX / w) * 2 - 1;
+                const ny = (e.clientY / h) * 2 - 1;
+
+                const maxYaw = 0.35;
+                const maxPitch = 0.18;
+
+                targetPivotRot.y = basePivotRot.y + nx * maxYaw;
+                targetPivotRot.x = basePivotRot.x + ny * maxPitch;
+            };
+
+            onWindowPointerReset = () => {
+                targetPivotRot.x = basePivotRot.x;
+                targetPivotRot.y = basePivotRot.y;
+            };
         };
 
         const destroyThree = (): void => {
@@ -366,6 +418,26 @@ const instagramLink = contactInfo.instagramLink;
             ro = null;
             clickAnimation?.kill();
             clickAnimation = null;
+
+            if (dialogModel) {
+                if (onModelPointerMove) {
+                    dialogModel.removeEventListener("pointermove", onModelPointerMove);
+                }
+                if (onModelPointerLeave) {
+                    dialogModel.removeEventListener("pointerleave", onModelPointerLeave);
+                }
+            }
+            onModelPointerMove = null;
+            onModelPointerLeave = null;
+
+            if (onWindowPointerMove) {
+                window.removeEventListener("pointermove", onWindowPointerMove);
+            }
+            if (onWindowPointerReset) {
+                window.removeEventListener("blur", onWindowPointerReset);
+            }
+            onWindowPointerMove = null;
+            onWindowPointerReset = null;
 
             if (scene) {
                 scene.traverse((obj) => {
@@ -384,6 +456,7 @@ const instagramLink = contactInfo.instagramLink;
             renderer = null;
             scene = null;
             camera = null;
+            mailboxPivot = null;
             mailbox = null;
             threeInit = false;
         };
@@ -395,23 +468,17 @@ const instagramLink = contactInfo.instagramLink;
         dialogModel?.addEventListener("click", () => {
             if (!mailbox) return;
 
-            clickAnimation?.kill();
+            if (clickAction && clickClip) {
+                clickAnimation?.kill();
+                clickAnimation = null;
 
-            clickAnimation = gsap.timeline()
-                .to(mailbox.rotation, {
-                    y: mailbox.rotation.y + Math.PI * 4,
-                    duration: 1.2,
-                    ease: "power3.out",
-                }, 0)
-                .to(mailbox.scale, {
-                    x: mailbox.scale.x * 1.2,
-                    y: mailbox.scale.y * 1.2,
-                    z: mailbox.scale.z * 1.2,
-                    duration: 0.2,
-                    ease: "back.out(2)",
-                    yoyo: true,
-                    repeat: 1,
-                }, 0);
+                clickAction.reset();
+                clickAction.enabled = true;
+                clickAction.setEffectiveTimeScale(1);
+                clickAction.setEffectiveWeight(1);
+                clickAction.play();
+                return;
+            }
         });
 
         // ── Dialog open / close ───────────────────────────────────────────────
@@ -478,6 +545,13 @@ const instagramLink = contactInfo.instagramLink;
                             stopRenderLoop();
                             resizeRendererToContainer();
                             renderThree();
+
+                            if (onWindowPointerMove) {
+                                window.addEventListener("pointermove", onWindowPointerMove);
+                            }
+                            if (onWindowPointerReset) {
+                                window.addEventListener("blur", onWindowPointerReset);
+                            }
                         })
                         .catch((err) => {
                             console.error("[BContact] Three.js init failed:", err);
@@ -491,6 +565,13 @@ const instagramLink = contactInfo.instagramLink;
             if (!dialog.open) return;
             killDialogTween();
             stopRenderLoop();
+
+            if (onWindowPointerMove) {
+                window.removeEventListener("pointermove", onWindowPointerMove);
+            }
+            if (onWindowPointerReset) {
+                window.removeEventListener("blur", onWindowPointerReset);
+            }
 
             if (dialogModel && getComputedStyle(dialogModel).display !== "none") {
                 modelTween = gsap.to(dialogModel, {
