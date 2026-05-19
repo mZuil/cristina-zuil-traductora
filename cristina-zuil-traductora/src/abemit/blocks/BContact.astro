@@ -171,6 +171,7 @@ const instagramLink = contactInfo.instagramLink;
         &__link-text {
             font-weight: 400;
             color: var(--color-grey);
+            user-select: text;
         }
 
         &__copy-icon {
@@ -193,16 +194,12 @@ const instagramLink = contactInfo.instagramLink;
             <div class="b-contact__dialog-body">
                 <AText size="headline-1">{titleText}</AText>
                 <div class="b-contact__dialog-links">
-                    <AButton type="button" class="b-contact__dialog-link">
+                    <AButton type="button" class="b-contact__dialog-link" data-copy-email={emailAddress}>
                         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor" class="b-contact__link-icon">
                             <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"></path>
                         </svg>
                         <AText size="headline-2">
                             {uiT(Astro.currentLocale, "contactEmail")}: <span class="b-contact__link-text">{emailAddress}</span>
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="b-contact__copy-icon">
-                                <path d="M16 2H8V5H16V2Z" stroke="currentColor" stroke-miterlimit="10"></path>
-                                <path d="M16 3H17.5L19 4.5V19.5L17.5 21H6.5L5 19.5V4.5L6.5 3H8" stroke="currentColor" stroke-miterlimit="10"></path>
-                            </svg>
                         </AText>
                     </AButton>
                     <AButton type="link" class="b-contact__dialog-link" href={linkedinLink?.url} target="_blank" rel="noopener noreferrer">
@@ -245,7 +242,7 @@ const instagramLink = contactInfo.instagramLink;
         }
     }
 
-    const MORPH_TARGET = "M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z";
+    const MORPH_TARGET = "M5 21q-.825 0-1.4125-.5875T3 19v-14q0-.825.5875-1.4125T5 3h7v2H5v14h14v-7h2v7q0 .825-.5875 1.4125T19 21H5Zm4.7-5.3-1.4-1.4 9.3-9.3H14v-2h7v7h-2v-3.6L9.7 15.7Z";
 
     const setLenisEnabled = (enabled: boolean): void => {
         const lenis = (window as any).__lenis as
@@ -370,7 +367,14 @@ const instagramLink = contactInfo.instagramLink;
             mailbox.position.y = 0.15;
             mailbox.rotation.x = Math.PI / 8;
             mailbox.rotation.y = Math.PI / 2 + Math.PI / 8;
-            mailbox.scale.set(0.2, 0.2, 0.2);
+            // mailbox.scale.set(0.2, 0.2, 0.2);
+            //Linearly interpolate scale between viewport height extremes
+            // At ≥1956px → 0.20  |  At ≤700px → 0.30  (clamped outside that range)
+            const _minH = 700, _maxH = 1956;
+            const _minScale = 0.30, _maxScale = 0.20;
+            const _t = Math.max(0, Math.min(1, (window.innerHeight - _minH) / (_maxH - _minH)));
+            const _dynamicScale = _minScale + (_maxScale - _minScale) * _t;
+            mailbox.scale.set(_dynamicScale, _dynamicScale, _dynamicScale);
 
             mailboxPivot = new THREE.Object3D();
             mailboxPivot.add(mailbox);
@@ -608,6 +612,15 @@ const instagramLink = contactInfo.instagramLink;
         };
 
         window.openContactModal = openDialog;
+
+        const emailBtn = nodeInDOM.querySelector<HTMLElement>("[data-copy-email]");
+        if (emailBtn) {
+            emailBtn.addEventListener("click", () => {
+                const email = emailBtn.dataset.copyEmail ?? "";
+                if (!email) return;
+                window.location.href = `mailto:${encodeURIComponent(email)}`;
+            });
+        }
 
         closeBtn?.addEventListener("click", () => closeDialog());
         dialogBackdrop?.addEventListener("click", () => closeDialog());
