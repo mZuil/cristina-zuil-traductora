@@ -2,6 +2,15 @@ export type UiLocale = 'es' | 'en';
 
 const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
   es: {
+
+    //For model tags
+    aboutMeTag: 'Sobre mí',
+    translationsTag: 'Traducciones',
+    writingsTag: 'Escritos',
+    articlesTag: 'Noticias',
+    contactTag: 'Contacto',
+    chickTag: 'Tradupollito',
+
     //For searching
     searchPlaceholder: 'Busca por título o autor',
     genreLabel: 'Género',
@@ -31,6 +40,14 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     instagram: 'Instagram',
   },
   en: {
+    //For model tags
+    aboutMeTag: 'About me',
+    translationsTag: 'Translations',
+    writingsTag: 'Writings',
+    articlesTag: 'Articles',
+    contactTag: 'Contact',
+    chickTag: 'Traduchicken',
+
     //For searching
     searchPlaceholder: 'Search by title or author',
     genreLabel: 'Genre',

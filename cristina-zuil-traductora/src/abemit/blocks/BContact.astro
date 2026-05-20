@@ -271,15 +271,15 @@ const instagramLink = contactInfo.instagramLink;
 
         // ── Three.js state ────────────────────────────────────────────────────
         let threeInit = false;
-        let renderer: THREE.WebGLRenderer | null = null;
-        let scene: THREE.Scene | null = null;
-        let camera: THREE.PerspectiveCamera | null = null;
-        let mailboxPivot: THREE.Object3D | null = null;
-        let mailbox: THREE.Object3D | null = null;
-        let mixer: THREE.AnimationMixer | null = null;
-        let clickClip: THREE.AnimationClip | null = null;
-        let clickAction: THREE.AnimationAction | null = null;
-        let clock: THREE.Clock | null = null;
+        let renderer: any = null;
+        let scene: any = null;
+        let camera: any = null;
+        let mailboxPivot: any = null;
+        let mailbox: any = null;
+        let mixer: any = null;
+        let clickClip: any = null;
+        let clickAction: any = null;
+        let lastFrameTimeMs: number | null = null;
         let frameId: number | null = null;
         let ro: ResizeObserver | null = null;
         let clickAnimation: gsap.core.Timeline | null = null;
@@ -301,8 +301,11 @@ const instagramLink = contactInfo.instagramLink;
 
         const renderThree = (): void => {
             if (!renderer || !scene || !camera) return;
-            const delta = clock?.getDelta() ?? 0;
-            mixer?.update(delta);
+            const nowMs = performance.now();
+            const deltaSeconds =
+                lastFrameTimeMs == null ? 0 : Math.max(0, (nowMs - lastFrameTimeMs) / 1000);
+            lastFrameTimeMs = nowMs;
+            mixer?.update(deltaSeconds);
 
             if (mailboxPivot) {
                 const lerpFactor = 0.08;
@@ -320,7 +323,6 @@ const instagramLink = contactInfo.instagramLink;
             const width = Math.max(1, Math.floor(rect.width));
             const height = Math.max(1, Math.floor(rect.height));
             if (width <= 1 || height <= 1) {
-                console.warn("[BContact] resizeRendererToContainer: container has no size yet", rect);
                 return;
             }
             renderer.setSize(width, height, false);
@@ -393,7 +395,7 @@ const instagramLink = contactInfo.instagramLink;
 
             camera.lookAt(0, 1, 0);
 
-            clock = new THREE.Clock();
+            lastFrameTimeMs = null;
 
             if (gltf.animations && gltf.animations.length > 0) {
                 clickClip = gltf.animations[0];
@@ -457,13 +459,13 @@ const instagramLink = contactInfo.instagramLink;
             onWindowPointerReset = null;
 
             if (scene) {
-                scene.traverse((obj) => {
+                scene.traverse((obj: any) => {
                     if (obj instanceof THREE.Mesh) {
                         obj.geometry.dispose();
                         const mats = Array.isArray(obj.material)
                             ? obj.material
                             : [obj.material];
-                        mats.forEach((m: THREE.Material) => m.dispose());
+                        mats.forEach((m: any) => m.dispose());
                     }
                 });
             }
@@ -560,12 +562,35 @@ const instagramLink = contactInfo.instagramLink;
                     initThreeOnce()
                         .then(() => {
                             stopRenderLoop();
-                            resizeRendererToContainer();
-                            renderThree();
+                            lastFrameTimeMs = null;
+                            const waitForNonZeroSize = (maxFrames = 60): Promise<void> => {
+                                return new Promise((resolve) => {
+                                    let frames = 0;
+                                    const tick = () => {
+                                        if (!dialogModel) return resolve();
+                                        const rect = dialogModel.getBoundingClientRect();
+                                        if (rect.width > 1 && rect.height > 1) return resolve();
+                                        frames += 1;
+                                        if (frames >= maxFrames) return resolve();
+                                        requestAnimationFrame(tick);
+                                    };
+                                    requestAnimationFrame(tick);
+                                });
+                            };
+                            waitForNonZeroSize().then(() => {
+                                resizeRendererToContainer();
+                                renderThree();
+                            });
 
                             // ResizeObserver: reacts to the panel element changing size
                             if (dialogModel && !ro) {
                                 ro = new ResizeObserver(() => {
+                                    const rect = dialogModel.getBoundingClientRect();
+                                    const width = Math.max(1, Math.floor(rect.width));
+                                    const height = Math.max(1, Math.floor(rect.height));
+                                    if (width <= 1 || height <= 1) {
+                                        return;
+                                    }
                                     resizeRendererToContainer();
                                 });
                                 ro.observe(dialogModel);

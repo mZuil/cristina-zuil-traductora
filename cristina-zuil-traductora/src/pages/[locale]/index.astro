@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, getNonDefaultLocales, isHomePage } from '../../config/i18n';
+import DefaultPage from '../../templates/DefaultPage.astro';
 
 export async function getStaticPaths() {
   const nonDefaultLocales = getNonDefaultLocales();
@@ -44,15 +45,7 @@ const getLocaleLabel = (loc: string) => {
   locale={locale}
   contentType="WebSite"
 >
-  <main>
-    {Array.isArray(content) ? (
-      <div>
-        {content.map((block: any) => (
-          <div set:html={block.body || ''} />
-        ))}
-      </div>
-    ) : (
-      <div set:html={content} />
-    )}
+  <main class="is-home">
+    <DefaultPage page={page} />
   </main>
 </Layout>

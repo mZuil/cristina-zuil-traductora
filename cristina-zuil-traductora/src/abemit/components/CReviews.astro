@@ -274,6 +274,7 @@ const getStrapiImageFromLogo = (
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
             this.initScrollCards();
+            this.entranceAnimation();
         }
 
         private getItemOffset(
@@ -286,6 +287,44 @@ const getStrapiImageFromLogo = (
                     "0",
             );
             return firstItem.offsetWidth + gap;
+        }
+
+        entranceAnimation() {
+            const trigger = this.nodeInDOM;
+            const cards = this.nodeInDOM.querySelectorAll<HTMLElement>(".js-review-item");
+            if (!cards.length) return;
+            
+            gsap.set(cards, { opacity: 0 });
+
+            gsap.fromTo(
+                cards,
+                {
+                    x: 400,
+                    opacity: 0,
+                    rotationY: -25,
+                    rotationX: 8,
+                    z: -200,
+                    skewY: 2,
+                    transformPerspective: 1000,
+                    transformOrigin: "left center"
+                },
+                {
+                    x: 0,
+                    opacity: 1,
+                    rotationY: 0,
+                    rotationX: 0,
+                    z: 0,
+                    skewY: 0,
+                    duration: 1,
+                    ease: "power3.out",
+                    stagger: 0.22,
+                    scrollTrigger: {
+                        trigger: trigger,
+                        start: 'top 70%',
+                        once: true,
+                    }
+                }
+            );
         }
 
         initScrollCards() {

@@ -4,6 +4,7 @@ import CFeaturedData from '../../abemit/components/CFeaturedData.astro';
 import CHeading from '../../abemit/components/CHeading.astro';
 import CLogos from '../../abemit/components/CLogos.astro';
 import CReviews from '../../abemit/components/CReviews.astro';
+import CModel from '../../abemit/components/CModel.astro';
 
 interface Props {
   content: any;
@@ -60,6 +61,11 @@ const renderers: Record<string, Renderer> = {
     Component: CReviews,
     props: (block) => ({
       publishers: block.publishers,
+    }),
+  },
+  'components.c-model': {
+    Component: CModel,
+    props: (block) => ({
     }),
   },
 };

@@ -57,3 +57,20 @@ body {
     overflow: hidden;
   }
 }
+
+body:has(main.is-home) {
+  background-color: var(--color-blue-dark);
+  overflow-y: hidden;
+
+  & .b-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: transparent;
+
+    &__text {
+      color: var(--color-white);
+    }
+  }
+}
