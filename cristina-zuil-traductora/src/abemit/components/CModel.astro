@@ -26,22 +26,22 @@ import AText from "../atoms/AText.astro";
     <canvas class="c-model__canvas js-c-model-canvas"></canvas>
 
     <div class="c-model__tag --about-me">
-        <AText size="">{uiT(Astro.currentLocale, "aboutMeTag")}</AText>
+        <AText size="display-1">{uiT(Astro.currentLocale, "aboutMeTag")}</AText>
     </div>
     <div class="c-model__tag --chick">
-        <AText size="">{uiT(Astro.currentLocale, "chickTag")}</AText>
+        <AText size="display-1">{uiT(Astro.currentLocale, "chickTag")}</AText>
     </div>
     <div class="c-model__tag --translations">
-        <AText size="">{uiT(Astro.currentLocale, "translationsTag")}</AText>
+        <AText size="display-1">{uiT(Astro.currentLocale, "translationsTag")}</AText>
     </div>
     <div class="c-model__tag --writings">
-        <AText size="">{uiT(Astro.currentLocale, "writingsTag")}</AText>
+        <AText size="display-1">{uiT(Astro.currentLocale, "writingsTag")}</AText>
     </div>
     <div class="c-model__tag --articles">
-        <AText size="">{uiT(Astro.currentLocale, "articlesTag")}</AText>
+        <AText size="display-1">{uiT(Astro.currentLocale, "articlesTag")}</AText>
     </div>
     <div class="c-model__tag --contact">
-        <AText size="">{uiT(Astro.currentLocale, "contactTag")}</AText>
+        <AText size="display-1">{uiT(Astro.currentLocale, "contactTag")}</AText>
     </div>
 </section>
 
@@ -129,6 +129,17 @@ class CModel extends BaseComponent {
 
         const gltf = await loader.loadAsync("/models/platform.glb");
         this.model = gltf.scene;
+        
+        //Get model children to make them clickable:
+        const children = this.model.children;
+        const aboutMeLink = children.find((child: any) => child.name === "cris");
+        const translationsLink = children.find((child: any) => child.name === "book_shop");
+        const farmLink = children.find((child: any) => child.name === "farm");
+        const chickLink = children.find((child: any) => child.name === "chick");
+        const tree1 = children.find((child: any) => child.name === "armature_big_tree");
+        const tree2 = children.find((child: any) => child.name === "armature_right_tree");
+        const tree3 = children.find((child: any) => child.name === "armature_left_tree");
+        const newsLink = children.find((child: any) => child.name === "kiosk");
 
         this.scene.add(this.model);
 
