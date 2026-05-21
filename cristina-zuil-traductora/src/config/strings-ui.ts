@@ -38,6 +38,12 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     contactEmail: 'Correo',
     linkedin: 'LinkedIn',
     instagram: 'Instagram',
+
+    //URLs
+    aboutMeUrl: '/sobre-mi',
+    translationsUrl: '/traducciones',
+    writingsUrl: '/escritos',
+    articlesUrl: '/noticias',
   },
   en: {
     //For model tags
@@ -75,6 +81,12 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     contactEmail: 'Email',
     linkedin: 'LinkedIn',
     instagram: 'Instagram',
+    
+    //URLs
+    aboutMeUrl: '/about-me',
+    translationsUrl: '/translations',
+    writingsUrl: '/writings',
+    articlesUrl: '/articles',
   },
 };
 

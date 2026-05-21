@@ -22,7 +22,7 @@ import AText from "../atoms/AText.astro";
     
 </style>
 
-<section class="c-model js-c-model">
+<section class="c-model js-c-model" data-locale={Astro.currentLocale}>
     <canvas class="c-model__canvas js-c-model-canvas"></canvas>
 
     <div class="c-model__tag --about-me">
@@ -47,6 +47,7 @@ import AText from "../atoms/AText.astro";
 
 <script>
 import { BaseComponent } from "../../helpers/base/BaseComponent";
+import { uiT } from "../../config/strings-ui";
 
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -122,7 +123,7 @@ class CModel extends BaseComponent {
         this.renderer.toneMappingExposure = 0.9;
 
         this.scene = new THREE.Scene();
-        this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
+        this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 130);
         this.camera.position.set(70.4336, 13.7303, 0.0658);
         this.camera.lookAt(0, 0, 0);
 
@@ -160,17 +161,24 @@ class CModel extends BaseComponent {
         this.raycaster = new THREE.Raycaster();
         this.pointerNdc = new THREE.Vector2();
 
+        const locale = this.nodeInDOM.dataset.locale || "es";
+
         const registerClickable = (root: any, href: string): void => {
             if (!root) return;
             this.clickableRoots.set(root, href);
         };
 
-        registerClickable(aboutMeLink, "/sobre-mi");
-        registerClickable(translationsLink, "/traducciones");
-        registerClickable(tree1, "/escritos");
-        registerClickable(tree2, "/escritos");
-        registerClickable(tree3, "/escritos");
-        registerClickable(newsLink, "/noticias");
+        const aboutMeUrl = uiT(locale as any, "aboutMeUrl") || "/sobre-mi";
+        const translationsUrl = uiT(locale as any, "translationsUrl") || "/traducciones";
+        const writingsUrl = uiT(locale as any, "writingsUrl") || "/escritos";
+        const articlesUrl = uiT(locale as any, "articlesUrl") || "/noticias";
+        
+        registerClickable(aboutMeLink, aboutMeUrl);
+        registerClickable(translationsLink, translationsUrl);
+        registerClickable(tree1, writingsUrl);
+        registerClickable(tree2, writingsUrl);
+        registerClickable(tree3, writingsUrl);
+        registerClickable(newsLink, articlesUrl);
 
         const updatePointerNdc = (e: PointerEvent): void => {
             if (!this.canvas) return;
