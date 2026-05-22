@@ -181,6 +181,19 @@ export const designTokens = {
         md: {},
         lg: {},
       },
+
+      'home-tags': {
+        sm: {
+          fontFamily: 'primary',
+          fontSize: '1.75cqw',
+          fontWeight: 700,
+          lineHeight: 1.2,
+          letterSpacing: '0',
+          textTransform: 'uppercase',
+        },
+        md: {},
+        lg: {},
+      },
     },
   },
 } as const;

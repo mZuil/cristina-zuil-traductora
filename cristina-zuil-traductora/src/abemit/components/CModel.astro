@@ -1,6 +1,13 @@
 ---
 import { uiT } from "../../config/strings-ui";
-import AText from "../atoms/AText.astro";
+import AButton from "../atoms/AButton.astro";
+
+const locale = Astro.currentLocale ?? "es";
+
+const aboutMeUrl = uiT(locale, "aboutMeUrl") || "/sobre-mi";
+const translationsUrl = uiT(locale, "translationsUrl") || "/traducciones";
+const writingsUrl = uiT(locale, "writingsUrl") || "/escritos";
+const articlesUrl = uiT(locale, "articlesUrl") || "/noticias";
 ---
 
 <style lang="scss">
@@ -12,12 +19,35 @@ import AText from "../atoms/AText.astro";
         height: 100lvh;
         min-height: 240px;
         overflow: hidden;
-    }
+        container-type: inline-size;
 
-    .c-model__canvas {
-        width: 100%;
-        height: 100%;
-        display: block;
+        &__canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        &__tag {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--color-blue-default);
+            pointer-events: auto;
+
+            &.--about-me {
+                display: block;
+            }
+
+            &-button {
+                padding: 5px 20px;
+                text-align: center;
+                border: 4px solid var(--color-blue-dark);
+                border-radius: 50px;
+                background-color: var(--color-white);
+                pointer-events: auto;
+            }
+        }
     }
     
 </style>
@@ -25,23 +55,35 @@ import AText from "../atoms/AText.astro";
 <section class="c-model js-c-model" data-locale={Astro.currentLocale}>
     <canvas class="c-model__canvas js-c-model-canvas"></canvas>
 
-    <div class="c-model__tag --about-me">
-        <AText size="display-1">{uiT(Astro.currentLocale, "aboutMeTag")}</AText>
+    <div class="c-model__tag js-tag --about-me">
+        <AButton as="a" href={aboutMeUrl} size="home-tags" class="c-model__tag-button">
+            {uiT(Astro.currentLocale, "aboutMeTag")}
+        </AButton>
     </div>
-    <div class="c-model__tag --chick">
-        <AText size="display-1">{uiT(Astro.currentLocale, "chickTag")}</AText>
+    <div class="c-model__tag js-tag --chick">
+        <AButton as="a" href={translationsUrl} size="home-tags" class="c-model__tag-button">
+            {uiT(Astro.currentLocale, "chickTag")}
+        </AButton>
     </div>
-    <div class="c-model__tag --translations">
-        <AText size="display-1">{uiT(Astro.currentLocale, "translationsTag")}</AText>
+    <div class="c-model__tag js-tag --translations">
+        <AButton as="a" href={translationsUrl} size="home-tags" class="c-model__tag-button">
+            {uiT(Astro.currentLocale, "translationsTag")}
+        </AButton>
     </div>
-    <div class="c-model__tag --writings">
-        <AText size="display-1">{uiT(Astro.currentLocale, "writingsTag")}</AText>
+    <div class="c-model__tag js-tag --writings">
+        <AButton as="a" href={writingsUrl} size="home-tags" class="c-model__tag-button">
+            {uiT(Astro.currentLocale, "writingsTag")}
+        </AButton>
     </div>
-    <div class="c-model__tag --articles">
-        <AText size="display-1">{uiT(Astro.currentLocale, "articlesTag")}</AText>
+    <div class="c-model__tag js-tag --articles">
+        <AButton as="a" href={articlesUrl} size="home-tags" class="c-model__tag-button">
+            {uiT(Astro.currentLocale, "articlesTag")}
+        </AButton>
     </div>
-    <div class="c-model__tag --contact">
-        <AText size="display-1">{uiT(Astro.currentLocale, "contactTag")}</AText>
+    <div class="c-model__tag js-tag --contact">
+        <AButton as="a" href={"#contact"} size="home-tags" class="c-model__tag-button">
+            {uiT(Astro.currentLocale, "contactTag")}
+        </AButton>
     </div>
 </section>
 
@@ -66,6 +108,7 @@ class CModel extends BaseComponent {
     renderer: any;
     scene: any;
     camera: any;
+    sizes: { width: number; height: number };
     modelPivot: any;
     model: any;
     //TODO: remove from here
@@ -84,6 +127,7 @@ class CModel extends BaseComponent {
     ro: ResizeObserver | null;
     lastFrameTimeMs: number | null;
     destroyed: boolean;
+    tagsPositions: Array<{ position: THREE.Vector3; element: HTMLElement | null }>;
 
     constructor(nodeInDOM: HTMLElement) {
         super(nodeInDOM);
@@ -92,6 +136,7 @@ class CModel extends BaseComponent {
         this.renderer = null;
         this.scene = null;
         this.camera = null;
+        this.sizes = { width: 0, height: 0 };
         this.modelPivot = null;
         this.model = null;
         this.controls = null;
@@ -108,6 +153,7 @@ class CModel extends BaseComponent {
         this.ro = null;
         this.lastFrameTimeMs = null;
         this.destroyed = false;
+        this.tagsPositions = [];
 
         this.init();
         document.addEventListener("astro:before-swap", this.destroy);
@@ -118,6 +164,11 @@ class CModel extends BaseComponent {
         if (!this.canvas) return;
         if (this.nodeInDOM.dataset.modelInit === "1") return;
         this.nodeInDOM.dataset.modelInit = "1";
+
+        this.sizes = {
+            width: this.canvas.clientWidth,
+            height: this.canvas.clientHeight,
+        };
 
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas,
@@ -131,10 +182,13 @@ class CModel extends BaseComponent {
         this.renderer.toneMappingExposure = 0.9;
 
         this.scene = new THREE.Scene();
+
+        /* CAMERA */
         this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 130);
         this.camera.position.set(70.4336, 13.7303, 0.0658);
         this.camera.lookAt(0, 0, 0);
 
+        /* LIGHTS */
         const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
         this.scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
         pmremGenerator.dispose();
@@ -144,6 +198,35 @@ class CModel extends BaseComponent {
         key.position.set(2, 3, 4);
         this.scene.add(ambient, key);
 
+        /* TAGS POINTS */
+        this.tagsPositions = [
+            {
+                position: new THREE.Vector3(39.0059, 6.6606, -0.0007),
+                element: this.nodeInDOM.querySelector(".js-tag.--about-me"),
+            },
+            {
+                position: new THREE.Vector3(21.8355, -20.5247, 24.7885),
+                element: this.nodeInDOM.querySelector(".js-tag.--translations"),
+            },
+            {
+                position: new THREE.Vector3(19.6588, -21.8543, -27.0160),
+                element: this.nodeInDOM.querySelector(".js-tag.--writings"),
+            },
+            {
+                position: new THREE.Vector3(-23.3633, -18.4472, -22.8574),
+                element: this.nodeInDOM.querySelector(".js-tag.--articles"),
+            },
+            {
+                position: new THREE.Vector3(-40.6911, -6.8630, -0.0034),
+                element: this.nodeInDOM.querySelector(".js-tag.--contact"),
+            },
+            {
+                position: new THREE.Vector3(-19.6904, -6.8916, 21.87),
+                element: this.nodeInDOM.querySelector(".js-tag.--chick"),
+            },
+        ];
+
+        /* MODEL */
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath("/draco/");
 
@@ -152,8 +235,6 @@ class CModel extends BaseComponent {
 
         const gltf = await loader.loadAsync("/models/platform-v2.glb");
         this.model = gltf.scene;
-
-        console.log(gltf);
 
         this.scene.add(this.model);
 
@@ -170,6 +251,21 @@ class CModel extends BaseComponent {
         const tree3            = children.find((child: any) => child.name === "armature_left_tree");
         const newsLink         = children.find((child: any) => child.name === "kiosk");
         const contactButton    = children.find((child: any) => child.name === "Armature001"); //Mailbox
+        const farm             = children.find((child: any) => child.name === "farm");
+
+        //CODE SNIPPET TO OBTAIN THE TOP POSITION OF EACH ELEMENT
+        // let aboutMeTopPosition = new THREE.Vector3(-45, 50, 0); // fallback
+        // if (aboutMeLink) {
+        //     const box = new THREE.Box3().setFromObject(aboutMeLink);
+
+        //     // Top-center = average X/Z, max Y
+        //     aboutMeTopPosition = new THREE.Vector3(
+        //         (box.min.x + box.max.x) / 2,
+        //         box.max.y,
+        //         (box.min.z + box.max.z) / 2
+        //     );
+        // }
+        
 
         const registerClickable = (root: any, href: string): void => {
             if (!root) return;
@@ -317,6 +413,19 @@ class CModel extends BaseComponent {
 
         //TODO: remove this line
         this.controls?.update?.();
+
+        //Update tags position
+        for(const tag of this.tagsPositions) {
+
+            if(!tag.element) continue;
+
+            const screenPosition = tag.position.clone();
+            screenPosition.project(this.camera); //Normalized coordinates (no pixels coordinates)
+            
+            const translateX = screenPosition.x * this.sizes.width * 0.5;
+            const translateY = screenPosition.y * this.sizes.height * 0.5;
+            tag.element.style.transform = `translateX(${translateX}px) translateY(${translateY}px)`;
+        }
 
         this.renderer.render(this.scene, this.camera);
         this.frameId = requestAnimationFrame(this.tick);
