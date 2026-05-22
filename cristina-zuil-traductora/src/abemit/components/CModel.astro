@@ -205,23 +205,23 @@ class CModel extends BaseComponent {
                 element: this.nodeInDOM.querySelector(".js-tag.--about-me"),
             },
             {
-                position: new THREE.Vector3(21.8355, -20.5247, 24.7885),
+                position: new THREE.Vector3(21.8355, 20.5247, 24.7885),
                 element: this.nodeInDOM.querySelector(".js-tag.--translations"),
             },
             {
-                position: new THREE.Vector3(19.6588, -21.8543, -27.0160),
+                position: new THREE.Vector3(19.6588, 21.8543, -27.0160),
                 element: this.nodeInDOM.querySelector(".js-tag.--writings"),
             },
             {
-                position: new THREE.Vector3(-23.3633, -18.4472, -22.8574),
+                position: new THREE.Vector3(-23.3633, 18.4472, -22.8574),
                 element: this.nodeInDOM.querySelector(".js-tag.--articles"),
             },
             {
-                position: new THREE.Vector3(-40.6911, -6.8630, -0.0034),
+                position: new THREE.Vector3(-40.6911, 6.8630, -0.0034),
                 element: this.nodeInDOM.querySelector(".js-tag.--contact"),
             },
             {
-                position: new THREE.Vector3(-19.6904, -6.8916, 21.87),
+                position: new THREE.Vector3(-19.6904, 6.8916, 21.87),
                 element: this.nodeInDOM.querySelector(".js-tag.--chick"),
             },
         ];
@@ -410,7 +410,7 @@ class CModel extends BaseComponent {
             screenPosition.project(this.camera); //Normalized coordinates (no pixels coordinates)
             
             const translateX = screenPosition.x * this.sizes.width * 0.5;
-            const translateY = screenPosition.y * this.sizes.height * 0.5;
+            const translateY = -screenPosition.y * this.sizes.height * 0.5;
             tag.element.style.transform = `translateX(${translateX}px) translateY(${translateY}px)`;
         }
 
