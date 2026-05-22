@@ -185,7 +185,7 @@ export const designTokens = {
       'home-tags': {
         sm: {
           fontFamily: 'primary',
-          fontSize: '1.75cqw',
+          fontSize: '1.1cqw',
           fontWeight: 700,
           lineHeight: 1.2,
           letterSpacing: '0',
