@@ -55,6 +55,11 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
+declare global {
+    interface Window {
+        openContactModal?: () => void;
+    }
+}
 
 class CModel extends BaseComponent {
     canvas: HTMLCanvasElement | null;
@@ -70,6 +75,7 @@ class CModel extends BaseComponent {
     raycaster: any;
     pointerNdc: any;
     clickableRoots: Map<any, string>;
+    contactRoots: Set<any>;
     onPointerMove: ((e: PointerEvent) => void) | null;
     onPointerDown: ((e: PointerEvent) => void) | null;
     onPointerUp: ((e: PointerEvent) => void) | null;
@@ -93,6 +99,7 @@ class CModel extends BaseComponent {
         this.raycaster = null;
         this.pointerNdc = null;
         this.clickableRoots = new Map();
+        this.contactRoots = new Set();
         this.onPointerMove = null;
         this.onPointerDown = null;
         this.onPointerUp = null;
@@ -106,6 +113,7 @@ class CModel extends BaseComponent {
         document.addEventListener("astro:before-swap", this.destroy);
     }
 
+    // ─── init ─────────────────────────────────────────────────────────────
     init = async (): Promise<void> => {
         if (!this.canvas) return;
         if (this.nodeInDOM.dataset.modelInit === "1") return;
@@ -142,19 +150,10 @@ class CModel extends BaseComponent {
         const loader = new GLTFLoader();
         loader.setDRACOLoader(dracoLoader);
 
-        const gltf = await loader.loadAsync("/models/platform.glb");
+        const gltf = await loader.loadAsync("/models/platform-v2.glb");
         this.model = gltf.scene;
-        
-        //Get model children to make them clickable:
-        const children = this.model.children;
-        const aboutMeLink = children.find((child: any) => child.name === "cris");
-        const translationsLink = children.find((child: any) => child.name === "book_shop");
-        const farmLink = children.find((child: any) => child.name === "farm");
-        const chickLink = children.find((child: any) => child.name === "chick");
-        const tree1 = children.find((child: any) => child.name === "armature_big_tree");
-        const tree2 = children.find((child: any) => child.name === "armature_right_tree");
-        const tree3 = children.find((child: any) => child.name === "armature_left_tree");
-        const newsLink = children.find((child: any) => child.name === "kiosk");
+
+        console.log(gltf);
 
         this.scene.add(this.model);
 
@@ -162,29 +161,44 @@ class CModel extends BaseComponent {
         this.pointerNdc = new THREE.Vector2();
 
         const locale = this.nodeInDOM.dataset.locale || "es";
+        const children = this.model.children;
+
+        const aboutMeLink      = children.find((child: any) => child.name === "cris");
+        const translationsLink = children.find((child: any) => child.name === "book_shop");
+        const tree1            = children.find((child: any) => child.name === "armature_big_tree");
+        const tree2            = children.find((child: any) => child.name === "armature_right_tree");
+        const tree3            = children.find((child: any) => child.name === "armature_left_tree");
+        const newsLink         = children.find((child: any) => child.name === "kiosk");
+        const contactButton    = children.find((child: any) => child.name === "Armature001"); //Mailbox
 
         const registerClickable = (root: any, href: string): void => {
             if (!root) return;
             this.clickableRoots.set(root, href);
         };
 
-        const aboutMeUrl = uiT(locale as any, "aboutMeUrl") || "/sobre-mi";
+        const registerContact = (root: any): void => {
+            if (!root) return;
+            this.contactRoots.add(root);
+        };
+
+        const aboutMeUrl      = uiT(locale as any, "aboutMeUrl")      || "/sobre-mi";
         const translationsUrl = uiT(locale as any, "translationsUrl") || "/traducciones";
-        const writingsUrl = uiT(locale as any, "writingsUrl") || "/escritos";
-        const articlesUrl = uiT(locale as any, "articlesUrl") || "/noticias";
-        
-        registerClickable(aboutMeLink, aboutMeUrl);
+        const writingsUrl     = uiT(locale as any, "writingsUrl")     || "/escritos";
+        const articlesUrl     = uiT(locale as any, "articlesUrl")     || "/noticias";
+
+        registerClickable(aboutMeLink,      aboutMeUrl);
         registerClickable(translationsLink, translationsUrl);
-        registerClickable(tree1, writingsUrl);
-        registerClickable(tree2, writingsUrl);
-        registerClickable(tree3, writingsUrl);
-        registerClickable(newsLink, articlesUrl);
+        registerClickable(tree1,            writingsUrl);
+        registerClickable(tree2,            writingsUrl);
+        registerClickable(tree3,            writingsUrl);
+        registerClickable(newsLink,         articlesUrl);
+        registerContact(contactButton);
 
         const updatePointerNdc = (e: PointerEvent): void => {
             if (!this.canvas) return;
             const rect = this.canvas.getBoundingClientRect();
             const x = (e.clientX - rect.left) / Math.max(1, rect.width);
-            const y = (e.clientY - rect.top) / Math.max(1, rect.height);
+            const y = (e.clientY - rect.top)  / Math.max(1, rect.height);
             this.pointerNdc.set(x * 2 - 1, -(y * 2 - 1));
         };
 
@@ -198,13 +212,26 @@ class CModel extends BaseComponent {
             return null;
         };
 
-        const raycastHit = (): { root: any; href: string } | null => {
-            if (!this.raycaster || !this.camera || !this.model) return null;
+        const findContactRoot = (obj: any): boolean => {
+            let cur: any = obj;
+            while (cur) {
+                if (this.contactRoots.has(cur)) return true;
+                cur = cur.parent;
+            }
+            return false;
+        };
 
+        const raycastAny = (): { isContact: boolean; href?: string } | null => {
+            if (!this.raycaster || !this.camera || !this.model) return null;
             this.raycaster.setFromCamera(this.pointerNdc, this.camera);
             const hits = this.raycaster.intersectObject(this.model, true);
             if (!hits.length) return null;
-            return findClickableRoot(hits[0]?.object);
+
+            const obj = hits[0].object;
+            const clickable = findClickableRoot(obj);
+            if (clickable) return { isContact: false, href: clickable.href };
+            if (findContactRoot(obj)) return { isContact: true };
+            return null;
         };
 
         const setCursor = (active: boolean): void => {
@@ -214,7 +241,7 @@ class CModel extends BaseComponent {
 
         this.onPointerMove = (e: PointerEvent) => {
             updatePointerNdc(e);
-            setCursor(Boolean(raycastHit()));
+            setCursor(Boolean(raycastAny()));
         };
 
         this.onPointerDown = (e: PointerEvent) => {
@@ -228,22 +255,20 @@ class CModel extends BaseComponent {
 
             const dx = e.clientX - start.x;
             const dy = e.clientY - start.y;
-            const movedPx = Math.hypot(dx, dy);
-            if (movedPx > 6) return;
+            if (Math.hypot(dx, dy) > 6) return;
 
             updatePointerNdc(e);
-            const hit = raycastHit();
+            const hit = raycastAny();
             if (!hit) return;
+            if (hit.isContact) { window.openContactModal?.(); return; }
             import("astro:transitions/client")
-                .then(({ navigate }) => navigate(hit.href))
-                .catch(() => {
-                    window.location.href = hit.href;
-                });
+                .then(({ navigate }) => navigate(hit.href!))
+                .catch(() => { window.location.href = hit.href!; });
         };
 
         this.canvas.addEventListener("pointermove", this.onPointerMove);
         this.canvas.addEventListener("pointerdown", this.onPointerDown);
-        this.canvas.addEventListener("pointerup", this.onPointerUp);
+        this.canvas.addEventListener("pointerup",   this.onPointerUp);
 
         //TODO: remove from here
         this.controls = new OrbitControls(this.camera, this.canvas);
@@ -270,39 +295,34 @@ class CModel extends BaseComponent {
         this.ro.observe(this.nodeInDOM);
 
         this.lastFrameTimeMs = null;
-        this.renderLoop();
+        this.tick();
     };
 
+    // ─── resize ───────────────────────────────────────────────────────────
     resize = (): void => {
         if (!this.renderer || !this.camera) return;
-        const rect = this.nodeInDOM.getBoundingClientRect();
-        const width = Math.max(1, Math.floor(rect.width));
+        const rect   = this.nodeInDOM.getBoundingClientRect();
+        const width  = Math.max(1, Math.floor(rect.width));
         const height = Math.max(1, Math.floor(rect.height));
         this.renderer.setSize(width, height, false);
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
     };
 
-    renderLoop = (): void => {
+    // ─── tick ─────────────────────────────────────────────────────────────
+    tick = (): void => {
         if (!this.renderer || !this.scene || !this.camera) return;
         const nowMs = performance.now();
-        const deltaSeconds =
-            this.lastFrameTimeMs == null
-                ? 0
-                : Math.max(0, (nowMs - this.lastFrameTimeMs) / 1000);
         this.lastFrameTimeMs = nowMs;
-
-        if (this.modelPivot) {
-            this.modelPivot.rotation.y += deltaSeconds * 0.25;
-        }
 
         //TODO: remove this line
         this.controls?.update?.();
 
         this.renderer.render(this.scene, this.camera);
-        this.frameId = requestAnimationFrame(this.renderLoop);
+        this.frameId = requestAnimationFrame(this.tick);
     };
 
+    // ─── destroy ──────────────────────────────────────────────────────────
     destroy = (): void => {
         if (this.destroyed) return;
         this.destroyed = true;
@@ -319,7 +339,6 @@ class CModel extends BaseComponent {
             this.scene.traverse((obj: any) => {
                 if (obj instanceof THREE.Mesh) {
                     obj.geometry.dispose();
-
                     const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
                     mats.forEach((m: any) => m.dispose());
                 }
@@ -329,32 +348,31 @@ class CModel extends BaseComponent {
         if (this.canvas) {
             if (this.onPointerMove) this.canvas.removeEventListener("pointermove", this.onPointerMove);
             if (this.onPointerDown) this.canvas.removeEventListener("pointerdown", this.onPointerDown);
-            if (this.onPointerUp) this.canvas.removeEventListener("pointerup", this.onPointerUp);
+            if (this.onPointerUp)   this.canvas.removeEventListener("pointerup",   this.onPointerUp);
         }
         this.onPointerMove = null;
         this.onPointerDown = null;
-        this.onPointerUp = null;
+        this.onPointerUp   = null;
         this.pointerDownPos = null;
         this.clickableRoots.clear();
+        this.contactRoots.clear();
 
         //TODO: from here
         if (this.controls) {
-            if (this.onControlsEnd) {
-                this.controls.removeEventListener("end", this.onControlsEnd);
-            }
+            if (this.onControlsEnd) this.controls.removeEventListener("end", this.onControlsEnd);
             this.controls.dispose?.();
         }
-        this.controls = null;
+        this.controls      = null;
         this.onControlsEnd = null;
         //TODO: to here
 
         this.renderer?.dispose();
         this.renderer?.forceContextLoss();
-        this.renderer = null;
-        this.scene = null;
-        this.camera = null;
+        this.renderer  = null;
+        this.scene     = null;
+        this.camera    = null;
         this.modelPivot = null;
-        this.model = null;
+        this.model     = null;
 
         document.removeEventListener("astro:before-swap", this.destroy);
     };
