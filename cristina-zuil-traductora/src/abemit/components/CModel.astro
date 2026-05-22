@@ -252,19 +252,6 @@ class CModel extends BaseComponent {
         const newsLink         = children.find((child: any) => child.name === "kiosk");
         const contactButton    = children.find((child: any) => child.name === "Armature001"); //Mailbox
         const farm             = children.find((child: any) => child.name === "farm");
-
-        //CODE SNIPPET TO OBTAIN THE TOP POSITION OF EACH ELEMENT
-        // let aboutMeTopPosition = new THREE.Vector3(-45, 50, 0); // fallback
-        // if (aboutMeLink) {
-        //     const box = new THREE.Box3().setFromObject(aboutMeLink);
-
-        //     // Top-center = average X/Z, max Y
-        //     aboutMeTopPosition = new THREE.Vector3(
-        //         (box.min.x + box.max.x) / 2,
-        //         box.max.y,
-        //         (box.min.z + box.max.z) / 2
-        //     );
-        // }
         
 
         const registerClickable = (root: any, href: string): void => {
