@@ -60,7 +60,6 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
     <SEOHead seoData={seoData} />
     <ClientRouter />
     <script type="application/ld+json" set:html={JSON.stringify(structuredData, null, 2)} />
-    <link rel="preload" href="/models/platform-v2.glb" as="fetch" crossorigin="anonymous" />
   </head>
   <body>
     <div class="js-page-wrapper">

@@ -44,6 +44,9 @@ document.addEventListener('astro:after-swap', () => {
   bottom.style.animation = 'none';
   panel.getBoundingClientRect();
 
+  //Removing loader
+  document.body.querySelector('.js-b-loader')?.remove();
+
   panel.style.animation  = `panel-out  ${DURATION}ms ${EASING} forwards`;
   bottom.style.animation = `bottom-out ${DURATION}ms ${EASING} forwards`;
 });
