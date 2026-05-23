@@ -79,7 +79,12 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
 
 <script>
   import '../scripts/lenis.ts';
+  import { prefetchPlatformModel } from '../scripts/model-prefetch';
   import '../scripts/page-transition.ts';
+  
+  document.addEventListener("astro:page-load", () => {
+    prefetchPlatformModel().catch(() => {});
+  });
 
   document.addEventListener("resize", () => ScrollTrigger.refresh());
 </script>

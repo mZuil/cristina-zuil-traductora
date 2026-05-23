@@ -44,11 +44,6 @@ document.addEventListener('astro:after-swap', () => {
   bottom.style.animation = 'none';
   panel.getBoundingClientRect();
 
-  document.addEventListener(
-      "model:ready",
-      () => {
-        panel.style.animation  = `panel-out  ${DURATION}ms ${EASING} forwards`;
-        bottom.style.animation = `bottom-out ${DURATION}ms ${EASING} forwards`;
-      },
-  );
+  panel.style.animation  = `panel-out  ${DURATION}ms ${EASING} forwards`;
+  bottom.style.animation = `bottom-out ${DURATION}ms ${EASING} forwards`;
 });

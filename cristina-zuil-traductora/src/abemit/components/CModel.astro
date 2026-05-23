@@ -107,8 +107,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-
-THREE.Cache.enabled = true;
+import { getPlatformModel } from "../../scripts/model-prefetch";
 
 declare global {
     interface Window {
@@ -246,9 +245,8 @@ class CModel extends BaseComponent {
         const loader = new GLTFLoader();
         loader.setDRACOLoader(dracoLoader);
 
-        const gltf = await loader.loadAsync("/models/platform-v2.glb");
-        this.model = gltf.scene;
-
+        const gltf = await getPlatformModel();
+        this.model = gltf.scene.clone(true);
         this.scene.add(this.model);
 
         this.raycaster = new THREE.Raycaster();
