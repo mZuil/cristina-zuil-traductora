@@ -12,6 +12,7 @@ import GridOverlay from '../helpers/structure/GridOverlay/GridOverlay.astro';
 import BFooter from '../abemit/blocks/BFooter.astro';
 import BContact from '../abemit/blocks/BContact.astro';
 import PageTransition from '../helpers/page-transition/PageTransition.astro';
+import BLoader from '../abemit/blocks/BLoader.astro';
 
 interface Props {
   content: any; // Strapi content (page, book, article, etc.)
@@ -59,6 +60,7 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
     <SEOHead seoData={seoData} />
     <ClientRouter />
     <script type="application/ld+json" set:html={JSON.stringify(structuredData, null, 2)} />
+    <link rel="preload" href="/models/platform-v2.glb" as="fetch" crossorigin="anonymous" />
   </head>
   <body>
     <div class="js-page-wrapper">
@@ -69,6 +71,7 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
 
     <PageTransition />
 
+    <BLoader />
     <BContact />
     <GridOverlay />
   </body>

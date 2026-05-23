@@ -1,0 +1,103 @@
+---
+
+---
+
+<style lang="scss">
+    @use "../../styles/mixins" as *;
+
+    .b-loader {
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top: 0;
+        left: 0;
+        background-color: var(--color-blue-dark);
+        z-index: 99999;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: all;
+        transition: opacity 0.2s ease, visibility 0.2s ease;
+
+        &.is-hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        &__cris-illustration {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+
+</style>
+
+<div class="b-loader js-b-loader">
+    <div class="b-loader__cris-illustration">
+        <img src="/imgs/cris-illustration-round.png" alt="Cristina Zuil, traductora" />
+    </div>
+</div>
+
+<script>
+    let isFirstLoad = true;
+
+    const hideLoader = (): void => {
+        const el = document.querySelector<HTMLElement>(".js-b-loader");
+        if (!el) return;
+
+        // If already hidden or already removed, do nothing
+        if (el.classList.contains("is-hidden")) return;
+
+        const remove = () => {
+            el.removeEventListener("transitionend", remove);
+            el.remove();
+        };
+
+        el.addEventListener("transitionend", remove);
+        el.classList.add("is-hidden");
+
+        // Fallback in case transitionend doesn't fire
+        window.setTimeout(() => {
+            if (document.contains(el)) el.remove();
+        }, 400);
+    };
+
+    const hideLoaderOnModelReady = (): void => {
+        const modelEl = document.querySelector(".js-c-model");
+
+        if (!modelEl) {
+            hideLoader();
+            return;
+        }
+
+        const timeout = setTimeout(hideLoader, 8000);
+
+        document.addEventListener(
+            "model:ready",
+            () => {
+            clearTimeout(timeout);
+            hideLoader();
+            },
+            { once: true }
+        );
+    };
+
+    // Full reload only — wait for the model
+    if (document.readyState === "complete") {
+    hideLoaderOnModelReady();
+    } else {
+    window.addEventListener("load", hideLoaderOnModelReady, { once: true });
+    }
+
+    // Client-side navigation — hide immediately, let the transition panel do its job
+    document.addEventListener("astro:page-load", () => {
+        if (isFirstLoad) {
+            isFirstLoad = false;
+            return; // already handled above by the load event
+        }
+        hideLoader();
+    });
+</script>

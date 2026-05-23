@@ -51,6 +51,12 @@ const articlesUrl = uiT(locale, "articlesUrl") || "/noticias";
                 border-radius: 50px;
                 background-color: var(--color-white);
                 pointer-events: auto;
+
+                transition: background-color 0.2s ease;
+
+                &:hover {
+                    background-color: var(--color-blue-lightest);
+                }
             }
         }
     }
@@ -101,6 +107,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+
+THREE.Cache.enabled = true;
 
 declare global {
     interface Window {
@@ -384,6 +392,10 @@ class CModel extends BaseComponent {
 
         this.lastFrameTimeMs = null;
         this.tick();
+
+        this.renderer.render(this.scene, this.camera); // render one frame immediately
+        this.nodeInDOM.dataset.modelReady = "1";
+        this.nodeInDOM.dispatchEvent(new CustomEvent("model:ready", { bubbles: true }));
     };
 
     // ─── resize ───────────────────────────────────────────────────────────

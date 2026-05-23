@@ -230,12 +230,27 @@ export function initBooksList(root: HTMLElement): void {
   const getPage = (): number =>
     Math.max(1, Number(new URLSearchParams(location.search).get('page') || '1') || 1);
 
-  function pushParams(overrides: Record<string, string | null>): void {
+  const writeParams = (overrides: Record<string, string | null>, mode: 'push' | 'replace'): void => {
     const params = new URLSearchParams(location.search);
     for (const [key, value] of Object.entries(overrides)) {
       value ? params.set(key, value) : params.delete(key);
     }
-    history.pushState({}, '', `?${params}`);
+
+    // Never force "?page=1" into the URL. Page 1 is the implicit default.
+    if ((params.get('page') || '') === '1') params.delete('page');
+
+    const query = params.toString();
+    const nextUrl = query ? `${location.pathname}?${query}` : location.pathname;
+    if (mode === 'replace') history.replaceState({}, '', nextUrl);
+    else history.pushState({}, '', nextUrl);
+  };
+
+  function pushParams(overrides: Record<string, string | null>): void {
+    writeParams(overrides, 'push');
+  }
+
+  function replaceParams(overrides: Record<string, string | null>): void {
+    writeParams(overrides, 'replace');
   }
 
   if (isFirstInit) {
@@ -465,7 +480,12 @@ export function initBooksList(root: HTMLElement): void {
   if (isFirstInit) {
     document.addEventListener('books:filters', (e) => {
       const { search, genreId, publisherId } = (e as CustomEvent<BooksFiltersDetail>).detail;
-      pushParams({
+
+      // The filters component emits once on init; that should not create a new history entry
+      // nor force /traducciones -> /traducciones?page=1.
+      const updateParams = isFirstInit ? replaceParams : pushParams;
+
+      updateParams({
         search:      search      || null,
         genre:       genreId     || null,
         publisher:   publisherId || null,

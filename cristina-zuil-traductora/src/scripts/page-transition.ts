@@ -37,11 +37,18 @@ document.addEventListener('astro:after-swap', () => {
   const { panel, bottom } = getEls();
   if (!panel || !bottom) return;
 
+  // Navigation is effectively done; clear the flag so normal behavior resumes
+  document.documentElement.classList.remove('is-navigating');
+
   panel.style.animation  = 'none';
   bottom.style.animation = 'none';
   panel.getBoundingClientRect();
 
-  // Continue sliding up out of view + collapse bottom circle
-  panel.style.animation  = `panel-out  ${DURATION}ms ${EASING} forwards`;
-  bottom.style.animation = `bottom-out ${DURATION}ms ${EASING} forwards`;
+  document.addEventListener(
+      "model:ready",
+      () => {
+        panel.style.animation  = `panel-out  ${DURATION}ms ${EASING} forwards`;
+        bottom.style.animation = `bottom-out ${DURATION}ms ${EASING} forwards`;
+      },
+  );
 });
