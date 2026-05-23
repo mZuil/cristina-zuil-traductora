@@ -210,7 +210,7 @@ class CModel extends BaseComponent {
                 element: this.nodeInDOM.querySelector(".js-tag.--about-me"),
             },
             {
-                position: new THREE.Vector3(30.8355, 20.5247, 8.7885),
+                position: new THREE.Vector3(28.8355, 20.5247, 8.7885),
                 element: this.nodeInDOM.querySelector(".js-tag.--translations"),
             },
             {
@@ -423,11 +423,16 @@ class CModel extends BaseComponent {
                 this.raycaster.setFromCamera(screenPosition, this.camera);
                 const intersects = this.raycaster.intersectObjects(this.scene.children, true);
 
-                if(intersects.length === 0){
-                    tag.element.classList.add('is-visible');
+                const tagDistance = tag.position.distanceTo(this.camera.position);
+
+                if(intersects.length === 0 ){
+                    if(tagDistance > 59) {
+                        tag.element.classList.remove('is-visible');
+                    } else {
+                        tag.element.classList.add('is-visible');
+                    }
                 } else {
                     const intersectionDistance = intersects[0].distance;
-                    const tagDistance = tag.position.distanceTo(this.camera.position);
 
                     if (intersectionDistance < tagDistance) {
                         tag.element.classList.remove('is-visible');
