@@ -122,18 +122,12 @@ const CAM_NEUTRAL      = new THREE.Vector3(70.4336, 13.7303, 0.0658);
 // ─── Chick constants ───────────────────────────────────────────────────────────
 const CHICK_SPEED        = 1.2;   // slower — more chick-like
 const CHICK_ARRIVE_DIST  = 0.4;
-const CHICK_PAUSE_MIN_MS = 0;
-const CHICK_PAUSE_MAX_MS = 0;
-const CHICK_EAT_DURATION = 1000;
+const CHICK_EAT_DURATION = 1400;
 const CHICK_TURN_SPEED   = 3.5;   // also slower — chickens pivot lazily
 const CHICK_LOOKAHEAD    = 2.2;   // cast this far ahead for wall detection
 const CHICK_PROBE_Y      = 0.2;   // low Y lift — catches low fences too
 
-// Farm boundary on XZ plane — tweak to match your scene geometry
-const FARM = { minX: -22, maxX: 22, minZ: -22, maxZ: 22 };
-
 // ─── Snap-point definitions ───────────────────────────────────────────────────
-
 interface SnapPoint {
     tagSelector: string;
     camPosition: THREE.Vector3;
@@ -214,10 +208,12 @@ class CModel extends BaseComponent {
     private chickAnimal:       THREE.Object3D | null = null;
     private chickClickRoot:  THREE.Object3D | null = null;  // for click detection
     private chickIsEating:   boolean = false;
+    private chickEatUntil:   number = 0;
     private chickTarget:     THREE.Vector3 = new THREE.Vector3();
     private chickPauseUntil: number = 0;     // performance.now() timestamp
     private chickEatTimeout: ReturnType<typeof setTimeout> | null = null;
     private farmMeshes: THREE.Object3D[] = [];  // add this to class fields at the top
+    private farmFrontMeshes: THREE.Object3D[] = [];
     private chickDir: THREE.Vector3 = new THREE.Vector3(1, 0, 0); // XZ heading, Y unused
     private farmBox: THREE.Box3 | null = null;
 
@@ -245,6 +241,7 @@ class CModel extends BaseComponent {
         this.mixer          = null;
         this.animations     = [];
         this.farmMeshes     = [];
+        this.farmFrontMeshes = [];
 
         this.init();
         document.addEventListener("astro:before-swap", this.destroy);
@@ -375,9 +372,17 @@ class CModel extends BaseComponent {
         const tree3            = children.find((c: any) => c.name === "armature_left_tree");
         const newsLink         = children.find((c: any) => c.name === "kiosk");
         const contactButton    = children.find((c: any) => c.name === "Mailbox");
-        // const farm             = children.find((c: any) => c.name === "farm");
+        const farm             = children.find((c: any) => c.name === "farm");
         const farmBounds       = children.find((c: any) => c.name === "Farm_Bounds");
         const chickAnimal      = children.find((c: any) => c.name === "chick");
+
+        //For deleting visually the front part of the farm
+        const frontNames = new Set(["Cylinder008", "Cylinder008_1", "Cylinder008_2", "Cylinder008_3"]);
+        farm?.traverse((obj: any) => {
+            if (obj instanceof THREE.Mesh && frontNames.has(obj.name)) {
+                this.farmFrontMeshes.push(obj);
+            }
+        });
 
         if (farmBounds) {
             farmBounds.traverse((obj: any) => {
@@ -587,18 +592,30 @@ class CModel extends BaseComponent {
 
     /** Pick a random XZ position inside FARM bounds as the next walk target. */
     private pickNewChickTarget(): void {
+        const worldPos = new THREE.Vector3();
+        if (this.chickAnimal) this.chickAnimal.getWorldPosition(worldPos);
+
+        const WALK_DIST_MIN = 3;
+        const WALK_DIST_MAX = 8;
+
+        // Pick a direction within ±60° of the current heading
+        // so the chick curves and meanders rather than spinning to face a random point
+        const currentAngle = Math.atan2(this.chickDir.x, this.chickDir.z);
+        const spread       = (Math.PI / 3);   // ±60°
+        const angle        = currentAngle + (Math.random() - 0.5) * 2 * spread;
+        const dist         = WALK_DIST_MIN + Math.random() * (WALK_DIST_MAX - WALK_DIST_MIN);
+
+        let x = worldPos.x + Math.sin(angle) * dist;
+        let z = worldPos.z + Math.cos(angle) * dist;
+
+        // Clamp to farmBox so the picked target is always valid
         if (this.farmBox) {
-            // Pick a random point strictly inside the real farm bounds
-            const x = this.farmBox.min.x + Math.random() * (this.farmBox.max.x - this.farmBox.min.x);
-            const z = this.farmBox.min.z + Math.random() * (this.farmBox.max.z - this.farmBox.min.z);
-            const y = this.chickAnimal ? this.chickAnimal.position.y : 0;
-            this.chickTarget.set(x, y, z);
-        } else {
-            // Fallback to constants if bounds not ready
-            const x = FARM.minX + Math.random() * (FARM.maxX - FARM.minX);
-            const z = FARM.minZ + Math.random() * (FARM.maxZ - FARM.minZ);
-            this.chickTarget.set(x, this.chickAnimal?.position.y ?? 0, z);
+            const pad = 1.0; // stay this far from the wall edge
+            x = Math.max(this.farmBox.min.x + pad, Math.min(this.farmBox.max.x - pad, x));
+            z = Math.max(this.farmBox.min.z + pad, Math.min(this.farmBox.max.z - pad, z));
         }
+
+        this.chickTarget.set(x, worldPos.y, z);
     }
 
     /** Called when the user clicks the chick. Triggers eating for CHICK_EAT_DURATION ms. */
@@ -773,12 +790,9 @@ class CModel extends BaseComponent {
         this.snapIndex = index;
         this.targetCamPos.copy(SNAP_POINTS[index].camPosition);
         this.targetLookAt.set(0, 0, 0);
-    }
 
-    private goNeutral(): void {
-        this.snapIndex = -1;
-        this.targetCamPos.copy(CAM_NEUTRAL);
-        this.targetLookAt.set(0, 0, 0);
+        const isChickSnap = SNAP_POINTS[index].tagSelector === "--chick";
+        this.farmFrontMeshes.forEach(m => { (m as any).visible = !isChickSnap; });
     }
 
     // ─── Pointer events ────────────────────────────────────────────────────
