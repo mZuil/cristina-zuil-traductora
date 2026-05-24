@@ -114,26 +114,15 @@ declare global {
 
 // ─── Tuning constants ──────────────────────────────────────────────────────────
 
-/** Lerp speed per frame for camera movement (0–1). Lower = floatier. */
-const LERP_FACTOR = 0.055;
-
-/** Minimum wheel/touch delta (px) to trigger a snap. */
+const LERP_FACTOR      = 0.055;
 const SCROLL_THRESHOLD = 30;
-
-/**
- * Milliseconds to ignore scroll input after a snap fires.
- * Prevents double-skipping on trackpads.
- */
 const SNAP_COOLDOWN_MS = 900;
-
-/** Camera position before the first snap. */
-const CAM_NEUTRAL = new THREE.Vector3(70.4336, 13.7303, 0.0658);
+const CAM_NEUTRAL      = new THREE.Vector3(70.4336, 13.7303, 0.0658);
 
 // ─── Snap-point definitions ───────────────────────────────────────────────────
 
 interface SnapPoint {
     tagSelector: string;
-    /** World-space camera position for this snap. Always looks at origin. */
     camPosition: THREE.Vector3;
 }
 
@@ -145,6 +134,21 @@ const SNAP_POINTS: SnapPoint[] = [
     { tagSelector: "--articles",     camPosition: new THREE.Vector3(-49.1818, 14.9362, -48.3925) },
     { tagSelector: "--writings",     camPosition: new THREE.Vector3( 38.3481, 21.9753, -56.5325) },
 ];
+
+// ─── Hover animation config ───────────────────────────────────────────────────
+
+interface HoverAnimConfig {
+    /** Animation clip name to play or modify on hover. */
+    name: string;
+    /** Behaviour mode on hover. */
+    mode: "loop-with-pause" | "speed-up" | "play-once" | "toggle-with-idle";
+    /** ms pause between loops (mode: loop-with-pause). */
+    pauseMs?: number;
+    /** timeScale while hovered (mode: speed-up). Normal idle timeScale is 1. */
+    speedScale?: number;
+    /** for toggle-with idle */
+    idleName?: string;
+}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -167,6 +171,8 @@ class CModel extends BaseComponent {
     ro: ResizeObserver | null;
     destroyed: boolean;
     tagsPositions: Array<{ position: THREE.Vector3; element: HTMLElement | null }>;
+    mixer: THREE.AnimationMixer | null;
+    animations: Array<{ name: string; action: THREE.AnimationAction }>;
 
     // ── Snap state ────────────────────────────────────────────────────────
     private snapIndex: number    = -1;
@@ -184,9 +190,17 @@ class CModel extends BaseComponent {
     private onTouchStart: ((e: TouchEvent) => void) | null = null;
     private onTouchEnd:   ((e: TouchEvent) => void) | null = null;
 
+    private frameCount: number = 0;
+    private previousTime: number | null = null;
+
     // ── Raycasting ────────────────────────────────────────────────────────
     private interactiveMeshes: THREE.Object3D[] = [];
     private proxyMeshes: THREE.Mesh[] = [];
+
+    // ── Hover animations ──────────────────────────────────────────────────
+    private hoveredRoot: THREE.Object3D | null = null;
+    private hoverAnimationMap: Map<any, HoverAnimConfig> = new Map();
+    private hoverLoopTimeout: ReturnType<typeof setTimeout> | null = null;
 
     constructor(nodeInDOM: HTMLElement) {
         super(nodeInDOM);
@@ -209,6 +223,8 @@ class CModel extends BaseComponent {
         this.ro             = null;
         this.destroyed      = false;
         this.tagsPositions  = [];
+        this.mixer          = null;
+        this.animations     = [];
 
         this.init();
         document.addEventListener("astro:before-swap", this.destroy);
@@ -233,9 +249,9 @@ class CModel extends BaseComponent {
             powerPreference: "high-performance",
         });
         this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-        this.renderer.outputColorSpace    = THREE.SRGBColorSpace;
-        this.renderer.toneMapping         = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure  = 0.9;
+        this.renderer.outputColorSpace   = THREE.SRGBColorSpace;
+        this.renderer.toneMapping        = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 0.9;
 
         /* SCENE */
         this.scene = new THREE.Scene();
@@ -272,13 +288,63 @@ class CModel extends BaseComponent {
         loader.setDRACOLoader(dracoLoader);
 
         const gltf = await getPlatformModel();
-        this.model = gltf.scene.clone(true);
+        this.model = gltf.scene;
         this.scene.add(this.model);
 
+        console.log(gltf.animations);
+
+        /* ANIMATIONS */
+        this.mixer = new THREE.AnimationMixer(this.model);
+
+        console.log(gltf);
+
+        this.animations = [
+            { name: "awkningBookShop", action: this.mixer.clipAction(gltf.animations[0])  },
+            { name: "chickEating",     action: this.mixer.clipAction(gltf.animations[1])  },
+            { name: "chickWalking",    action: this.mixer.clipAction(gltf.animations[2])  },
+            { name: "awkningKiosk",    action: this.mixer.clipAction(gltf.animations[3])  },
+            { name: "mailbox",         action: this.mixer.clipAction(gltf.animations[4])  },
+            { name: "bigTreeLeft",     action: this.mixer.clipAction(gltf.animations[5])  },
+            { name: "bigTreeRight",    action: this.mixer.clipAction(gltf.animations[6])  },
+            { name: "bigTreeLeft2",    action: this.mixer.clipAction(gltf.animations[7])  },
+            { name: "rightTreeLeft",   action: this.mixer.clipAction(gltf.animations[8])  },
+            { name: "rightTreeRight",  action: this.mixer.clipAction(gltf.animations[9])  },
+            { name: "leftTreeLeft",    action: this.mixer.clipAction(gltf.animations[10]) },
+            { name: "leftTreeRight",   action: this.mixer.clipAction(gltf.animations[11]) },
+            { name: "crisDance",       action: this.mixer.clipAction(gltf.animations[12]) },
+            { name: "crisIdle",        action: this.mixer.clipAction(gltf.animations[13]) },
+            { name: "crisWave",        action: this.mixer.clipAction(gltf.animations[14]) },
+        ];
+
+        const getAction = (name: string) => this.animations.find(a => a.name === name)?.action;
+
+        /* IDLE ANIMATIONS */
+        const crisWave = getAction("crisWave");
+        const crisIdle = getAction("crisIdle");
+
+        if (crisWave && crisIdle) {
+            crisWave.setLoop(THREE.LoopOnce, 1);
+            crisWave.clampWhenFinished = true;
+            crisWave.reset().play();
+
+            const onWaveDone = (e: any) => {
+                if (e.action !== crisWave) return;
+                this.mixer!.removeEventListener("finished", onWaveDone);
+                crisIdle.reset().play();
+            };
+            this.mixer.addEventListener("finished", onWaveDone);
+        } else {
+            crisIdle?.play();
+        }
+        getAction("awkningBookShop")?.play();
+        getAction("awkningKiosk")?.play();
+        getAction("chickWalking")?.play();
+
+        /* RAYCASTER */
         this.raycaster  = new THREE.Raycaster();
         this.pointerNdc = new THREE.Vector2();
 
-        /* CLICKABLE / CONTACT mesh roots */
+        /* CLICKABLE / CONTACT MESH ROOTS */
         const locale   = this.nodeInDOM.dataset.locale || "es";
         const children = this.model.children;
 
@@ -288,8 +354,7 @@ class CModel extends BaseComponent {
         const tree2            = children.find((c: any) => c.name === "armature_right_tree");
         const tree3            = children.find((c: any) => c.name === "armature_left_tree");
         const newsLink         = children.find((c: any) => c.name === "kiosk");
-        const contactButton    = children.find((c: any) => c.name === "Armature001");
-        console.log(children);
+        const contactButton    = children.find((c: any) => c.name === "Mailbox");
 
         const aboutMeUrl      = uiT(locale as any, "aboutMeUrl")      || "/sobre-mi";
         const translationsUrl = uiT(locale as any, "translationsUrl") || "/traducciones";
@@ -307,8 +372,14 @@ class CModel extends BaseComponent {
         reg(newsLink,         articlesUrl);
         regC(contactButton);
 
+        /* HOVER ANIMATION MAP */
+        if (contactButton)    this.hoverAnimationMap.set(contactButton,    { name: "mailbox",         mode: "loop-with-pause", pauseMs: 1000 });
+        if (aboutMeLink)      this.hoverAnimationMap.set(aboutMeLink,      { name: "crisDance",       mode: "toggle-with-idle", idleName: "crisIdle" });
+        if (newsLink)         this.hoverAnimationMap.set(newsLink,         { name: "awkningKiosk",    mode: "speed-up", speedScale: 6        });
+        if (translationsLink) this.hoverAnimationMap.set(translationsLink, { name: "awkningBookShop", mode: "speed-up", speedScale: 3        });
+
         /* BUILD INTERACTIVE MESHES */
-        const heavyRoots = new Set([aboutMeLink, contactButton]);
+        const heavyRoots       = new Set([aboutMeLink, contactButton]);
         const interactiveRoots = [...this.clickableRoots.keys(), ...this.contactRoots];
 
         interactiveRoots.forEach(root => {
@@ -321,6 +392,10 @@ class CModel extends BaseComponent {
                 }
                 if (this.contactRoots.has(root)) {
                     this.contactRoots.add(proxy);
+                }
+                // Mirror hover config to the proxy
+                if (this.hoverAnimationMap.has(root)) {
+                    this.hoverAnimationMap.set(proxy, this.hoverAnimationMap.get(root)!);
                 }
                 this.interactiveMeshes.push(proxy);
             } else {
@@ -363,6 +438,93 @@ class CModel extends BaseComponent {
         this.scene.add(proxy);
         this.proxyMeshes.push(proxy);
         return proxy;
+    }
+
+    // ─── Hover animation helpers ───────────────────────────────────────────
+    private getHoverConfig(obj: any): HoverAnimConfig | null {
+        let cur: any = obj;
+        while (cur) {
+            const config = this.hoverAnimationMap.get(cur);
+            if (config) return config;
+            cur = cur.parent;
+        }
+        return null;
+    }
+
+    private playHoverAnimation(config: HoverAnimConfig): void {
+        const action = this.animations.find(a => a.name === config.name)?.action;
+        if (!action) return;
+
+        if (config.mode === "speed-up") {
+            action.timeScale = config.speedScale ?? 2;
+            return;
+        }
+
+        if (config.mode === "play-once") {
+            action.setLoop(THREE.LoopOnce, 1);
+            action.clampWhenFinished = true;
+            action.reset().play();
+            return;
+        }
+
+        if (config.mode === "loop-with-pause") {
+            const scheduleNext = () => {
+                action.reset().play();
+                const onFinished = (e: any) => {
+                    if (e.action !== action) return;
+                    this.mixer!.removeEventListener("finished", onFinished);
+                    if (this.hoveredRoot) {
+                        this.hoverLoopTimeout = setTimeout(() => {
+                            if (this.hoveredRoot) scheduleNext();
+                        }, config.pauseMs ?? 1000);
+                    }
+                };
+                this.mixer!.addEventListener("finished", onFinished);
+            };
+            action.setLoop(THREE.LoopOnce, 1);
+            action.clampWhenFinished = false;
+            scheduleNext();
+        }
+
+        if (config.mode === "toggle-with-idle") {
+            const idleAction = config.idleName
+                ? this.animations.find(a => a.name === config.idleName)?.action
+                : null;
+
+            idleAction?.stop();
+
+            action.setLoop(THREE.LoopRepeat, Infinity);
+            action.clampWhenFinished = false;
+            action.reset().play();
+            return;
+        }
+    }
+
+    private stopHoverAnimation(config: HoverAnimConfig): void {
+        if (this.hoverLoopTimeout !== null) {
+            clearTimeout(this.hoverLoopTimeout);
+            this.hoverLoopTimeout = null;
+        }
+
+        const action = this.animations.find(a => a.name === config.name)?.action;
+        if (!action) return;
+
+        if (config.mode === "speed-up") {
+            action.timeScale = 1;
+            return;
+        }
+
+        if (config.mode === "toggle-with-idle") {
+            action.stop();
+
+            const idleAction = config.idleName
+                ? this.animations.find(a => a.name === config.idleName)?.action
+                : null;
+            idleAction?.reset().play();
+            return;
+        }
+
+        action.stop();
     }
 
     // ─── Scroll snap input ─────────────────────────────────────────────────
@@ -441,21 +603,39 @@ class CModel extends BaseComponent {
             return false;
         };
 
-        const raycast = (): { isContact: boolean; href?: string } | null => {
+        const raycast = (): { isContact: boolean; href?: string; root?: any } | null => {
             if (!this.raycaster || !this.camera || !this.model) return null;
             this.raycaster.setFromCamera(this.pointerNdc, this.camera);
             const hits = this.raycaster.intersectObjects(this.interactiveMeshes, false);
             if (!hits.length) return null;
             const obj  = hits[0].object;
             const href = findClickable(obj);
-            if (href) return { isContact: false, href };
-            if (findContact(obj)) return { isContact: true };
+            if (href) return { isContact: false, href, root: obj };
+            if (findContact(obj)) return { isContact: true, root: obj };
             return null;
         };
 
         this.onPointerMove = (e: PointerEvent) => {
             updateNdc(e);
-            this.canvas!.style.cursor = raycast() ? "pointer" : "default";
+            const hit = raycast();
+            this.canvas!.style.cursor = hit ? "pointer" : "default";
+
+            const newRoot = hit?.root ?? null;
+            if (newRoot === this.hoveredRoot) return;
+
+            // Stop previous hover animation
+            if (this.hoveredRoot) {
+                const prevConfig = this.getHoverConfig(this.hoveredRoot);
+                if (prevConfig) this.stopHoverAnimation(prevConfig);
+                this.hoveredRoot = null;
+            }
+
+            // Start new hover animation
+            if (newRoot) {
+                this.hoveredRoot = newRoot;
+                const nextConfig = this.getHoverConfig(newRoot);
+                if (nextConfig) this.playHoverAnimation(nextConfig);
+            }
         };
 
         this.onPointerDown = (e: PointerEvent) => {
@@ -493,11 +673,13 @@ class CModel extends BaseComponent {
         this.camera.updateProjectionMatrix();
     };
 
-    private frameCount = 0;
-
     // ─── tick ──────────────────────────────────────────────────────────────
     tick = (): void => {
         if (!this.renderer || !this.scene || !this.camera) return;
+
+        const nowMs     = performance.now();
+        const deltaTime = this.previousTime == null ? 0 : (nowMs - this.previousTime) / 1000;
+        this.previousTime = nowMs;
 
         // 1. Lerp camera
         this.currentCamPos.lerp(this.targetCamPos, LERP_FACTOR);
@@ -535,7 +717,10 @@ class CModel extends BaseComponent {
             tag.element.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px))`;
         }
 
-        // 3. Render
+        // 3. Update animations
+        this.mixer?.update(deltaTime);
+
+        // 4. Render
         this.renderer.render(this.scene, this.camera);
         this.frameId = requestAnimationFrame(this.tick);
     };
@@ -549,6 +734,11 @@ class CModel extends BaseComponent {
 
         this.ro?.disconnect();
         this.ro = null;
+
+        if (this.hoverLoopTimeout !== null) {
+            clearTimeout(this.hoverLoopTimeout);
+            this.hoverLoopTimeout = null;
+        }
 
         if (this.canvas) {
             if (this.onWheel)       this.canvas.removeEventListener("wheel",       this.onWheel);
@@ -568,13 +758,15 @@ class CModel extends BaseComponent {
         this.pointerDownPos = null;
         this.clickableRoots.clear();
         this.contactRoots.clear();
+        this.hoverAnimationMap.clear();
+        this.hoveredRoot = null;
 
         this.proxyMeshes.forEach(p => {
             p.geometry.dispose();
             (p.material as THREE.Material).dispose();
             this.scene?.remove(p);
         });
-        this.proxyMeshes = [];
+        this.proxyMeshes       = [];
         this.interactiveMeshes = [];
 
         if (this.scene) {
