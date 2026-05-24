@@ -1,6 +1,7 @@
 ---
 import { uiT } from "../../config/strings-ui";
 import AButton from "../atoms/AButton.astro";
+import AText from "../atoms/AText.astro";
 
 const locale = Astro.currentLocale ?? "es";
 
@@ -51,6 +52,7 @@ const articlesUrl     = uiT(locale, "articlesUrl")     || "/noticias";
                 border-radius: 50px;
                 background-color: var(--color-white);
                 pointer-events: auto;
+                user-select: none;
                 transition: background-color 0.2s ease;
 
                 &:hover {
@@ -70,9 +72,9 @@ const articlesUrl     = uiT(locale, "articlesUrl")     || "/noticias";
         </AButton>
     </div>
     <div class="c-model__tag js-tag --chick">
-        <AButton as="a" href={translationsUrl} size="home-tags" class="c-model__tag-button">
+        <AText size="home-tags" class="c-model__tag-button">
             {uiT(Astro.currentLocale, "chickTag")}
-        </AButton>
+        </AText>
     </div>
     <div class="c-model__tag js-tag --translations">
         <AButton as="a" href={translationsUrl} size="home-tags" class="c-model__tag-button">
