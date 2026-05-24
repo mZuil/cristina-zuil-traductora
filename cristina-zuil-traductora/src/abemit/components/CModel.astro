@@ -300,8 +300,8 @@ class CModel extends BaseComponent {
 
         this.animations = [
             { name: "awkningBookShop", action: this.mixer.clipAction(gltf.animations[0])  },
-            { name: "chickEating",     action: this.mixer.clipAction(gltf.animations[1])  },
-            { name: "chickWalking",    action: this.mixer.clipAction(gltf.animations[2])  },
+            { name: "chickWalking",    action: this.mixer.clipAction(gltf.animations[1])  },
+            { name: "chickEating",     action: this.mixer.clipAction(gltf.animations[2])  },
             { name: "awkningKiosk",    action: this.mixer.clipAction(gltf.animations[3])  },
             { name: "mailbox",         action: this.mixer.clipAction(gltf.animations[4])  },
             { name: "bigTreeLeft",     action: this.mixer.clipAction(gltf.animations[5])  },
@@ -338,6 +338,8 @@ class CModel extends BaseComponent {
         }
         getAction("awkningBookShop")?.play();
         getAction("awkningKiosk")?.play();
+
+        // getAction("chickEating")?.stop();
         getAction("chickWalking")?.play();
 
         /* RAYCASTER */
