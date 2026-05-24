@@ -55,7 +55,7 @@ const articlesUrl     = uiT(locale, "articlesUrl")     || "/noticias";
                 user-select: none;
                 transition: background-color 0.2s ease;
 
-                &:hover {
+                &:not(.--no-link):hover {
                     background-color: var(--color-blue-lightest);
                 }
             }
@@ -72,7 +72,7 @@ const articlesUrl     = uiT(locale, "articlesUrl")     || "/noticias";
         </AButton>
     </div>
     <div class="c-model__tag js-tag --chick">
-        <AText size="home-tags" class="c-model__tag-button">
+        <AText size="home-tags" class="c-model__tag-button --no-link">
             {uiT(Astro.currentLocale, "chickTag")}
         </AText>
     </div>
@@ -205,6 +205,7 @@ class CModel extends BaseComponent {
     private hoveredRoot: THREE.Object3D | null = null;
     private hoverAnimationMap: Map<any, HoverAnimConfig> = new Map();
     private hoverLoopTimeout: ReturnType<typeof setTimeout> | null = null;
+    private tagHoverCleanup: Array<() => void> = [];
 
     // ── Chick state ───────────────────────────────────────────────────────
     private chickAnimal:       THREE.Object3D | null = null;
@@ -244,9 +245,26 @@ class CModel extends BaseComponent {
         this.animations     = [];
         this.farmMeshes     = [];
         this.farmFrontMeshes = [];
+        this.tagHoverCleanup = [];
 
         this.init();
         document.addEventListener("astro:before-swap", this.destroy);
+    }
+
+    private setHoveredRoot(newRoot: any | null): void {
+        if (newRoot === this.hoveredRoot) return;
+
+        if (this.hoveredRoot) {
+            const prevConfig = this.getHoverConfig(this.hoveredRoot);
+            if (prevConfig) this.stopHoverAnimation(prevConfig);
+            this.hoveredRoot = null;
+        }
+
+        if (newRoot) {
+            this.hoveredRoot = newRoot;
+            const nextConfig = this.getHoverConfig(newRoot);
+            if (nextConfig) this.playHoverAnimation(nextConfig);
+        }
     }
 
     // ─── init ──────────────────────────────────────────────────────────────
@@ -418,6 +436,39 @@ class CModel extends BaseComponent {
         if (aboutMeLink)      this.hoverAnimationMap.set(aboutMeLink,      { name: "crisDance",       mode: "toggle-with-idle", idleName: "crisIdle" });
         if (newsLink)         this.hoverAnimationMap.set(newsLink,         { name: "awkningKiosk",    mode: "speed-up", speedScale: 6        });
         if (translationsLink) this.hoverAnimationMap.set(translationsLink, { name: "awkningBookShop", mode: "speed-up", speedScale: 3        });
+
+        /* TAG HOVER -> SAME HOVER AS 3D OBJECTS */
+        const tagRootMap = new Map<string, any>([
+            ["--about-me", aboutMeLink],
+            ["--translations", translationsLink],
+            ["--writings", tree1],
+            ["--articles", newsLink],
+            ["--contact", contactButton],
+            ["--chick", chickAnimal],
+        ]);
+
+        this.tagHoverCleanup.forEach(fn => fn());
+        this.tagHoverCleanup = [];
+
+        for (const [tagSelector, root] of tagRootMap) {
+            const el = this.nodeInDOM.querySelector<HTMLElement>(`.js-tag.${tagSelector}`);
+            if (!el || !root) continue;
+
+            const onEnter = () => this.setHoveredRoot(root);
+            const onLeave = () => this.setHoveredRoot(null);
+
+            el.addEventListener("mouseenter", onEnter);
+            el.addEventListener("mouseleave", onLeave);
+            el.addEventListener("focusin", onEnter);
+            el.addEventListener("focusout", onLeave);
+
+            this.tagHoverCleanup.push(() => {
+                el.removeEventListener("mouseenter", onEnter);
+                el.removeEventListener("mouseleave", onLeave);
+                el.removeEventListener("focusin", onEnter);
+                el.removeEventListener("focusout", onLeave);
+            });
+        }
 
         /* BUILD INTERACTIVE MESHES */
         const heavyRoots       = new Set([aboutMeLink, contactButton]);
@@ -847,19 +898,7 @@ class CModel extends BaseComponent {
             this.canvas!.style.cursor = hit ? "pointer" : "default";
 
             const newRoot = hit?.root ?? null;
-            if (newRoot === this.hoveredRoot) return;
-
-            if (this.hoveredRoot) {
-                const prevConfig = this.getHoverConfig(this.hoveredRoot);
-                if (prevConfig) this.stopHoverAnimation(prevConfig);
-                this.hoveredRoot = null;
-            }
-
-            if (newRoot) {
-                this.hoveredRoot = newRoot;
-                const nextConfig = this.getHoverConfig(newRoot);
-                if (nextConfig) this.playHoverAnimation(nextConfig);
-            }
+            this.setHoveredRoot(newRoot);
         };
 
         this.onPointerDown = (e: PointerEvent) => {
@@ -988,6 +1027,9 @@ class CModel extends BaseComponent {
             if (this.onPointerDown) this.canvas.removeEventListener("pointerdown", this.onPointerDown);
             if (this.onPointerUp)   this.canvas.removeEventListener("pointerup",   this.onPointerUp);
         }
+
+        this.tagHoverCleanup.forEach(fn => fn());
+        this.tagHoverCleanup = [];
 
         this.onWheel        = null;
         this.onTouchStart   = null;
