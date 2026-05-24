@@ -119,6 +119,19 @@ const SCROLL_THRESHOLD = 30;
 const SNAP_COOLDOWN_MS = 900;
 const CAM_NEUTRAL      = new THREE.Vector3(70.4336, 13.7303, 0.0658);
 
+// ─── Chick constants ───────────────────────────────────────────────────────────
+const CHICK_SPEED        = 1.2;   // slower — more chick-like
+const CHICK_ARRIVE_DIST  = 0.4;
+const CHICK_PAUSE_MIN_MS = 0;
+const CHICK_PAUSE_MAX_MS = 0;
+const CHICK_EAT_DURATION = 1000;
+const CHICK_TURN_SPEED   = 3.5;   // also slower — chickens pivot lazily
+const CHICK_LOOKAHEAD    = 2.2;   // cast this far ahead for wall detection
+const CHICK_PROBE_Y      = 0.2;   // low Y lift — catches low fences too
+
+// Farm boundary on XZ plane — tweak to match your scene geometry
+const FARM = { minX: -22, maxX: 22, minZ: -22, maxZ: 22 };
+
 // ─── Snap-point definitions ───────────────────────────────────────────────────
 
 interface SnapPoint {
@@ -138,15 +151,10 @@ const SNAP_POINTS: SnapPoint[] = [
 // ─── Hover animation config ───────────────────────────────────────────────────
 
 interface HoverAnimConfig {
-    /** Animation clip name to play or modify on hover. */
     name: string;
-    /** Behaviour mode on hover. */
     mode: "loop-with-pause" | "speed-up" | "play-once" | "toggle-with-idle";
-    /** ms pause between loops (mode: loop-with-pause). */
     pauseMs?: number;
-    /** timeScale while hovered (mode: speed-up). Normal idle timeScale is 1. */
     speedScale?: number;
-    /** for toggle-with idle */
     idleName?: string;
 }
 
@@ -202,6 +210,17 @@ class CModel extends BaseComponent {
     private hoverAnimationMap: Map<any, HoverAnimConfig> = new Map();
     private hoverLoopTimeout: ReturnType<typeof setTimeout> | null = null;
 
+    // ── Chick state ───────────────────────────────────────────────────────
+    private chickAnimal:       THREE.Object3D | null = null;
+    private chickClickRoot:  THREE.Object3D | null = null;  // for click detection
+    private chickIsEating:   boolean = false;
+    private chickTarget:     THREE.Vector3 = new THREE.Vector3();
+    private chickPauseUntil: number = 0;     // performance.now() timestamp
+    private chickEatTimeout: ReturnType<typeof setTimeout> | null = null;
+    private farmMeshes: THREE.Object3D[] = [];  // add this to class fields at the top
+    private chickDir: THREE.Vector3 = new THREE.Vector3(1, 0, 0); // XZ heading, Y unused
+    private farmBox: THREE.Box3 | null = null;
+
     constructor(nodeInDOM: HTMLElement) {
         super(nodeInDOM);
 
@@ -225,6 +244,7 @@ class CModel extends BaseComponent {
         this.tagsPositions  = [];
         this.mixer          = null;
         this.animations     = [];
+        this.farmMeshes     = [];
 
         this.init();
         document.addEventListener("astro:before-swap", this.destroy);
@@ -338,9 +358,7 @@ class CModel extends BaseComponent {
         }
         getAction("awkningBookShop")?.play();
         getAction("awkningKiosk")?.play();
-
-        // getAction("chickEating")?.stop();
-        getAction("chickWalking")?.play();
+        getAction("chickWalking")?.play();   // start walking immediately
 
         /* RAYCASTER */
         this.raycaster  = new THREE.Raycaster();
@@ -357,6 +375,19 @@ class CModel extends BaseComponent {
         const tree3            = children.find((c: any) => c.name === "armature_left_tree");
         const newsLink         = children.find((c: any) => c.name === "kiosk");
         const contactButton    = children.find((c: any) => c.name === "Mailbox");
+        // const farm             = children.find((c: any) => c.name === "farm");
+        const farmBounds       = children.find((c: any) => c.name === "Farm_Bounds");
+        const chickAnimal      = children.find((c: any) => c.name === "chick");
+
+        if (farmBounds) {
+            farmBounds.traverse((obj: any) => {
+                if (obj instanceof THREE.Mesh) this.farmMeshes.push(obj);
+            });
+        }
+
+        if (farmBounds) {
+            this.farmBox = new THREE.Box3().setFromObject(farmBounds);
+        }
 
         const aboutMeUrl      = uiT(locale as any, "aboutMeUrl")      || "/sobre-mi";
         const translationsUrl = uiT(locale as any, "translationsUrl") || "/traducciones";
@@ -373,6 +404,7 @@ class CModel extends BaseComponent {
         reg(tree3,            writingsUrl);
         reg(newsLink,         articlesUrl);
         regC(contactButton);
+        // NOTE: chick is NOT added to clickableRoots — we handle it separately
 
         /* HOVER ANIMATION MAP */
         if (contactButton)    this.hoverAnimationMap.set(contactButton,    { name: "mailbox",         mode: "loop-with-pause", pauseMs: 1000 });
@@ -395,7 +427,6 @@ class CModel extends BaseComponent {
                 if (this.contactRoots.has(root)) {
                     this.contactRoots.add(proxy);
                 }
-                // Mirror hover config to the proxy
                 if (this.hoverAnimationMap.has(root)) {
                     this.hoverAnimationMap.set(proxy, this.hoverAnimationMap.get(root)!);
                 }
@@ -406,6 +437,18 @@ class CModel extends BaseComponent {
                 });
             }
         });
+
+        // ── NEW: register chick meshes for raycasting separately ───────────
+        if (chickAnimal) {
+            this.chickAnimal      = chickAnimal;
+            this.chickClickRoot = chickAnimal;
+            // Seed an initial walk target so the chick moves from frame 1
+            this.pickNewChickTarget();
+
+            chickAnimal.traverse((obj: any) => {
+                if (obj instanceof THREE.Mesh) this.interactiveMeshes.push(obj);
+            });
+        }
 
         /* INPUT */
         this.setupScrollInput();
@@ -529,6 +572,166 @@ class CModel extends BaseComponent {
         action.stop();
     }
 
+    // ─── Chick helpers ─────────────────────────────────────────────────────
+
+    /** Returns true if the given intersected object belongs to the chick root. */
+    private isChick(obj: THREE.Object3D): boolean {
+        if (!this.chickClickRoot) return false;
+        let cur: any = obj;
+        while (cur) {
+            if (cur === this.chickClickRoot) return true;
+            cur = cur.parent;
+        }
+        return false;
+    }
+
+    /** Pick a random XZ position inside FARM bounds as the next walk target. */
+    private pickNewChickTarget(): void {
+        if (this.farmBox) {
+            // Pick a random point strictly inside the real farm bounds
+            const x = this.farmBox.min.x + Math.random() * (this.farmBox.max.x - this.farmBox.min.x);
+            const z = this.farmBox.min.z + Math.random() * (this.farmBox.max.z - this.farmBox.min.z);
+            const y = this.chickAnimal ? this.chickAnimal.position.y : 0;
+            this.chickTarget.set(x, y, z);
+        } else {
+            // Fallback to constants if bounds not ready
+            const x = FARM.minX + Math.random() * (FARM.maxX - FARM.minX);
+            const z = FARM.minZ + Math.random() * (FARM.maxZ - FARM.minZ);
+            this.chickTarget.set(x, this.chickAnimal?.position.y ?? 0, z);
+        }
+    }
+
+    /** Called when the user clicks the chick. Triggers eating for CHICK_EAT_DURATION ms. */
+    private triggerChickEating(): void {
+        if (this.chickIsEating) {
+            // Re-click while eating: just reset the timer
+            this.chickEatUntil = performance.now() + CHICK_EAT_DURATION;
+            return;
+        }
+
+        this.chickIsEating = true;
+        this.chickEatUntil = performance.now() + CHICK_EAT_DURATION;
+
+        const walking = this.animations.find(a => a.name === "chickWalking")?.action;
+        const eating  = this.animations.find(a => a.name === "chickEating")?.action;
+
+        walking?.stop();
+
+        if (eating) {
+            eating.setLoop(THREE.LoopRepeat, Infinity);
+            eating.reset().play();
+        }
+
+        // Schedule return to walking
+        if (this.chickEatTimeout !== null) clearTimeout(this.chickEatTimeout);
+        this.chickEatTimeout = setTimeout(() => {
+            this.chickEatTimeout  = null;
+            this.chickIsEating    = false;
+
+            eating?.stop();
+            walking?.reset().play();
+            this.pickNewChickTarget();   // head somewhere new after eating
+        }, CHICK_EAT_DURATION);
+    }
+
+    /**
+     * Called every frame from tick().
+     * Moves the chick toward its current target and rotates it to face the direction of travel.
+     * Does nothing while the chick is eating or paused.
+     */
+    private updateChick(deltaTime: number): void {
+        if (!this.chickAnimal || this.chickIsEating) return;
+
+        const now = performance.now();
+        if (now < this.chickPauseUntil) return;
+
+        // ── World-space position ──────────────────────────────────────────────
+        // chickAnimal.position is LOCAL — we need world space for the raycaster
+        const worldPos = new THREE.Vector3();
+        this.chickAnimal.getWorldPosition(worldPos);
+
+        const target = this.chickTarget;
+        const dx     = target.x - worldPos.x;
+        const dz     = target.z - worldPos.z;
+        const dist   = Math.sqrt(dx * dx + dz * dz);
+
+        if (dist < CHICK_ARRIVE_DIST) {
+            this.pickNewChickTarget();
+            return;
+        }
+
+        // Desired direction toward target
+        const desiredDirX = dx / dist;
+        const desiredDirZ = dz / dist;
+
+        // ── Smooth steering — blend current heading toward desired ────────────
+        // This makes direction changes gradual rather than instant
+        const STEER_SPEED = 2.5; // how fast the heading turns (rad/s equivalent)
+        const steerAmount = Math.min(STEER_SPEED * deltaTime, 1.0);
+        this.chickDir.x += (desiredDirX - this.chickDir.x) * steerAmount;
+        this.chickDir.z += (desiredDirZ - this.chickDir.z) * steerAmount;
+
+        // Re-normalise to prevent drift
+        const dirLen = Math.sqrt(this.chickDir.x ** 2 + this.chickDir.z ** 2);
+        if (dirLen < 0.001) return;
+        const dirX = this.chickDir.x / dirLen;
+        const dirZ = this.chickDir.z / dirLen;
+
+        // ── Wall collision in world space ─────────────────────────────────────
+        let wallAhead = false;
+        if (this.farmMeshes.length > 0) {
+            const savedFar = this.raycaster.far;
+            const origin   = new THREE.Vector3(worldPos.x, worldPos.y + CHICK_PROBE_Y, worldPos.z);
+            const dir      = new THREE.Vector3(dirX, 0, dirZ);
+            this.raycaster.set(origin, dir);
+            this.raycaster.far = CHICK_LOOKAHEAD;
+
+            wallAhead = this.raycaster.intersectObjects(this.farmMeshes, true).length > 0;
+            this.raycaster.far = savedFar;
+        }
+
+        if (wallAhead) {
+            // Rotate heading ~180° ± random spread and pick a new target inward
+            const randomAngle = (Math.random() - 0.5) * Math.PI * 0.75;
+            const cos = Math.cos(Math.PI + randomAngle);
+            const sin = Math.sin(Math.PI + randomAngle);
+            this.chickDir.x = dirX * cos - dirZ * sin;
+            this.chickDir.z = dirX * sin + dirZ * cos;
+
+            const STEP_AWAY = 5;
+            this.chickTarget.set(
+                worldPos.x + this.chickDir.x * STEP_AWAY,
+                worldPos.y,
+                worldPos.z + this.chickDir.z * STEP_AWAY,
+            );
+            return;
+        }
+
+        // ── Move (in local space — undo parent transform for position delta) ──
+        // Since we move in world XZ, and the chick's parent may have a transform,
+        // we apply the delta directly to local position using the world direction.
+        // For a flat scene (no parent rotation/scale), world delta == local delta.
+        const step = CHICK_SPEED * deltaTime;
+        this.chickAnimal.position.x += dirX * step;
+        this.chickAnimal.position.z += dirZ * step;
+
+        // ── Natural rotation — face the actual movement direction smoothly ─────
+        // We rotate the model to face dirX/dirZ, but only nudge it each frame
+        // so it visually "leans into" the turn rather than spinning in place
+        const targetAngle  = Math.atan2(dirX, dirZ);
+        const currentAngle = this.chickAnimal.rotation.y;
+
+        // Shortest-path delta
+        let angleDelta = targetAngle - currentAngle;
+        while (angleDelta >  Math.PI) angleDelta -= Math.PI * 2;
+        while (angleDelta < -Math.PI) angleDelta += Math.PI * 2;
+
+        // Ease toward target angle — faster when the turn is sharp
+        const turnEase = Math.min(Math.abs(angleDelta) / (Math.PI * 0.5), 1.0); // 0–1
+        const effectiveTurnSpeed = CHICK_TURN_SPEED * (0.4 + 0.6 * turnEase);   // slower on small corrections
+        this.chickAnimal.rotation.y += Math.sign(angleDelta) * Math.min(Math.abs(angleDelta), effectiveTurnSpeed * deltaTime);
+    }
+
     // ─── Scroll snap input ─────────────────────────────────────────────────
     private setupScrollInput(): void {
         if (!this.canvas) return;
@@ -605,15 +808,20 @@ class CModel extends BaseComponent {
             return false;
         };
 
-        const raycast = (): { isContact: boolean; href?: string; root?: any } | null => {
+        // ── NEW: chick-aware raycast result ───────────────────────────────
+        const raycast = (): { isContact: boolean; isChick: boolean; href?: string; root?: any } | null => {
             if (!this.raycaster || !this.camera || !this.model) return null;
             this.raycaster.setFromCamera(this.pointerNdc, this.camera);
             const hits = this.raycaster.intersectObjects(this.interactiveMeshes, false);
             if (!hits.length) return null;
             const obj  = hits[0].object;
+
+            // Check chick first (highest priority for click)
+            if (this.isChick(obj)) return { isContact: false, isChick: true, root: obj };
+
             const href = findClickable(obj);
-            if (href) return { isContact: false, href, root: obj };
-            if (findContact(obj)) return { isContact: true, root: obj };
+            if (href) return { isContact: false, isChick: false, href, root: obj };
+            if (findContact(obj)) return { isContact: true, isChick: false, root: obj };
             return null;
         };
 
@@ -625,14 +833,12 @@ class CModel extends BaseComponent {
             const newRoot = hit?.root ?? null;
             if (newRoot === this.hoveredRoot) return;
 
-            // Stop previous hover animation
             if (this.hoveredRoot) {
                 const prevConfig = this.getHoverConfig(this.hoveredRoot);
                 if (prevConfig) this.stopHoverAnimation(prevConfig);
                 this.hoveredRoot = null;
             }
 
-            // Start new hover animation
             if (newRoot) {
                 this.hoveredRoot = newRoot;
                 const nextConfig = this.getHoverConfig(newRoot);
@@ -652,6 +858,13 @@ class CModel extends BaseComponent {
             updateNdc(e);
             const hit = raycast();
             if (!hit) return;
+
+            // ── NEW: chick click ───────────────────────────────────────────
+            if (hit.isChick) {
+                this.triggerChickEating();
+                return;
+            }
+
             if (hit.isContact) { window.openContactModal?.(); return; }
             import("astro:transitions/client")
                 .then(({ navigate }) => navigate(hit.href!))
@@ -722,7 +935,10 @@ class CModel extends BaseComponent {
         // 3. Update animations
         this.mixer?.update(deltaTime);
 
-        // 4. Render
+        // 4. ── NEW: update chick movement ─────────────────────────────────
+        this.updateChick(deltaTime);
+
+        // 5. Render
         this.renderer.render(this.scene, this.camera);
         this.frameId = requestAnimationFrame(this.tick);
     };
@@ -740,6 +956,12 @@ class CModel extends BaseComponent {
         if (this.hoverLoopTimeout !== null) {
             clearTimeout(this.hoverLoopTimeout);
             this.hoverLoopTimeout = null;
+        }
+
+        // ── NEW: clear chick timeout ───────────────────────────────────────
+        if (this.chickEatTimeout !== null) {
+            clearTimeout(this.chickEatTimeout);
+            this.chickEatTimeout = null;
         }
 
         if (this.canvas) {
@@ -762,6 +984,10 @@ class CModel extends BaseComponent {
         this.contactRoots.clear();
         this.hoverAnimationMap.clear();
         this.hoveredRoot = null;
+
+        // ── NEW: clear chick refs ──────────────────────────────────────────
+        this.chickAnimal      = null;
+        this.chickClickRoot = null;
 
         this.proxyMeshes.forEach(p => {
             p.geometry.dispose();
