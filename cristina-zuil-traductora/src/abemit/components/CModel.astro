@@ -4,10 +4,10 @@ import AButton from "../atoms/AButton.astro";
 
 const locale = Astro.currentLocale ?? "es";
 
-const aboutMeUrl = uiT(locale, "aboutMeUrl") || "/sobre-mi";
+const aboutMeUrl      = uiT(locale, "aboutMeUrl")      || "/sobre-mi";
 const translationsUrl = uiT(locale, "translationsUrl") || "/traducciones";
-const writingsUrl = uiT(locale, "writingsUrl") || "/escritos";
-const articlesUrl = uiT(locale, "articlesUrl") || "/noticias";
+const writingsUrl     = uiT(locale, "writingsUrl")     || "/escritos";
+const articlesUrl     = uiT(locale, "articlesUrl")     || "/noticias";
 ---
 
 <style lang="scss">
@@ -25,6 +25,7 @@ const articlesUrl = uiT(locale, "articlesUrl") || "/noticias";
             width: 100%;
             height: 100%;
             display: block;
+            touch-action: none;
         }
 
         &__tag {
@@ -35,7 +36,6 @@ const articlesUrl = uiT(locale, "articlesUrl") || "/noticias";
             opacity: 0;
             visibility: hidden;
             pointer-events: none;
-
             transition: opacity 0.1s ease, visibility 0.1s ease;
 
             &.is-visible {
@@ -51,7 +51,6 @@ const articlesUrl = uiT(locale, "articlesUrl") || "/noticias";
                 border-radius: 50px;
                 background-color: var(--color-white);
                 pointer-events: auto;
-
                 transition: background-color 0.2s ease;
 
                 &:hover {
@@ -60,7 +59,6 @@ const articlesUrl = uiT(locale, "articlesUrl") || "/noticias";
             }
         }
     }
-    
 </style>
 
 <section class="c-model js-c-model" data-locale={Astro.currentLocale}>
@@ -106,7 +104,6 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { getPlatformModel } from "../../scripts/model-prefetch";
 
 declare global {
@@ -115,73 +112,120 @@ declare global {
     }
 }
 
+// ─── Tuning constants ──────────────────────────────────────────────────────────
+
+/** Lerp speed per frame for camera movement (0–1). Lower = floatier. */
+const LERP_FACTOR = 0.055;
+
+/** Minimum wheel/touch delta (px) to trigger a snap. */
+const SCROLL_THRESHOLD = 30;
+
+/**
+ * Milliseconds to ignore scroll input after a snap fires.
+ * Prevents double-skipping on trackpads.
+ */
+const SNAP_COOLDOWN_MS = 900;
+
+/** Camera position before the first snap. */
+const CAM_NEUTRAL = new THREE.Vector3(70.4336, 13.7303, 0.0658);
+
+// ─── Snap-point definitions ───────────────────────────────────────────────────
+
+interface SnapPoint {
+    tagSelector: string;
+    /** World-space camera position for this snap. Always looks at origin. */
+    camPosition: THREE.Vector3;
+}
+
+const SNAP_POINTS: SnapPoint[] = [
+    { tagSelector: "--about-me",     camPosition: new THREE.Vector3( 53.9117,  6.2968,  -0.0973) },
+    { tagSelector: "--translations", camPosition: new THREE.Vector3( 49.2224, 18.3008,  58.9907) },
+    { tagSelector: "--chick",        camPosition: new THREE.Vector3(-32.4472,  8.2288,  37.2811) },
+    { tagSelector: "--contact",      camPosition: new THREE.Vector3(-57.8206,  7.2626,   0.0514) },
+    { tagSelector: "--articles",     camPosition: new THREE.Vector3(-49.1818, 14.9362, -48.3925) },
+    { tagSelector: "--writings",     camPosition: new THREE.Vector3( 38.3481, 21.9753, -56.5325) },
+];
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 class CModel extends BaseComponent {
     canvas: HTMLCanvasElement | null;
     renderer: any;
     scene: any;
     camera: any;
     sizes: { width: number; height: number };
-    modelPivot: any;
     model: any;
-    //TODO: remove from here
-    controls: any;
-    onControlsEnd: (() => void) | null;
-    //TODO: remove to here
     raycaster: any;
     pointerNdc: any;
     clickableRoots: Map<any, string>;
     contactRoots: Set<any>;
     onPointerMove: ((e: PointerEvent) => void) | null;
     onPointerDown: ((e: PointerEvent) => void) | null;
-    onPointerUp: ((e: PointerEvent) => void) | null;
+    onPointerUp:   ((e: PointerEvent) => void) | null;
     pointerDownPos: { x: number; y: number } | null;
     frameId: number | null;
     ro: ResizeObserver | null;
-    lastFrameTimeMs: number | null;
     destroyed: boolean;
     tagsPositions: Array<{ position: THREE.Vector3; element: HTMLElement | null }>;
+
+    // ── Snap state ────────────────────────────────────────────────────────
+    private snapIndex: number    = -1;
+    private lastSnapTime: number = 0;
+    private touchStartY: number  = 0;
+
+    // ── Animated camera ───────────────────────────────────────────────────
+    private currentCamPos: THREE.Vector3 = CAM_NEUTRAL.clone();
+    private targetCamPos:  THREE.Vector3 = CAM_NEUTRAL.clone();
+    private currentLookAt: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+    private targetLookAt:  THREE.Vector3 = new THREE.Vector3(0, 0, 0);
+
+    // ── Input handler refs for cleanup ────────────────────────────────────
+    private onWheel:      ((e: WheelEvent) => void) | null = null;
+    private onTouchStart: ((e: TouchEvent) => void) | null = null;
+    private onTouchEnd:   ((e: TouchEvent) => void) | null = null;
+
+    // ── Raycasting ────────────────────────────────────────────────────────
+    private interactiveMeshes: THREE.Object3D[] = [];
+    private proxyMeshes: THREE.Mesh[] = [];
 
     constructor(nodeInDOM: HTMLElement) {
         super(nodeInDOM);
 
-        this.canvas = this.nodeInDOM.querySelector<HTMLCanvasElement>(".js-c-model-canvas");
-        this.renderer = null;
-        this.scene = null;
-        this.camera = null;
-        this.sizes = { width: 0, height: 0 };
-        this.modelPivot = null;
-        this.model = null;
-        this.controls = null;
-        this.onControlsEnd = null;
-        this.raycaster = null;
-        this.pointerNdc = null;
+        this.canvas         = this.nodeInDOM.querySelector<HTMLCanvasElement>(".js-c-model-canvas");
+        this.renderer       = null;
+        this.scene          = null;
+        this.camera         = null;
+        this.sizes          = { width: 0, height: 0 };
+        this.model          = null;
+        this.raycaster      = null;
+        this.pointerNdc     = null;
         this.clickableRoots = new Map();
-        this.contactRoots = new Set();
-        this.onPointerMove = null;
-        this.onPointerDown = null;
-        this.onPointerUp = null;
+        this.contactRoots   = new Set();
+        this.onPointerMove  = null;
+        this.onPointerDown  = null;
+        this.onPointerUp    = null;
         this.pointerDownPos = null;
-        this.frameId = null;
-        this.ro = null;
-        this.lastFrameTimeMs = null;
-        this.destroyed = false;
-        this.tagsPositions = [];
+        this.frameId        = null;
+        this.ro             = null;
+        this.destroyed      = false;
+        this.tagsPositions  = [];
 
         this.init();
         document.addEventListener("astro:before-swap", this.destroy);
     }
 
-    // ─── init ─────────────────────────────────────────────────────────────
+    // ─── init ──────────────────────────────────────────────────────────────
     init = async (): Promise<void> => {
         if (!this.canvas) return;
         if (this.nodeInDOM.dataset.modelInit === "1") return;
         this.nodeInDOM.dataset.modelInit = "1";
 
         this.sizes = {
-            width: this.canvas.clientWidth,
+            width:  this.canvas.clientWidth,
             height: this.canvas.clientHeight,
         };
 
+        /* RENDERER */
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas,
             antialias: true,
@@ -189,59 +233,41 @@ class CModel extends BaseComponent {
             powerPreference: "high-performance",
         });
         this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 0.9;
+        this.renderer.outputColorSpace    = THREE.SRGBColorSpace;
+        this.renderer.toneMapping         = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure  = 0.9;
 
+        /* SCENE */
         this.scene = new THREE.Scene();
 
         /* CAMERA */
         this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 130);
-        this.camera.position.set(70.4336, 13.7303, 0.0658);
+        this.camera.position.copy(CAM_NEUTRAL);
         this.camera.lookAt(0, 0, 0);
 
-        /* LIGHTS */
+        /* ENVIRONMENT + LIGHTS */
         const pmremGenerator = new THREE.PMREMGenerator(this.renderer);
         this.scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
         pmremGenerator.dispose();
 
         const ambient = new THREE.AmbientLight(0xffffff, 0.35);
-        const key = new THREE.DirectionalLight(0xffffff, 2.0);
+        const key     = new THREE.DirectionalLight(0xffffff, 2.0);
         key.position.set(2, 3, 4);
         this.scene.add(ambient, key);
 
-        /* TAGS POINTS */
+        /* TAG WORLD POSITIONS */
         this.tagsPositions = [
-            {
-                position: new THREE.Vector3(39.0059, 8.1606, -0.0007),
-                element: this.nodeInDOM.querySelector(".js-tag.--about-me"),
-            },
-            {
-                position: new THREE.Vector3(28.8355, 20.5247, 8.7885),
-                element: this.nodeInDOM.querySelector(".js-tag.--translations"),
-            },
-            {
-                position: new THREE.Vector3(19.6588, 23.2543, -27.0160),
-                element: this.nodeInDOM.querySelector(".js-tag.--writings"),
-            },
-            {
-                position: new THREE.Vector3(-23.3633, 19.9472, -22.8574),
-                element: this.nodeInDOM.querySelector(".js-tag.--articles"),
-            },
-            {
-                position: new THREE.Vector3(-40.6911, 8.2630, -0.0034),
-                element: this.nodeInDOM.querySelector(".js-tag.--contact"),
-            },
-            {
-                position: new THREE.Vector3(-19.6904, 6.8916, 21.87),
-                element: this.nodeInDOM.querySelector(".js-tag.--chick"),
-            },
+            { position: new THREE.Vector3( 39.0059,  8.1606,  -0.0007), element: this.nodeInDOM.querySelector(".js-tag.--about-me")     },
+            { position: new THREE.Vector3( 28.8355, 20.5247,   8.7885), element: this.nodeInDOM.querySelector(".js-tag.--translations")  },
+            { position: new THREE.Vector3( 19.6588, 23.2543, -27.0160), element: this.nodeInDOM.querySelector(".js-tag.--writings")      },
+            { position: new THREE.Vector3(-23.3633, 19.9472, -22.8574), element: this.nodeInDOM.querySelector(".js-tag.--articles")      },
+            { position: new THREE.Vector3(-40.6911,  8.2630,  -0.0034), element: this.nodeInDOM.querySelector(".js-tag.--contact")       },
+            { position: new THREE.Vector3(-19.6904,  6.8916,  21.8700), element: this.nodeInDOM.querySelector(".js-tag.--chick")         },
         ];
 
         /* MODEL */
         const dracoLoader = new DRACOLoader();
         dracoLoader.setDecoderPath("/draco/");
-
         const loader = new GLTFLoader();
         loader.setDRACOLoader(dracoLoader);
 
@@ -249,93 +275,187 @@ class CModel extends BaseComponent {
         this.model = gltf.scene.clone(true);
         this.scene.add(this.model);
 
-        this.raycaster = new THREE.Raycaster();
+        this.raycaster  = new THREE.Raycaster();
         this.pointerNdc = new THREE.Vector2();
 
-        const locale = this.nodeInDOM.dataset.locale || "es";
+        /* CLICKABLE / CONTACT mesh roots */
+        const locale   = this.nodeInDOM.dataset.locale || "es";
         const children = this.model.children;
 
-        const aboutMeLink      = children.find((child: any) => child.name === "cris");
-        const translationsLink = children.find((child: any) => child.name === "book_shop");
-        const tree1            = children.find((child: any) => child.name === "armature_big_tree");
-        const tree2            = children.find((child: any) => child.name === "armature_right_tree");
-        const tree3            = children.find((child: any) => child.name === "armature_left_tree");
-        const newsLink         = children.find((child: any) => child.name === "kiosk");
-        const contactButton    = children.find((child: any) => child.name === "Armature001"); //Mailbox
-        const farm             = children.find((child: any) => child.name === "farm");
-        
-
-        const registerClickable = (root: any, href: string): void => {
-            if (!root) return;
-            this.clickableRoots.set(root, href);
-        };
-
-        const registerContact = (root: any): void => {
-            if (!root) return;
-            this.contactRoots.add(root);
-        };
+        const aboutMeLink      = children.find((c: any) => c.name === "cris");
+        const translationsLink = children.find((c: any) => c.name === "book_shop");
+        const tree1            = children.find((c: any) => c.name === "armature_big_tree");
+        const tree2            = children.find((c: any) => c.name === "armature_right_tree");
+        const tree3            = children.find((c: any) => c.name === "armature_left_tree");
+        const newsLink         = children.find((c: any) => c.name === "kiosk");
+        const contactButton    = children.find((c: any) => c.name === "Armature001");
+        console.log(children);
 
         const aboutMeUrl      = uiT(locale as any, "aboutMeUrl")      || "/sobre-mi";
         const translationsUrl = uiT(locale as any, "translationsUrl") || "/traducciones";
         const writingsUrl     = uiT(locale as any, "writingsUrl")     || "/escritos";
         const articlesUrl     = uiT(locale as any, "articlesUrl")     || "/noticias";
 
-        registerClickable(aboutMeLink,      aboutMeUrl);
-        registerClickable(translationsLink, translationsUrl);
-        registerClickable(tree1,            writingsUrl);
-        registerClickable(tree2,            writingsUrl);
-        registerClickable(tree3,            writingsUrl);
-        registerClickable(newsLink,         articlesUrl);
-        registerContact(contactButton);
+        const reg  = (root: any, href: string) => { if (root) this.clickableRoots.set(root, href); };
+        const regC = (root: any)               => { if (root) this.contactRoots.add(root); };
 
-        const updatePointerNdc = (e: PointerEvent): void => {
-            if (!this.canvas) return;
-            const rect = this.canvas.getBoundingClientRect();
+        reg(aboutMeLink,      aboutMeUrl);
+        reg(translationsLink, translationsUrl);
+        reg(tree1,            writingsUrl);
+        reg(tree2,            writingsUrl);
+        reg(tree3,            writingsUrl);
+        reg(newsLink,         articlesUrl);
+        regC(contactButton);
+
+        /* BUILD INTERACTIVE MESHES */
+        const heavyRoots = new Set([aboutMeLink, contactButton]);
+        const interactiveRoots = [...this.clickableRoots.keys(), ...this.contactRoots];
+
+        interactiveRoots.forEach(root => {
+            if (!root) return;
+
+            if (heavyRoots.has(root)) {
+                const proxy = this.buildProxy(root);
+                if (this.clickableRoots.has(root)) {
+                    this.clickableRoots.set(proxy, this.clickableRoots.get(root)!);
+                }
+                if (this.contactRoots.has(root)) {
+                    this.contactRoots.add(proxy);
+                }
+                this.interactiveMeshes.push(proxy);
+            } else {
+                root.traverse((obj: any) => {
+                    if (obj instanceof THREE.Mesh) this.interactiveMeshes.push(obj);
+                });
+            }
+        });
+
+        /* INPUT */
+        this.setupScrollInput();
+        this.setupPointerEvents();
+
+        /* RESIZE */
+        this.resize();
+        this.ro = new ResizeObserver(() => this.resize());
+        this.ro.observe(this.nodeInDOM);
+
+        /* START */
+        this.renderer.render(this.scene, this.camera);
+        this.tick();
+
+        this.nodeInDOM.dataset.modelReady = "1";
+        this.nodeInDOM.dispatchEvent(new CustomEvent("model:ready", { bubbles: true }));
+    };
+
+    // ─── Proxy builder ─────────────────────────────────────────────────────
+    private buildProxy(root: THREE.Object3D): THREE.Mesh {
+        const box    = new THREE.Box3().setFromObject(root);
+        const size   = new THREE.Vector3();
+        const center = new THREE.Vector3();
+        box.getSize(size);
+        box.getCenter(center);
+
+        const proxy = new THREE.Mesh(
+            new THREE.BoxGeometry(size.x, size.y, size.z),
+            new THREE.MeshBasicMaterial({ visible: false }),
+        );
+        proxy.position.copy(center);
+        this.scene.add(proxy);
+        this.proxyMeshes.push(proxy);
+        return proxy;
+    }
+
+    // ─── Scroll snap input ─────────────────────────────────────────────────
+    private setupScrollInput(): void {
+        if (!this.canvas) return;
+
+        this.onWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+            if (Math.abs(delta) < SCROLL_THRESHOLD) return;
+            this.advanceSnap(delta > 0 ? 1 : -1);
+        };
+
+        this.onTouchStart = (e: TouchEvent) => {
+            this.touchStartY = e.touches[0].clientY;
+        };
+
+        this.onTouchEnd = (e: TouchEvent) => {
+            const dy = this.touchStartY - e.changedTouches[0].clientY;
+            if (Math.abs(dy) < SCROLL_THRESHOLD) return;
+            this.advanceSnap(dy > 0 ? 1 : -1);
+        };
+
+        this.canvas.addEventListener("wheel",      this.onWheel,      { passive: false });
+        this.canvas.addEventListener("touchstart", this.onTouchStart, { passive: true  });
+        this.canvas.addEventListener("touchend",   this.onTouchEnd,   { passive: true  });
+    }
+
+    private advanceSnap(dir: 1 | -1): void {
+        const now = performance.now();
+        if (now - this.lastSnapTime < SNAP_COOLDOWN_MS) return;
+        this.lastSnapTime = now;
+
+        const count = SNAP_POINTS.length;
+        const next  = ((this.snapIndex + dir) % count + count) % count;
+        this.goToSnap(next);
+    }
+
+    private goToSnap(index: number): void {
+        this.snapIndex = index;
+        this.targetCamPos.copy(SNAP_POINTS[index].camPosition);
+        this.targetLookAt.set(0, 0, 0);
+    }
+
+    private goNeutral(): void {
+        this.snapIndex = -1;
+        this.targetCamPos.copy(CAM_NEUTRAL);
+        this.targetLookAt.set(0, 0, 0);
+    }
+
+    // ─── Pointer events ────────────────────────────────────────────────────
+    private setupPointerEvents(): void {
+        if (!this.canvas) return;
+
+        const updateNdc = (e: PointerEvent) => {
+            const rect = this.canvas!.getBoundingClientRect();
             const x = (e.clientX - rect.left) / Math.max(1, rect.width);
             const y = (e.clientY - rect.top)  / Math.max(1, rect.height);
             this.pointerNdc.set(x * 2 - 1, -(y * 2 - 1));
         };
 
-        const findClickableRoot = (obj: any): { root: any; href: string } | null => {
+        const findClickable = (obj: any): string | null => {
             let cur: any = obj;
             while (cur) {
                 const href = this.clickableRoots.get(cur);
-                if (href) return { root: cur, href };
+                if (href) return href;
                 cur = cur.parent;
             }
             return null;
         };
 
-        const findContactRoot = (obj: any): boolean => {
+        const findContact = (obj: any): boolean => {
             let cur: any = obj;
-            while (cur) {
-                if (this.contactRoots.has(cur)) return true;
-                cur = cur.parent;
-            }
+            while (cur) { if (this.contactRoots.has(cur)) return true; cur = cur.parent; }
             return false;
         };
 
-        const raycastAny = (): { isContact: boolean; href?: string } | null => {
+        const raycast = (): { isContact: boolean; href?: string } | null => {
             if (!this.raycaster || !this.camera || !this.model) return null;
             this.raycaster.setFromCamera(this.pointerNdc, this.camera);
-            const hits = this.raycaster.intersectObject(this.model, true);
+            const hits = this.raycaster.intersectObjects(this.interactiveMeshes, false);
             if (!hits.length) return null;
-
-            const obj = hits[0].object;
-            const clickable = findClickableRoot(obj);
-            if (clickable) return { isContact: false, href: clickable.href };
-            if (findContactRoot(obj)) return { isContact: true };
+            const obj  = hits[0].object;
+            const href = findClickable(obj);
+            if (href) return { isContact: false, href };
+            if (findContact(obj)) return { isContact: true };
             return null;
         };
 
-        const setCursor = (active: boolean): void => {
-            if (!this.canvas) return;
-            this.canvas.style.cursor = active ? "pointer" : "default";
-        };
-
         this.onPointerMove = (e: PointerEvent) => {
-            updatePointerNdc(e);
-            setCursor(Boolean(raycastAny()));
+            updateNdc(e);
+            this.canvas!.style.cursor = raycast() ? "pointer" : "default";
         };
 
         this.onPointerDown = (e: PointerEvent) => {
@@ -346,13 +466,9 @@ class CModel extends BaseComponent {
             const start = this.pointerDownPos;
             this.pointerDownPos = null;
             if (!start) return;
-
-            const dx = e.clientX - start.x;
-            const dy = e.clientY - start.y;
-            if (Math.hypot(dx, dy) > 6) return;
-
-            updatePointerNdc(e);
-            const hit = raycastAny();
+            if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > 6) return;
+            updateNdc(e);
+            const hit = raycast();
             if (!hit) return;
             if (hit.isContact) { window.openContactModal?.(); return; }
             import("astro:transitions/client")
@@ -363,47 +479,15 @@ class CModel extends BaseComponent {
         this.canvas.addEventListener("pointermove", this.onPointerMove);
         this.canvas.addEventListener("pointerdown", this.onPointerDown);
         this.canvas.addEventListener("pointerup",   this.onPointerUp);
+    }
 
-        //TODO: remove from here
-        this.controls = new OrbitControls(this.camera, this.canvas);
-        this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.08;
-        this.controls.enablePan = false;
-        this.controls.target.set(0, 0, 0);
-        this.controls.update();
-
-        this.onControlsEnd = () => {
-            if (!this.camera) return;
-            const p = this.camera.position;
-            // console.log("[CModel] camera.position", {
-            //     x: Number(p.x.toFixed(4)),
-            //     y: Number(p.y.toFixed(4)),
-            //     z: Number(p.z.toFixed(4)),
-            // });
-        };
-        this.controls.addEventListener("end", this.onControlsEnd);
-        //TODO: to here
-
-        this.resize();
-        this.ro = new ResizeObserver(() => this.resize());
-        this.ro.observe(this.nodeInDOM);
-
-        this.lastFrameTimeMs = null;
-        this.tick();
-
-        this.renderer.render(this.scene, this.camera); // render one frame immediately
-        this.nodeInDOM.dataset.modelReady = "1";
-        this.nodeInDOM.dispatchEvent(new CustomEvent("model:ready", { bubbles: true }));
-    };
-
-    // ─── resize ───────────────────────────────────────────────────────────
+    // ─── resize ────────────────────────────────────────────────────────────
     resize = (): void => {
         if (!this.renderer || !this.camera) return;
         const rect   = this.nodeInDOM.getBoundingClientRect();
         const width  = Math.max(1, Math.floor(rect.width));
         const height = Math.max(1, Math.floor(rect.height));
-        this.sizes.width  = window.innerWidth;
-        this.sizes.height = window.innerHeight;
+        this.sizes   = { width: window.innerWidth, height: window.innerHeight };
         this.renderer.setSize(width, height, false);
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
@@ -411,68 +495,87 @@ class CModel extends BaseComponent {
 
     private frameCount = 0;
 
-    // ─── tick ─────────────────────────────────────────────────────────────
+    // ─── tick ──────────────────────────────────────────────────────────────
     tick = (): void => {
         if (!this.renderer || !this.scene || !this.camera) return;
 
-        //TODO: remove this line
-        this.controls?.update?.();
+        // 1. Lerp camera
+        this.currentCamPos.lerp(this.targetCamPos, LERP_FACTOR);
+        this.currentLookAt.lerp(this.targetLookAt, LERP_FACTOR);
+        this.camera.position.copy(this.currentCamPos);
+        this.camera.lookAt(this.currentLookAt);
 
+        // 2. Update tag screen positions
         this.frameCount++;
         const checkOcclusion = this.frameCount % 6 === 0;
 
-        //Update tags position
-        for(const tag of this.tagsPositions) {
+        for (const tag of this.tagsPositions) {
+            if (!tag.element) continue;
 
-            if(!tag.element) continue;
+            const screenPos = tag.position.clone();
+            screenPos.project(this.camera);
 
-            const screenPosition = tag.position.clone();
-            screenPosition.project(this.camera); //Normalized coordinates (no pixels coordinates)
-            
-            if(checkOcclusion) {
-                this.raycaster.setFromCamera(screenPosition, this.camera);
-                const intersects = this.raycaster.intersectObjects(this.scene.children, true);
-
+            if (checkOcclusion) {
+                this.raycaster.setFromCamera(
+                    new THREE.Vector2(screenPos.x, screenPos.y),
+                    this.camera,
+                );
+                const intersects  = this.raycaster.intersectObjects(this.scene.children, true);
                 const tagDistance = tag.position.distanceTo(this.camera.position);
 
-                if(intersects.length === 0 ){
-                    if(tagDistance > 59) {
-                        tag.element.classList.remove('is-visible');
-                    } else {
-                        tag.element.classList.add('is-visible');
-                    }
+                if (intersects.length === 0) {
+                    tag.element.classList.toggle("is-visible", tagDistance <= 59);
                 } else {
-                    const intersectionDistance = intersects[0].distance;
-
-                    if (intersectionDistance < tagDistance) {
-                        tag.element.classList.remove('is-visible');
-                    } else {
-                        tag.element.classList.add('is-visible');
-                    }
+                    tag.element.classList.toggle("is-visible", intersects[0].distance >= tagDistance);
                 }
             }
-            
-            const translateX = screenPosition.x * this.sizes.width * 0.5;
-            const translateY = -screenPosition.y * this.sizes.height * 0.5;
-            tag.element.style.transform = `translate(calc(-50% + ${translateX}px), calc(-50% + ${translateY}px))`;
+
+            const tx = screenPos.x *  this.sizes.width  * 0.5;
+            const ty = screenPos.y * -this.sizes.height  * 0.5;
+            tag.element.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px))`;
         }
 
+        // 3. Render
         this.renderer.render(this.scene, this.camera);
         this.frameId = requestAnimationFrame(this.tick);
     };
 
-    // ─── destroy ──────────────────────────────────────────────────────────
+    // ─── destroy ───────────────────────────────────────────────────────────
     destroy = (): void => {
         if (this.destroyed) return;
         this.destroyed = true;
 
-        if (this.frameId != null) {
-            cancelAnimationFrame(this.frameId);
-            this.frameId = null;
-        }
+        if (this.frameId != null) { cancelAnimationFrame(this.frameId); this.frameId = null; }
 
         this.ro?.disconnect();
         this.ro = null;
+
+        if (this.canvas) {
+            if (this.onWheel)       this.canvas.removeEventListener("wheel",       this.onWheel);
+            if (this.onTouchStart)  this.canvas.removeEventListener("touchstart",  this.onTouchStart);
+            if (this.onTouchEnd)    this.canvas.removeEventListener("touchend",    this.onTouchEnd);
+            if (this.onPointerMove) this.canvas.removeEventListener("pointermove", this.onPointerMove);
+            if (this.onPointerDown) this.canvas.removeEventListener("pointerdown", this.onPointerDown);
+            if (this.onPointerUp)   this.canvas.removeEventListener("pointerup",   this.onPointerUp);
+        }
+
+        this.onWheel        = null;
+        this.onTouchStart   = null;
+        this.onTouchEnd     = null;
+        this.onPointerMove  = null;
+        this.onPointerDown  = null;
+        this.onPointerUp    = null;
+        this.pointerDownPos = null;
+        this.clickableRoots.clear();
+        this.contactRoots.clear();
+
+        this.proxyMeshes.forEach(p => {
+            p.geometry.dispose();
+            (p.material as THREE.Material).dispose();
+            this.scene?.remove(p);
+        });
+        this.proxyMeshes = [];
+        this.interactiveMeshes = [];
 
         if (this.scene) {
             this.scene.traverse((obj: any) => {
@@ -484,34 +587,12 @@ class CModel extends BaseComponent {
             });
         }
 
-        if (this.canvas) {
-            if (this.onPointerMove) this.canvas.removeEventListener("pointermove", this.onPointerMove);
-            if (this.onPointerDown) this.canvas.removeEventListener("pointerdown", this.onPointerDown);
-            if (this.onPointerUp)   this.canvas.removeEventListener("pointerup",   this.onPointerUp);
-        }
-        this.onPointerMove = null;
-        this.onPointerDown = null;
-        this.onPointerUp   = null;
-        this.pointerDownPos = null;
-        this.clickableRoots.clear();
-        this.contactRoots.clear();
-
-        //TODO: from here
-        if (this.controls) {
-            if (this.onControlsEnd) this.controls.removeEventListener("end", this.onControlsEnd);
-            this.controls.dispose?.();
-        }
-        this.controls      = null;
-        this.onControlsEnd = null;
-        //TODO: to here
-
         this.renderer?.dispose();
         this.renderer?.forceContextLoss();
-        this.renderer  = null;
-        this.scene     = null;
-        this.camera    = null;
-        this.modelPivot = null;
-        this.model     = null;
+        this.renderer = null;
+        this.scene    = null;
+        this.camera   = null;
+        this.model    = null;
 
         document.removeEventListener("astro:before-swap", this.destroy);
     };
