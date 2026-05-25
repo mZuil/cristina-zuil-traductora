@@ -102,6 +102,8 @@ const articlesUrl     = uiT(locale, "articlesUrl")     || "/noticias";
 import { BaseComponent } from "../../helpers/base/BaseComponent";
 import { uiT } from "../../config/strings-ui";
 
+import gsap from "gsap";
+
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
@@ -128,6 +130,9 @@ const CHICK_EAT_DURATION = 1400;
 const CHICK_TURN_SPEED   = 3.5;
 const CHICK_LOOKAHEAD    = 2.2;
 const CHICK_PROBE_Y      = 0.2;
+
+const CHICK_GROW_STEP    = 0.1;
+const CHICK_GROW_MAX     = 2000.0;
 
 // ─── Tree sway constants ───────────────────────────────────────────────────────
 // How far into each clip we play before reversing (seconds)
@@ -325,6 +330,8 @@ class CModel extends BaseComponent {
     private chickTarget:     THREE.Vector3 = new THREE.Vector3();
     private chickPauseUntil: number = 0;
     private chickEatTimeout: ReturnType<typeof setTimeout> | null = null;
+    private chickScaleTween: gsap.core.Tween | gsap.core.Timeline | null = null;
+    private chickBaseScale: number = 1;
     private farmMeshes:      THREE.Object3D[] = [];
     private farmFrontMeshes: THREE.Object3D[] = [];
     private chickDir:        THREE.Vector3 = new THREE.Vector3(1, 0, 0);
@@ -671,6 +678,7 @@ class CModel extends BaseComponent {
         if (chickAnimal) {
             this.chickAnimal    = chickAnimal;
             this.chickClickRoot = chickAnimal;
+            this.chickBaseScale = chickAnimal.scale.x || 1;
             this.pickNewChickTarget();
 
             chickAnimal.traverse((obj: any) => {
@@ -860,6 +868,31 @@ class CModel extends BaseComponent {
             this.chickIsEating   = false;
             eating?.stop();
             walking?.reset().play();
+
+            if (this.chickAnimal) {
+                this.chickScaleTween?.kill();
+                this.chickBaseScale = Math.min(CHICK_GROW_MAX, this.chickBaseScale + CHICK_GROW_STEP);
+
+                const scale = this.chickAnimal.scale;
+                const base  = this.chickBaseScale;
+
+                const tl = gsap.timeline({ onComplete: () => { this.chickScaleTween = null; } });
+                tl.to(scale, {
+                    x: base * 1.18,
+                    y: base * 0.85,
+                    z: base * 1.18,
+                    duration: 0.14,
+                    ease: "power2.out",
+                });
+                tl.to(scale, {
+                    x: base,
+                    y: base,
+                    z: base,
+                    duration: 0.16,
+                    ease: "power2.inOut",
+                });
+                this.chickScaleTween = tl;
+            }
             this.pickNewChickTarget();
         }, CHICK_EAT_DURATION);
     }
@@ -1150,6 +1183,11 @@ class CModel extends BaseComponent {
         if (this.chickEatTimeout !== null) {
             clearTimeout(this.chickEatTimeout);
             this.chickEatTimeout = null;
+        }
+
+        if (this.chickScaleTween) {
+            this.chickScaleTween.kill();
+            this.chickScaleTween = null;
         }
 
         if (this.canvas) {
