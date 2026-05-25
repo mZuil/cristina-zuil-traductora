@@ -42,41 +42,47 @@ const getStrapiImageFromLogo = (
         --card-width: calc(var(--card-height) * 50 / 68);
 
         position: relative;
-        min-height: 100lvh;
         background-color: var(--color-white);
         z-index: 1;
+        padding-block: 40px;
 
+        // ───────────────────────── Mobile / tablet (default) ─────────────────────────
         &__current-publisher {
-            position: absolute;
-            inset-block: 0;
-            left: 0;
-            width: 33%;
-            height: var(--card-height);
-            z-index: 2;
+            position: relative;
+            width: 100%;
+            height: auto;
+            padding-inline: 1rem;
+            padding-block: 0 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding-inline: clamp(2rem, 5vw, 10rem);
+            z-index: 2;
         }
 
         &__publisher-name {
             text-wrap: balance;
             text-align: center;
+            // Reserve space for up to 2 lines so single-line names don't
+            // cause the logo below to jump around.
+            min-height: 2lh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         &__publisher-logo {
             position: relative;
-            margin-top: 28px;
-            width: 160px;
-            height: 80px;
+            margin-top: 20px;
+            width: 140px;
+            height: 70px;
         }
 
         &__publisher-logo-item {
             position: absolute;
             inset: 0;
-            width: 160px;
-            height: 80px;
+            width: 100%;
+            height: 100%;
             visibility: hidden;
             opacity: 0;
 
@@ -94,33 +100,35 @@ const getStrapiImageFromLogo = (
             object-position: center;
         }
 
-        :global(.c-reviews__publisher-logo-image) {
-            width: 100%;
-            height: 100%;
-            max-height: 160px;
-            object-fit: contain;
-            object-position: center;
-        }
-
-        // First card mathematically centered at 50vw
         &__reviews-list {
             position: relative;
-            margin-left: calc(50vw - var(--card-width) / 2);
+            list-style: none;
+            margin: 0;
+            padding-inline: 10vw;
+            padding-block: 8px;
             display: flex;
             flex-direction: row;
             align-items: center;
-            gap: var(--grid-gutter);
+            gap: 16px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+
+            &::-webkit-scrollbar {
+                display: none;
+            }
         }
 
-        // Height-driven: ratio is always preserved
         &__review {
             position: relative;
             display: flex;
             flex-direction: column;
-            flex: 0 0 var(--card-width);
-            width: var(--card-width);
-            height: var(--card-height);
+            flex: 0 0 80vw;
+            width: 80vw;
             aspect-ratio: 50 / 68;
+            scroll-snap-align: center;
             will-change: transform;
             backface-visibility: hidden;
 
@@ -155,6 +163,56 @@ const getStrapiImageFromLogo = (
             z-index: 2;
             color: var(--color-white);
         }
+
+        // Slightly bigger card on tablets
+        @include md {
+            &__review {
+                flex: 0 0 60vw;
+                width: 60vw;
+            }
+
+            &__reviews-list {
+                padding-inline: 20vw;
+            }
+        }
+
+        // ───────────────────────── Desktop (>= lg) ─────────────────────────
+        @include lg {
+            min-height: 100lvh;
+            padding-block: 0;
+
+            &__current-publisher {
+                position: absolute;
+                inset-block: 0;
+                left: 0;
+                width: 33%;
+                height: var(--card-height);
+                padding-inline: clamp(2rem, 5vw, 10rem);
+                padding-block: 0;
+            }
+
+            &__publisher-logo {
+                margin-top: 28px;
+                width: 160px;
+                height: 80px;
+            }
+
+            &__reviews-list {
+                margin-left: calc(50vw - var(--card-width) / 2);
+                padding-inline: 0;
+                padding-block: 0;
+                gap: var(--grid-gutter);
+                overflow: visible;
+                scroll-snap-type: none;
+            }
+
+            &__review {
+                flex: 0 0 var(--card-width);
+                width: var(--card-width);
+                height: var(--card-height);
+                scroll-snap-align: none;
+            }
+        }
     }
 
     .u-sr-only {
@@ -168,36 +226,6 @@ const getStrapiImageFromLogo = (
         white-space: nowrap;
         border: 0;
     }
-
-    // @include breakpoint-down(md) {
-    //     flex-direction: column;
-    //     padding-left: 0;
-
-    //     &__current-publisher {
-    //         flex: unset;
-    //         max-width: 100%;
-    //         width: 100%;
-    //         padding-inline: var(--container-margin);
-    //     }
-
-    //     &__reviews-list {
-    //         width: 100%;
-    //         max-height: none;
-    //         overflow-x: scroll;
-    //         overflow-y: hidden;
-    //         scrollbar-width: none;
-    //         scroll-snap-type: x mandatory;
-    //         scroll-padding: var(--container-margin);
-    //         padding-inline: var(--container-margin);
-    //         padding-block: 1.5rem;
-    //     }
-
-    //     &__review {
-    //         width: 80vw;
-    //         flex: 0 0 80vw;
-    //         scroll-snap-align: center;
-    //     }
-    // }
 </style>
 
 <section class="c-reviews js-c-reviews" aria-label="Publisher testimonials">
@@ -271,11 +299,26 @@ const getStrapiImageFromLogo = (
         private activeIndex = -1;
         private publisherNameTween: gsap.core.Tween | null = null;
         private publisherLogoTween: gsap.core.Tween | null = null;
+        private mm?: ReturnType<typeof gsap.matchMedia>;
+        private mobileIO?: IntersectionObserver;
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
-            this.initScrollCards();
             this.entranceAnimation();
+
+            this.mm = gsap.matchMedia();
+
+            // Desktop: pinned horizontal scroll timeline
+            this.mm.add("(min-width: 1190px)", () => {
+                this.initScrollCardsDesktop();
+                return () => this.teardownDesktop();
+            });
+
+            // Mobile / tablet: native scroll-snap carousel with IntersectionObserver
+            this.mm.add("(max-width: 1189px)", () => {
+                this.initScrollCardsMobile();
+                return () => this.teardownMobile();
+            });
         }
 
         private getItemOffset(
@@ -331,29 +374,12 @@ const getStrapiImageFromLogo = (
             );
         }
 
-        initScrollCards() {
-            const track =
-                this.nodeInDOM.querySelector<HTMLElement>(".js-reviews-list");
-            if (!track) return;
-
-            const publisherNameEl =
-                this.nodeInDOM.querySelector<HTMLElement>(".js-publisher-name");
-            const publisherLogoItems = Array.from(
-                this.nodeInDOM.querySelectorAll<HTMLElement>(
-                    ".js-publisher-logo-item",
-                ),
-            );
-
-            const items = Array.from(
-                track.querySelectorAll<HTMLElement>(".js-review-item"),
-            );
-            if (items.length <= 1) return;
-
-            items.forEach((item, i) => {
-                item.style.zIndex = String(i + 1);
-            });
-
-            const setActive = (index: number) => {
+        private buildSetActive(
+            items: HTMLElement[],
+            publisherNameEl: HTMLElement | null,
+            publisherLogoItems: HTMLElement[],
+        ): (index: number) => void {
+            return (index: number) => {
                 const next = Math.max(0, Math.min(index, items.length - 1));
                 if (next === this.activeIndex) return;
                 this.activeIndex = next;
@@ -366,7 +392,6 @@ const getStrapiImageFromLogo = (
                     const nextName = items[next]?.dataset.publisher ?? "";
                     this.publisherNameTween?.kill();
 
-                    // Snap text immediately, then animate in — no onComplete needed
                     gsap.set(publisherNameEl, { autoAlpha: 0 });
                     publisherNameEl.textContent = nextName;
 
@@ -380,14 +405,12 @@ const getStrapiImageFromLogo = (
                 if (publisherLogoItems.length > 0) {
                     this.publisherLogoTween?.kill();
 
-                    // Immediately snap all non-active logos to hidden — no waiting for completion
                     publisherLogoItems.forEach((el, i) => {
                         if (i === next) return;
                         gsap.set(el, { autoAlpha: 0 });
                         el.classList.remove("is-active");
                     });
 
-                    // Then animate the new one in
                     const nextLogo = publisherLogoItems[next];
                     if (nextLogo) {
                         nextLogo.classList.add("is-active");
@@ -399,6 +422,46 @@ const getStrapiImageFromLogo = (
                     }
                 }
             };
+        }
+
+        private getReviewParts(): {
+            track: HTMLElement;
+            items: HTMLElement[];
+            publisherNameEl: HTMLElement | null;
+            publisherLogoItems: HTMLElement[];
+            currentPublisher: HTMLElement | null;
+        } | null {
+            const track = this.nodeInDOM.querySelector<HTMLElement>(".js-reviews-list");
+            if (!track) return null;
+
+            const publisherNameEl =
+                this.nodeInDOM.querySelector<HTMLElement>(".js-publisher-name");
+            const publisherLogoItems = Array.from(
+                this.nodeInDOM.querySelectorAll<HTMLElement>(".js-publisher-logo-item"),
+            );
+
+            const items = Array.from(
+                track.querySelectorAll<HTMLElement>(".js-review-item"),
+            );
+            if (items.length <= 1) return null;
+
+            const currentPublisher =
+                this.nodeInDOM.querySelector<HTMLElement>(".js-current-publisher");
+
+            return { track, items, publisherNameEl, publisherLogoItems, currentPublisher };
+        }
+
+        private initScrollCardsDesktop() {
+            const parts = this.getReviewParts();
+            if (!parts) return;
+            const { track, items, publisherNameEl, publisherLogoItems, currentPublisher } = parts;
+
+            items.forEach((item, i) => {
+                item.style.zIndex = String(i + 1);
+                item.style.transform = "";
+            });
+
+            const setActive = this.buildSetActive(items, publisherNameEl, publisherLogoItems);
 
             if (publisherNameEl) {
                 publisherNameEl.textContent =
@@ -408,6 +471,7 @@ const getStrapiImageFromLogo = (
                 gsap.set(publisherNameEl, { autoAlpha: 1 });
             }
 
+            this.activeIndex = -1;
             setActive(0);
 
             this.tl?.kill();
@@ -425,9 +489,6 @@ const getStrapiImageFromLogo = (
                     0,
                 );
             });
-
-            const currentPublisher =
-                this.nodeInDOM.querySelector<HTMLElement>(".js-current-publisher");
 
             const endDistance = () =>
                 `+=${(items.length - 1) * this.getItemOffset(track, items[0]) + window.innerHeight}`;
@@ -460,19 +521,13 @@ const getStrapiImageFromLogo = (
                 onUpdate: () => {
                     if (!this.tl) return;
                     const t = this.tl.time();
-                    const idx = Math.min(
-                        items.length - 1,
-                        Math.floor(t + 0.5),
-                    );
+                    const idx = Math.min(items.length - 1, Math.floor(t + 0.5));
                     setActive(idx);
                 },
                 onRefresh: () => {
                     if (!this.tl) return;
                     const t = this.tl.time();
-                    const idx = Math.min(
-                        items.length - 1,
-                        Math.floor(t + 0.5),
-                    );
+                    const idx = Math.min(items.length - 1, Math.floor(t + 0.5));
                     setActive(idx);
                 },
             });
@@ -491,7 +546,79 @@ const getStrapiImageFromLogo = (
             }
         }
 
+        private teardownDesktop() {
+            this.st?.kill(true);
+            this.st = undefined;
+            this.stPanel?.kill(true);
+            this.stPanel = undefined;
+            this.tl?.kill();
+            this.tl = undefined;
+
+            // Reset any inline transforms applied by the timeline
+            const items = this.nodeInDOM.querySelectorAll<HTMLElement>(".js-review-item");
+            items.forEach((el) => {
+                el.style.transform = "";
+            });
+        }
+
+        private initScrollCardsMobile() {
+            const parts = this.getReviewParts();
+            if (!parts) return;
+            const { track, items, publisherNameEl, publisherLogoItems } = parts;
+
+            items.forEach((item, i) => {
+                item.style.zIndex = String(i + 1);
+                item.style.transform = "";
+            });
+
+            const setActive = this.buildSetActive(items, publisherNameEl, publisherLogoItems);
+
+            if (publisherNameEl) {
+                publisherNameEl.textContent =
+                    items[0]?.dataset.publisher ??
+                    publisherNameEl.textContent ??
+                    "";
+                gsap.set(publisherNameEl, { autoAlpha: 1 });
+            }
+
+            this.activeIndex = -1;
+            setActive(0);
+
+            // Use an IntersectionObserver against the scroll container to pick
+            // whichever card is most visible (>= 60% threshold).
+            this.mobileIO?.disconnect();
+            this.mobileIO = new IntersectionObserver(
+                (entries) => {
+                    let bestIdx = -1;
+                    let bestRatio = 0;
+                    entries.forEach((entry) => {
+                        if (entry.intersectionRatio > bestRatio) {
+                            bestRatio = entry.intersectionRatio;
+                            bestIdx = items.indexOf(entry.target as HTMLElement);
+                        }
+                    });
+                    if (bestIdx >= 0 && bestRatio >= 0.6) {
+                        setActive(bestIdx);
+                    }
+                },
+                {
+                    root: track,
+                    threshold: [0, 0.25, 0.5, 0.6, 0.75, 1],
+                },
+            );
+
+            items.forEach((item) => this.mobileIO!.observe(item));
+        }
+
+        private teardownMobile() {
+            this.mobileIO?.disconnect();
+            this.mobileIO = undefined;
+        }
+
         destroy(): void {
+            this.mm?.revert();
+            this.mm = undefined;
+
             this.st?.kill(true);
             this.st = undefined;
             this.stPanel?.kill(true);
@@ -504,6 +631,8 @@ const getStrapiImageFromLogo = (
             this.publisherNameTween = null;
             this.publisherLogoTween?.kill();
             this.publisherLogoTween = null;
+            this.mobileIO?.disconnect();
+            this.mobileIO = undefined;
         }
     }
 
