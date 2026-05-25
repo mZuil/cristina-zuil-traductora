@@ -147,7 +147,16 @@ interface SnapPoint {
     camPosition: THREE.Vector3;
 }
 
-const SNAP_POINTS: SnapPoint[] = [
+const SNAP_POINTS_DESKTOP: SnapPoint[] = [
+    { tagSelector: "--about-me",     camPosition: new THREE.Vector3( 53.9117,  6.2968,  -0.0973) },
+    { tagSelector: "--translations", camPosition: new THREE.Vector3( 49.2224, 18.3008,  58.9907) },
+    { tagSelector: "--chick",        camPosition: new THREE.Vector3(-32.4472,  8.2288,  37.2811) },
+    { tagSelector: "--contact",      camPosition: new THREE.Vector3(-57.8206,  7.2626,   0.0514) },
+    { tagSelector: "--articles",     camPosition: new THREE.Vector3(-49.1818, 14.9362, -48.3925) },
+    { tagSelector: "--writings",     camPosition: new THREE.Vector3( 38.3481, 21.9753, -56.5325) },
+];
+
+const SNAP_POINTS_MOBILE: SnapPoint[] = [
     { tagSelector: "--about-me",     camPosition: new THREE.Vector3( 53.9117,  6.2968,  -0.0973) },
     { tagSelector: "--translations", camPosition: new THREE.Vector3( 49.2224, 18.3008,  58.9907) },
     { tagSelector: "--chick",        camPosition: new THREE.Vector3(-32.4472,  8.2288,  37.2811) },
@@ -288,6 +297,7 @@ class CModel extends BaseComponent {
     private snapIndex: number    = -1;
     private lastSnapTime: number = 0;
     private touchStartY: number  = 0;
+    private usingMobileSnapPoints: boolean = false;
 
     // ── Animated camera ───────────────────────────────────────────────────
     private currentCamPos: THREE.Vector3 = CAM_NEUTRAL.clone();
@@ -1000,18 +1010,27 @@ class CModel extends BaseComponent {
         if (now - this.lastSnapTime < SNAP_COOLDOWN_MS) return;
         this.lastSnapTime = now;
 
-        const count = SNAP_POINTS.length;
+        const points = this.getSnapPoints();
+        const count = points.length;
         const next  = ((this.snapIndex + dir) % count + count) % count;
         this.goToSnap(next);
     }
 
     private goToSnap(index: number): void {
-        this.snapIndex = index;
-        this.targetCamPos.copy(SNAP_POINTS[index].camPosition);
+        const points = this.getSnapPoints();
+        const safeIndex = Math.max(0, Math.min(index, points.length - 1));
+        this.snapIndex = safeIndex;
+        this.targetCamPos.copy(points[safeIndex].camPosition);
         this.targetLookAt.set(0, 0, 0);
 
-        const isChickSnap = SNAP_POINTS[index].tagSelector === "--chick";
+        const isChickSnap = points[safeIndex].tagSelector === "--chick";
         this.farmFrontMeshes.forEach(m => { (m as any).visible = !isChickSnap; });
+    }
+
+    private getSnapPoints(): SnapPoint[] {
+        const isMobile = window.matchMedia("(max-width: 768px)").matches;
+        this.usingMobileSnapPoints = isMobile;
+        return isMobile ? SNAP_POINTS_MOBILE : SNAP_POINTS_DESKTOP;
     }
 
     // ─── Pointer events ────────────────────────────────────────────────────
@@ -1091,6 +1110,10 @@ class CModel extends BaseComponent {
     // ─── resize ────────────────────────────────────────────────────────────
     resize = (): void => {
         if (!this.renderer || !this.camera) return;
+
+        const wasMobile = this.usingMobileSnapPoints;
+        const pointsNow = this.getSnapPoints();
+
         const rect   = this.nodeInDOM.getBoundingClientRect();
         const width  = Math.max(1, Math.floor(rect.width));
         const height = Math.max(1, Math.floor(rect.height));
@@ -1098,6 +1121,15 @@ class CModel extends BaseComponent {
         this.renderer.setSize(width, height, false);
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
+
+        if (wasMobile !== this.usingMobileSnapPoints && this.snapIndex >= 0) {
+            const safeIndex = Math.max(0, Math.min(this.snapIndex, pointsNow.length - 1));
+            this.snapIndex = safeIndex;
+            this.targetCamPos.copy(pointsNow[safeIndex].camPosition);
+
+            const isChickSnap = pointsNow[safeIndex].tagSelector === "--chick";
+            this.farmFrontMeshes.forEach(m => { (m as any).visible = !isChickSnap; });
+        }
     };
 
     // ─── tick ──────────────────────────────────────────────────────────────

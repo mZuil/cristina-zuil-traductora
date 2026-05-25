@@ -187,14 +187,18 @@ export const designTokens = {
       'home-tags': {
         sm: {
           fontFamily: 'primary',
-          fontSize: '1.1cqw',
+          fontSize: 'clamp(15px, 4cqw, 20px)',
           fontWeight: 700,
           lineHeight: 1.2,
           letterSpacing: '0',
           textTransform: 'uppercase',
         },
-        md: {},
-        lg: {},
+        md: {
+          fontSize: 'clamp(15px, 1.7cqw, 20px)',
+        },
+        lg: {
+          fontSize: 'clamp(19px, 1.1cqw, 30px)',
+        },
       },
     },
   },
