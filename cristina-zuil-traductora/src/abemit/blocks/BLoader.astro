@@ -31,73 +31,171 @@
             align-items: center;
             justify-content: center;
         }
-    }
 
+        &__image-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+        }
+
+        &__ring {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: visible;
+
+            &-track {
+                fill: none;
+                stroke: rgba(255, 255, 255, 0.15);
+                stroke-width: 3;
+            }
+
+            &-fill {
+                fill: none;
+                stroke: var(--color-blue-light);
+                stroke-width: 3;
+                stroke-linecap: round;
+                transform: rotate(-90deg);
+                transform-origin: 50% 50%;
+                stroke-dasharray: 289.03;
+                stroke-dashoffset: 289.03;
+                transition: stroke-dashoffset 0.4s ease;
+            }
+        }
+    }
 </style>
 
 <div class="b-loader js-b-loader">
     <div class="b-loader__cris-illustration">
-        <img src="/imgs/cris-illustration-round.png" alt="Cristina Zuil, traductora" />
+        <div class="b-loader__image-wrapper">
+            <img src="/imgs/cris-illustration-round.png" alt="Cristina Zuil, traductora" />
+            <svg class="b-loader__ring" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle class="b-loader__ring-track" cx="50" cy="50" r="46" />
+                <circle class="b-loader__ring-fill js-b-loader-fill" cx="50" cy="50" r="46" />
+            </svg>
+        </div>
     </div>
 </div>
 
 <script>
+    const CIRCUMFERENCE = 289.03; // 2π × 46
+
+    // Progress is split into two real phases:
+    //   0.00 – 0.35  DOMContentLoaded  (HTML parsed, blocking scripts done)
+    //   0.35 – 0.70  load              (all static resources fetched)
+    //   0.70 – 1.00  model:progress / model:ready
+    const PHASE_DOM   = 0.35;
+    const PHASE_LOAD  = 0.70;
+    const PHASE_MODEL = 1.00;
+
     let isFirstLoad = true;
 
-    const hideLoader = (): void => {
-        const el = document.querySelector<HTMLElement>(".js-b-loader");
-        if (!el) return;
+    // ─── Ring ────────────────────────────────────────────────────────────────
 
-        // If already hidden or already removed, do nothing
-        if (el.classList.contains("is-hidden")) return;
+    function getFill(): SVGCircleElement | null {
+        return document.querySelector<SVGCircleElement>(".js-b-loader-fill");
+    }
+
+    function setProgress(p: number): void {
+        const fill = getFill();
+        if (!fill) return;
+        fill.style.strokeDashoffset = String(
+            CIRCUMFERENCE * (1 - Math.min(1, Math.max(0, p)))
+        );
+    }
+
+    // ─── Hide ────────────────────────────────────────────────────────────────
+
+    function hideLoader(): void {
+        const el = document.querySelector<HTMLElement>(".js-b-loader");
+        if (!el || el.classList.contains("is-hidden")) return;
 
         const remove = () => {
             el.removeEventListener("transitionend", remove);
             el.remove();
         };
-
         el.addEventListener("transitionend", remove);
         el.classList.add("is-hidden");
 
-        // Fallback in case transitionend doesn't fire
         window.setTimeout(() => {
             if (document.contains(el)) el.remove();
         }, 400);
-    };
+    }
 
-    const hideLoaderOnModelReady = (): void => {
-        const modelEl = document.querySelector(".js-c-model");
+    function finishAndHide(): void {
+        setProgress(1);
+        window.setTimeout(hideLoader, 350); // let ring reach 100% visually
+    }
 
-        if (!modelEl) {
-            hideLoader();
-            return;
+    // ─── Initial full load ───────────────────────────────────────────────────
+
+    function initFullLoadProgress(): void {
+        const hasModel = !!document.querySelector(".js-c-model");
+
+        // Phase 1 — DOMContentLoaded (may already have fired)
+        const onDCL = () => setProgress(PHASE_DOM);
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", onDCL, { once: true });
+        } else {
+            onDCL();
         }
 
-        const timeout = setTimeout(hideLoader, 8000);
+        // Phase 2 — load (all static assets)
+        const onLoad = () => {
+            setProgress(PHASE_LOAD);
+            if (!hasModel) finishAndHide();
+        };
+        if (document.readyState === "complete") {
+            onLoad();
+        } else {
+            window.addEventListener("load", onLoad, { once: true });
+        }
 
+        if (!hasModel) return;
+
+        // Phase 3a — real GLTFLoader bytes (0.70 – 0.95)
+        //   Fires only if CModel dispatches "model:progress" with { ratio: 0–1 }
+        const MODEL_RANGE = PHASE_MODEL - PHASE_LOAD; // 0.30
+        const onModelProgress = (e: Event) => {
+            const ratio = (e as CustomEvent<{ ratio: number }>).detail.ratio;
+            // Map 0–1 model ratio into the 0.70–0.95 band (leave room for the
+            // final ready event so the ring visibly completes)
+            setProgress(PHASE_LOAD + ratio * MODEL_RANGE * 0.85);
+        };
+        document.addEventListener("model:progress", onModelProgress);
+
+        // Phase 3b — model:ready → 100%
+        const safetyTimeout = setTimeout(finishAndHide, 8000);
         document.addEventListener(
             "model:ready",
             () => {
-            clearTimeout(timeout);
-            hideLoader();
+                clearTimeout(safetyTimeout);
+                document.removeEventListener("model:progress", onModelProgress);
+                finishAndHide();
             },
             { once: true }
         );
-    };
-
-    // Full reload only — wait for the model
-    if (document.readyState === "complete") {
-    hideLoaderOnModelReady();
-    } else {
-    window.addEventListener("load", hideLoaderOnModelReady, { once: true });
     }
 
-    // Client-side navigation — hide immediately, let the transition panel do its job
+    if (document.readyState === "complete") {
+        initFullLoadProgress();
+    } else {
+        // Run as early as possible so the ring starts moving from the first milestone
+        initFullLoadProgress();
+    }
+
+    // ─── Client-side navigation ───────────────────────────────────────────────
+    // Astro's events map to real network/DOM milestones — no faking needed.
+
+    document.addEventListener("astro:before-preparation", () => setProgress(0.10));
+    document.addEventListener("astro:after-preparation",  () => setProgress(0.60)); // fetch done
+    document.addEventListener("astro:before-swap",        () => setProgress(0.85)); // DOM swap imminent
     document.addEventListener("astro:page-load", () => {
-        if (isFirstLoad) {
-            isFirstLoad = false;
-            return; // already handled above by the load event
-        }
-        hideLoader();
+        if (isFirstLoad) { isFirstLoad = false; return; }
+        finishAndHide();
     });
 </script>

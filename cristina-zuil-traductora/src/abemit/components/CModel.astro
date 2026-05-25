@@ -478,12 +478,8 @@ class CModel extends BaseComponent {
         this.model = gltf.scene;
         this.scene.add(this.model);
 
-        console.log(gltf.animations);
-
         /* ANIMATIONS */
         this.mixer = new THREE.AnimationMixer(this.model);
-
-        console.log(gltf);
 
         this.animations = [
             { name: "awkningBookShop", action: this.mixer.clipAction(gltf.animations[0])  },
