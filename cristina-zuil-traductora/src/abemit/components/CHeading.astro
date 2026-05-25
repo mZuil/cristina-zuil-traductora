@@ -171,7 +171,10 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true, hasContactBut
         separator,
         { x: 0 },
         {
-          x: -700,
+          x: () => {
+            const isDesktop = window.matchMedia('(min-width: 1190px)').matches;
+            return isDesktop ? -700 : -window.innerWidth * 0.6;
+          },
           ease: "none",
           scrollTrigger: {
             trigger: separator,
