@@ -291,6 +291,9 @@ const getStrapiImageFromLogo = (
 
     gsap.registerPlugin(ScrollTrigger);
 
+    // Prevent layout jumps when the mobile URL bar shows/hides
+    ScrollTrigger.config({ ignoreMobileResize: true });
+
     class CReviews extends BaseComponent {
         private st?: ScrollTrigger;
         private stPanel?: ScrollTrigger;

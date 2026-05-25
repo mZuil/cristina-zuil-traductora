@@ -97,13 +97,15 @@ if (!title) {
         // POEM
         &__poem {
             position: relative;
-            height: 100dvh;
+            // svh = stable smallest viewport height; doesn't change as the
+            // mobile URL bar shows/hides (unlike dvh).
+            height: 100svh;
             opacity: 0;
             visibility: hidden;
         }
 
         &__poem-wrapper {
-            height: 100dvh;
+            height: 100svh;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -338,6 +340,9 @@ if (!title) {
     import { BaseComponent } from "../../helpers/base/BaseComponent";
 
     gsap.registerPlugin(ScrollTrigger);
+
+    // Prevent layout jumps when the mobile URL bar shows/hides
+    ScrollTrigger.config({ ignoreMobileResize: true });
 
     class CTitle extends BaseComponent {
         private freezeScrollY = 0;
