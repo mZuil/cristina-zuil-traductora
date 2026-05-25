@@ -267,6 +267,7 @@ const getStrapiImageFromLogo = (
         private st?: ScrollTrigger;
         private stPanel?: ScrollTrigger;
         private tl?: gsap.core.Timeline;
+        private entranceTl?: gsap.core.Timeline;
         private activeIndex = -1;
         private publisherNameTween: gsap.core.Tween | null = null;
         private publisherLogoTween: gsap.core.Tween | null = null;
@@ -296,34 +297,37 @@ const getStrapiImageFromLogo = (
             
             gsap.set(cards, { opacity: 0 });
 
-            gsap.fromTo(
+            this.entranceTl?.kill();
+            this.entranceTl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: trigger,
+                    start: "top 75%",
+                    once: true,
+                },
+            });
+
+            this.entranceTl.fromTo(
                 cards,
                 {
-                    x: 400,
                     opacity: 0,
                     rotationY: -25,
                     rotationX: 8,
                     z: -200,
                     skewY: 2,
                     transformPerspective: 1000,
-                    transformOrigin: "left center"
+                    transformOrigin: "left center",
                 },
                 {
-                    x: 0,
                     opacity: 1,
                     rotationY: 0,
                     rotationX: 0,
                     z: 0,
                     skewY: 0,
-                    duration: 1,
+                    duration: 0.8,
                     ease: "power3.out",
-                    stagger: 0.22,
-                    scrollTrigger: {
-                        trigger: trigger,
-                        start: 'top 70%',
-                        once: true,
-                    }
-                }
+                    stagger: 0.15,
+                    overwrite: "auto",
+                },
             );
         }
 
@@ -439,6 +443,20 @@ const getStrapiImageFromLogo = (
                 anticipatePin: 1,
                 scrub: true,
                 invalidateOnRefresh: true,
+                onEnter: () => {
+                    if (this.entranceTl && this.entranceTl.progress() < 1) {
+                        this.entranceTl.progress(1);
+                        this.entranceTl.kill();
+                        this.entranceTl = undefined;
+                        gsap.set(items, {
+                            opacity: 1,
+                            rotationY: 0,
+                            rotationX: 0,
+                            z: 0,
+                            skewY: 0,
+                        });
+                    }
+                },
                 onUpdate: () => {
                     if (!this.tl) return;
                     const t = this.tl.time();
@@ -480,6 +498,8 @@ const getStrapiImageFromLogo = (
             this.stPanel = undefined;
             this.tl?.kill();
             this.tl = undefined;
+            this.entranceTl?.kill();
+            this.entranceTl = undefined;
             this.publisherNameTween?.kill();
             this.publisherNameTween = null;
             this.publisherLogoTween?.kill();
