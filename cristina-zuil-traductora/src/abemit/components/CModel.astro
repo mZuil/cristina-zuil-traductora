@@ -157,7 +157,7 @@ const SNAP_POINTS_DESKTOP: SnapPoint[] = [
 ];
 
 const SNAP_POINTS_MOBILE: SnapPoint[] = [
-    { tagSelector: "--about-me",     camPosition: new THREE.Vector3( 53.9117,  6.2968,  -0.0973) },
+    { tagSelector: "--about-me",     camPosition: new THREE.Vector3( 53.9117,  4.2968,  -0.0973) },
     { tagSelector: "--translations", camPosition: new THREE.Vector3( 64.191, 28.1674,  73.3339) },
     { tagSelector: "--chick",        camPosition: new THREE.Vector3(-50.7305,  13.873,  55.0863) },
     { tagSelector: "--contact",      camPosition: new THREE.Vector3(-57.8206,  7.2626,   0.0514) },
@@ -289,7 +289,7 @@ class CModel extends BaseComponent {
     frameId: number | null;
     ro: ResizeObserver | null;
     destroyed: boolean;
-    tagsPositions: Array<{ position: THREE.Vector3; element: HTMLElement | null }>;
+    tagsPositions: Array<{ position: THREE.Vector3; mobilePosition?: THREE.Vector3; element: HTMLElement | null }>;
     mixer: THREE.AnimationMixer | null;
     animations: Array<{ name: string; action: THREE.AnimationAction }>;
 
@@ -471,8 +471,8 @@ class CModel extends BaseComponent {
         /* TAG WORLD POSITIONS */
         this.tagsPositions = [
             { position: new THREE.Vector3( 39.0059,  8.1606,  -0.0007), element: this.nodeInDOM.querySelector(".js-tag.--about-me")     },
-            { position: new THREE.Vector3( 28.8355, 20.5247,   8.7885), element: this.nodeInDOM.querySelector(".js-tag.--translations")  },
-            { position: new THREE.Vector3( 19.6588, 23.2543, -27.0160), element: this.nodeInDOM.querySelector(".js-tag.--writings")      },
+            { position: new THREE.Vector3( 28.8355, 20.5247,   8.7885), mobilePosition: new THREE.Vector3(37.0, 28.5, 42.0), element: this.nodeInDOM.querySelector(".js-tag.--translations")  },
+            { position: new THREE.Vector3( 19.6588, 23.2543, -27.0160), mobilePosition: new THREE.Vector3(34.0, 28.0, -42.0), element: this.nodeInDOM.querySelector(".js-tag.--writings")      },
             { position: new THREE.Vector3(-23.3633, 19.9472, -22.8574), element: this.nodeInDOM.querySelector(".js-tag.--articles")      },
             { position: new THREE.Vector3(-40.6911,  8.2630,  -0.0034), element: this.nodeInDOM.querySelector(".js-tag.--contact")       },
             { position: new THREE.Vector3(-19.6904,  6.8916,  21.8700), element: this.nodeInDOM.querySelector(".js-tag.--chick")         },
@@ -700,6 +700,14 @@ class CModel extends BaseComponent {
         this.resize();
         this.ro = new ResizeObserver(() => this.resize());
         this.ro.observe(this.nodeInDOM);
+
+        // Mobile starts at the first snap point; desktop keeps the neutral camera start.
+        if (this.getSnapPoints() === SNAP_POINTS_MOBILE) {
+            this.goToSnap(0);
+            this.currentCamPos.copy(this.targetCamPos);
+            this.camera.position.copy(this.targetCamPos);
+            this.camera.lookAt(this.targetLookAt);
+        }
 
         /* START */
         this.renderer.render(this.scene, this.camera);
@@ -1028,7 +1036,7 @@ class CModel extends BaseComponent {
     }
 
     private getSnapPoints(): SnapPoint[] {
-        const isMobile = window.matchMedia("(max-width: 768px)").matches;
+        const isMobile = window.matchMedia("(max-width: 1190px)").matches;
         this.usingMobileSnapPoints = isMobile;
         return isMobile ? SNAP_POINTS_MOBILE : SNAP_POINTS_DESKTOP;
     }
@@ -1151,10 +1159,13 @@ class CModel extends BaseComponent {
         this.frameCount++;
         const checkOcclusion = this.frameCount % 6 === 0;
 
+        const isMobile = window.matchMedia("(max-width: 1190px)").matches;
+
         for (const tag of this.tagsPositions) {
             if (!tag.element) continue;
 
-            this._screenScratch.copy(tag.position);
+            const worldPos = isMobile ? (tag.mobilePosition ?? tag.position) : tag.position;
+            this._screenScratch.copy(worldPos);
             this._screenScratch.project(this.camera);
 
             if (checkOcclusion) {
@@ -1163,7 +1174,7 @@ class CModel extends BaseComponent {
 
                 // Cast only against cheap proxy boxes — not the full scene
                 const intersects  = this.raycaster.intersectObjects(this.occluderMeshes, false);
-                const tagDistance = tag.position.distanceTo(this.camera.position);
+                const tagDistance = worldPos.distanceTo(this.camera.position);
 
                 if (intersects.length === 0) {
                     tag.element.classList.toggle("is-visible", tagDistance <= 59);
