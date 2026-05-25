@@ -37,13 +37,18 @@ function getFullYearsSince(dateNumber: Date) {
 ---
 
 <style lang="scss">
+  @use '../../styles/mixins.scss' as *;
 
   .c-featured-data {
 
     position: relative;
-    padding-block: 6px 123px;
+    padding-block: 6px 80px;
     background-color: var(--color-white);
     z-index: 1;
+
+    @include lg {
+      padding-block: 6px 123px;
+    }
 
     &__item {
       display: flex;
@@ -51,8 +56,13 @@ function getFullYearsSince(dateNumber: Date) {
       align-items: center;
       gap: 8px;
       padding-block: 32px 26px;
+      margin-bottom: 10px;
       border-radius: 30px;
       background-color: var(--color-blue-light);
+
+      @include lg {
+        margin-bottom: 0;
+      }
     }
   }
 

@@ -17,11 +17,17 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true, hasContactBut
 ---
 
 <style lang="scss">
+  @use '../../styles/mixins.scss' as *;
+  
   .c-heading {
     position: relative;
-    padding-block: 70px 60px;
+    padding-block: 70px 30px;
     background-color: var(--color-white);
     z-index: 2;
+
+    @include lg {
+      padding-block: 70px 60px;
+    }
 
     &.--has-contact-btn {
       padding-block: 150px 60px;

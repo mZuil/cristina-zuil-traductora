@@ -55,7 +55,7 @@ export const designTokens = {
       'display-1': {
         sm: {
           fontFamily: 'primary',
-          fontSize: 'clamp(40px, 10cvw, 50px)',
+          fontSize: 'clamp(30px, 20cqw, 40px)',
           fontWeight: 700,
           lineHeight: 1.05,
           letterSpacing: '0.03em',

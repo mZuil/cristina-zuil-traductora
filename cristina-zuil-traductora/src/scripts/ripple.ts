@@ -12,6 +12,12 @@ export function initRipple(): void {
 
   const mm = gsap.matchMedia();
 
+  const isTouchDevice =
+    (typeof navigator !== 'undefined' && (navigator.maxTouchPoints ?? 0) > 0) ||
+    (typeof window !== 'undefined' &&
+      (window.matchMedia('(hover: none)').matches ||
+       window.matchMedia('(pointer: coarse)').matches));
+
   document.querySelectorAll<HTMLElement>('.a-button--ripple').forEach((button) => {
     // Skip buttons already initialized
     if ((button as any).__rippleInit) return;
@@ -19,6 +25,8 @@ export function initRipple(): void {
 
     const circle = button.querySelector<HTMLElement>('[data-ripple-circle]');
     if (!circle) return;
+
+    if (isTouchDevice) return;
 
     mm.add(
       '(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)',

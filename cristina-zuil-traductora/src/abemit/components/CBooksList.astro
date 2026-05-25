@@ -27,13 +27,25 @@ const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
     position: relative;
     background-color: var(--color-white);
     z-index: 1;
-    padding-block: 100px 60px;
+    padding-block: 70px 60px;
+
+    @include lg {
+      padding-block: 100px 60px;
+    }
 
     &__grid {
       display: grid;
-      grid-template-columns: repeat(4, calc(var(--width-col) * 3 + var(--grid-gutter) * 2));
+      grid-template-columns: repeat(1, calc(var(--width-col) * 4 + var(--grid-gutter) * 3));
       column-gap: var(--grid-gutter);
       row-gap: 30px;
+
+      @include md {
+        grid-template-columns: repeat(2, calc(var(--width-col) * 4 + var(--grid-gutter) * 3))
+      }
+
+      @include lg {
+        grid-template-columns: repeat(4, calc(var(--width-col) * 3 + var(--grid-gutter) * 2))
+      }
     }
 
     /* Book item */
@@ -45,9 +57,11 @@ const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
       transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    :global(.c-books-list__book-container:hover .c-books-list__book-cover) {
-      transform: rotateY(-23deg);
-      z-index: 3;
+    @media (hover: hover) and (pointer: fine) {
+      :global(.c-books-list__book-container:hover .c-books-list__book-cover) {
+        transform: rotateY(-23deg);
+        z-index: 3;
+      }
     }
 
     :global(.c-books-list__book-container.is-open .c-books-list__book-cover) {
@@ -208,7 +222,11 @@ const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
       width: 100%;
       display: flex;
       justify-content: center;
-      margin-top: 111px;
+      margin-top: 60px;
+
+      @include lg {
+        margin-top: 111px;
+      }
     }
 
     &__pages {
@@ -226,6 +244,7 @@ const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
       justify-content: center;
 
       background-color: transparent;
+      color: var(--color-blue-dark);
       border: none;
       cursor: pointer;
 
