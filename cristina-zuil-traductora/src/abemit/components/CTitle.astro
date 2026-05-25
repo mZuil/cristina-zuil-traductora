@@ -133,6 +133,10 @@ if (!title) {
             @include sm {
                 font-size: 20px;
             }
+
+            @include lg {
+                font-size: 40px;
+            }
         }
 
         // IMAGES
@@ -391,6 +395,9 @@ if (!title) {
          * the document flow. Scrolling up past a buffer threshold unfreezes it.
          */
         private setupScrollFreeze() {
+            // Desktop only — mobile/tablet keeps the title in normal flow.
+            if (!window.matchMedia("(min-width: 1190px)").matches) return;
+
             const el = this.nodeInDOM;
 
             // Determine vertical alignment based on element height vs viewport
@@ -695,8 +702,6 @@ if (!title) {
             this.poemComputeMaxStanzaWidth?.();
             this.poemUpdateImagePositions?.();
             this.poemTrigger?.refresh();
-
-            this.initTitleAnimation();
 
             ScrollTrigger.refresh();
         }
