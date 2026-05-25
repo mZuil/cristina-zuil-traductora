@@ -131,10 +131,10 @@ const CHICK_PROBE_Y      = 0.2;
 
 // ─── Tree sway constants ───────────────────────────────────────────────────────
 // How far into each clip we play before reversing (seconds)
-const TREE_IDLE_REACH  = 2.0;   // idle: reach 1 s then reverse
-const TREE_HOVER_REACH = 2.5;   // hover: reach 1.3 s then reverse (more exaggerated)
+const TREE_IDLE_REACH  = 0.7;   // idle: reach 1 s then reverse
+const TREE_HOVER_REACH = 2.0;   // hover: reach 1.3 s then reverse (more exaggerated)
 const TREE_IDLE_SPEED  = 0.5;   // playback speed multiplier for idle
-const TREE_HOVER_SPEED = 0.8;   // playback speed multiplier for hover
+const TREE_HOVER_SPEED = 0.5;   // playback speed multiplier for hover
 
 // ─── Snap-point definitions ───────────────────────────────────────────────────
 interface SnapPoint {
@@ -177,39 +177,41 @@ class TreeSwayController {
     private actionLeft:  THREE.AnimationAction;
     private actionRight: THREE.AnimationAction;
 
-    private phase:     number = 0;   // 0-3
-    private progress:  number = 0;   // 0 → reach, current position in phase
+    private phase:     number = 0;
+    private progress:  number = 0;
 
-    // Configurable at runtime (idle vs hover)
-    reach: number = TREE_IDLE_REACH;
-    speed: number = TREE_IDLE_SPEED;
+    // Active values — what the current phase is actually using
+    private reach: number = TREE_IDLE_REACH;
+    private speed: number = TREE_IDLE_SPEED;
+
+    // Pending values — applied only at the next phase boundary
+    private pendingReach: number = TREE_IDLE_REACH;
+    private pendingSpeed: number = TREE_IDLE_SPEED;
 
     constructor(actionLeft: THREE.AnimationAction, actionRight: THREE.AnimationAction) {
         this.actionLeft  = actionLeft;
         this.actionRight = actionRight;
 
-        // Both actions must be playing so the mixer evaluates them, but we
-        // override .time ourselves and set timeScale = 0 so the mixer doesn't
-        // advance them automatically.
         for (const a of [actionLeft, actionRight]) {
             a.setLoop(THREE.LoopRepeat, Infinity);
             a.clampWhenFinished = false;
             a.reset().play();
-            a.timeScale = 0;  // we drive time manually
+            a.timeScale = 0;
             a.time      = 0;
         }
     }
 
-    /** Called every frame. deltaTime is in seconds. */
     update(deltaTime: number): void {
         this.progress += this.speed * deltaTime;
 
         if (this.progress >= this.reach) {
-            // Overshoot — clamp and advance to next phase
             this.progress = this.reach;
             this.applyFrame();
             this.phase    = (this.phase + 1) % 4;
             this.progress = 0;
+            // Safe moment to apply pending reach/speed — progress just reset to 0
+            this.reach = this.pendingReach;
+            this.speed = this.pendingSpeed;
             return;
         }
 
@@ -217,26 +219,34 @@ class TreeSwayController {
     }
 
     private applyFrame(): void {
-        // Which clip is active in this phase?
-        // Phase 0 & 1 → Left clip;  Phase 2 & 3 → Right clip
-        const useLeft   = this.phase < 2;
-        const active    = useLeft ? this.actionLeft  : this.actionRight;
-        const inactive  = useLeft ? this.actionRight : this.actionLeft;
+        const useLeft  = this.phase < 2;
+        const active   = useLeft ? this.actionLeft  : this.actionRight;
+        const inactive = useLeft ? this.actionRight : this.actionLeft;
 
-        // Forward phases (0, 2): time goes 0 → reach
-        // Reverse phases (1, 3): time goes reach → 0
         const isForward = (this.phase % 2) === 0;
         active.time   = isForward ? this.progress : (this.reach - this.progress);
         inactive.time = 0;
 
-        // Weight: active = 1, inactive = 0
         active.setEffectiveWeight(1);
         inactive.setEffectiveWeight(0);
     }
 
     setHovered(hovered: boolean): void {
-        this.reach = hovered ? TREE_HOVER_REACH : TREE_IDLE_REACH;
-        this.speed = hovered ? TREE_HOVER_SPEED : TREE_IDLE_SPEED;
+        const newReach = hovered ? TREE_HOVER_REACH : TREE_IDLE_REACH;
+        const newSpeed = hovered ? TREE_HOVER_SPEED : TREE_IDLE_SPEED;
+
+        this.pendingReach = newReach;
+        this.pendingSpeed = newSpeed;
+
+        // Forward phases (0, 2) use time = progress, so reach doesn't affect
+        // the current frame at all — safe to apply immediately.
+        // Reverse phases (1, 3) use time = reach - progress, so ANY change
+        // to reach shifts the playhead — must wait for the phase boundary.
+        const isForwardPhase = (this.phase % 2) === 0;
+        if (isForwardPhase && newReach > this.reach) {
+            this.reach = newReach;
+            this.speed = newSpeed;
+        }
     }
 
     dispose(): void {
