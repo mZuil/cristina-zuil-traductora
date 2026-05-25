@@ -122,12 +122,19 @@ const SNAP_COOLDOWN_MS = 900;
 const CAM_NEUTRAL      = new THREE.Vector3(70.4336, 13.7303, 0.0658);
 
 // ─── Chick constants ───────────────────────────────────────────────────────────
-const CHICK_SPEED        = 1.2;   // slower — more chick-like
+const CHICK_SPEED        = 1.2;
 const CHICK_ARRIVE_DIST  = 0.4;
 const CHICK_EAT_DURATION = 1400;
-const CHICK_TURN_SPEED   = 3.5;   // also slower — chickens pivot lazily
-const CHICK_LOOKAHEAD    = 2.2;   // cast this far ahead for wall detection
-const CHICK_PROBE_Y      = 0.2;   // low Y lift — catches low fences too
+const CHICK_TURN_SPEED   = 3.5;
+const CHICK_LOOKAHEAD    = 2.2;
+const CHICK_PROBE_Y      = 0.2;
+
+// ─── Tree sway constants ───────────────────────────────────────────────────────
+// How far into each clip we play before reversing (seconds)
+const TREE_IDLE_REACH  = 2.0;   // idle: reach 1 s then reverse
+const TREE_HOVER_REACH = 2.5;   // hover: reach 1.3 s then reverse (more exaggerated)
+const TREE_IDLE_SPEED  = 0.5;   // playback speed multiplier for idle
+const TREE_HOVER_SPEED = 0.8;   // playback speed multiplier for hover
 
 // ─── Snap-point definitions ───────────────────────────────────────────────────
 interface SnapPoint {
@@ -148,10 +155,94 @@ const SNAP_POINTS: SnapPoint[] = [
 
 interface HoverAnimConfig {
     name: string;
-    mode: "loop-with-pause" | "speed-up" | "play-once" | "toggle-with-idle";
+    mode: "loop-with-pause" | "speed-up" | "play-once" | "toggle-with-idle" | "tree-sway";
     pauseMs?: number;
     speedScale?: number;
     idleName?: string;
+}
+
+// ─── Tree sway controller ─────────────────────────────────────────────────────
+//
+// Drives a ping-pong animation between two clips (Left / Right) entirely from
+// tick().  No THREE mixer "finished" events are needed — we manually set
+// action.time each frame so we have full control over reach-point and reversal.
+//
+// Phase cycle (repeats forever):
+//   0  forward Left   0 → reach
+//   1  reverse Left   reach → 0
+//   2  forward Right  0 → reach
+//   3  reverse Right  reach → 0
+
+class TreeSwayController {
+    private actionLeft:  THREE.AnimationAction;
+    private actionRight: THREE.AnimationAction;
+
+    private phase:     number = 0;   // 0-3
+    private progress:  number = 0;   // 0 → reach, current position in phase
+
+    // Configurable at runtime (idle vs hover)
+    reach: number = TREE_IDLE_REACH;
+    speed: number = TREE_IDLE_SPEED;
+
+    constructor(actionLeft: THREE.AnimationAction, actionRight: THREE.AnimationAction) {
+        this.actionLeft  = actionLeft;
+        this.actionRight = actionRight;
+
+        // Both actions must be playing so the mixer evaluates them, but we
+        // override .time ourselves and set timeScale = 0 so the mixer doesn't
+        // advance them automatically.
+        for (const a of [actionLeft, actionRight]) {
+            a.setLoop(THREE.LoopRepeat, Infinity);
+            a.clampWhenFinished = false;
+            a.reset().play();
+            a.timeScale = 0;  // we drive time manually
+            a.time      = 0;
+        }
+    }
+
+    /** Called every frame. deltaTime is in seconds. */
+    update(deltaTime: number): void {
+        this.progress += this.speed * deltaTime;
+
+        if (this.progress >= this.reach) {
+            // Overshoot — clamp and advance to next phase
+            this.progress = this.reach;
+            this.applyFrame();
+            this.phase    = (this.phase + 1) % 4;
+            this.progress = 0;
+            return;
+        }
+
+        this.applyFrame();
+    }
+
+    private applyFrame(): void {
+        // Which clip is active in this phase?
+        // Phase 0 & 1 → Left clip;  Phase 2 & 3 → Right clip
+        const useLeft   = this.phase < 2;
+        const active    = useLeft ? this.actionLeft  : this.actionRight;
+        const inactive  = useLeft ? this.actionRight : this.actionLeft;
+
+        // Forward phases (0, 2): time goes 0 → reach
+        // Reverse phases (1, 3): time goes reach → 0
+        const isForward = (this.phase % 2) === 0;
+        active.time   = isForward ? this.progress : (this.reach - this.progress);
+        inactive.time = 0;
+
+        // Weight: active = 1, inactive = 0
+        active.setEffectiveWeight(1);
+        inactive.setEffectiveWeight(0);
+    }
+
+    setHovered(hovered: boolean): void {
+        this.reach = hovered ? TREE_HOVER_REACH : TREE_IDLE_REACH;
+        this.speed = hovered ? TREE_HOVER_SPEED : TREE_IDLE_SPEED;
+    }
+
+    dispose(): void {
+        this.actionLeft.stop();
+        this.actionRight.stop();
+    }
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -199,7 +290,10 @@ class CModel extends BaseComponent {
 
     // ── Raycasting ────────────────────────────────────────────────────────
     private interactiveMeshes: THREE.Object3D[] = [];
-    private proxyMeshes: THREE.Mesh[] = [];
+    private proxyMeshes:       THREE.Mesh[]     = [];
+    // Occlusion casts only against this cheap list of proxy boxes (no full-scene traverse)
+    private occluderMeshes:    THREE.Mesh[]     = [];
+    private chickRaycaster:    THREE.Raycaster  = new THREE.Raycaster();
 
     // ── Hover animations ──────────────────────────────────────────────────
     private hoveredRoot: THREE.Object3D | null = null;
@@ -207,18 +301,31 @@ class CModel extends BaseComponent {
     private hoverLoopTimeout: ReturnType<typeof setTimeout> | null = null;
     private tagHoverCleanup: Array<() => void> = [];
 
+    // ── Tree sway controllers ─────────────────────────────────────────────
+    private treeControllers: Map<any /* root */, TreeSwayController> = new Map();
+
+    // ── Cris state ─────────────────────────────────────────────
+    private crisWaveFinished: boolean = false;
+
     // ── Chick state ───────────────────────────────────────────────────────
-    private chickAnimal:       THREE.Object3D | null = null;
-    private chickClickRoot:  THREE.Object3D | null = null;  // for click detection
+    private chickAnimal:     THREE.Object3D | null = null;
+    private chickClickRoot:  THREE.Object3D | null = null;
     private chickIsEating:   boolean = false;
     private chickEatUntil:   number = 0;
     private chickTarget:     THREE.Vector3 = new THREE.Vector3();
-    private chickPauseUntil: number = 0;     // performance.now() timestamp
+    private chickPauseUntil: number = 0;
     private chickEatTimeout: ReturnType<typeof setTimeout> | null = null;
-    private farmMeshes: THREE.Object3D[] = [];  // add this to class fields at the top
+    private farmMeshes:      THREE.Object3D[] = [];
     private farmFrontMeshes: THREE.Object3D[] = [];
-    private chickDir: THREE.Vector3 = new THREE.Vector3(1, 0, 0); // XZ heading, Y unused
-    private farmBox: THREE.Box3 | null = null;
+    private chickDir:        THREE.Vector3 = new THREE.Vector3(1, 0, 0);
+    private farmBox:         THREE.Box3 | null = null;
+
+    // Reusable scratch objects — zero per-frame allocations
+    private _screenScratch:   THREE.Vector3 = new THREE.Vector3();
+    private _ndcScratch:      THREE.Vector2 = new THREE.Vector2();
+    private _chickOrigin:     THREE.Vector3 = new THREE.Vector3();
+    private _chickDirVec:     THREE.Vector3 = new THREE.Vector3();
+    private _worldPosScratch: THREE.Vector3 = new THREE.Vector3();
 
     constructor(nodeInDOM: HTMLElement) {
         super(nodeInDOM);
@@ -256,14 +363,40 @@ class CModel extends BaseComponent {
 
         if (this.hoveredRoot) {
             const prevConfig = this.getHoverConfig(this.hoveredRoot);
-            if (prevConfig) this.stopHoverAnimation(prevConfig);
+            if (prevConfig) {
+                if (prevConfig.mode === "tree-sway") {
+                    // Find which tree controller owns this root and un-hover it
+                    const ctrl = this.treeControllers.get(this.hoveredRoot)
+                               ?? this.treeControllers.get(this.hoveredRoot?.parent);
+                    ctrl?.setHovered(false);
+                } else {
+                    this.stopHoverAnimation(prevConfig);
+                }
+            }
             this.hoveredRoot = null;
         }
 
         if (newRoot) {
+            // Block hover on cris until the wave animation completes
+            if (!this.crisWaveFinished) {
+                const cfg = this.getHoverConfig(newRoot);
+                if (cfg?.name === "crisDance") return;
+            }
             this.hoveredRoot = newRoot;
             const nextConfig = this.getHoverConfig(newRoot);
-            if (nextConfig) this.playHoverAnimation(nextConfig);
+            if (nextConfig) {
+                if (nextConfig.mode === "tree-sway") {
+                    // Walk up to find the root that owns a controller
+                    let cur: any = newRoot;
+                    while (cur) {
+                        const ctrl = this.treeControllers.get(cur);
+                        if (ctrl) { ctrl.setHovered(true); break; }
+                        cur = cur.parent;
+                    }
+                } else {
+                    this.playHoverAnimation(nextConfig);
+                }
+            }
         }
     }
 
@@ -286,9 +419,9 @@ class CModel extends BaseComponent {
             powerPreference: "high-performance",
         });
         this.renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
-        this.renderer.outputColorSpace   = THREE.SRGBColorSpace;
-        this.renderer.toneMapping        = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 0.9;
+        this.renderer.outputColorSpace    = THREE.SRGBColorSpace;
+        this.renderer.toneMapping         = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure  = 0.9;
 
         /* SCENE */
         this.scene = new THREE.Scene();
@@ -354,7 +487,7 @@ class CModel extends BaseComponent {
 
         const getAction = (name: string) => this.animations.find(a => a.name === name)?.action;
 
-        /* IDLE ANIMATIONS */
+        /* IDLE ANIMATIONS — cris */
         const crisWave = getAction("crisWave");
         const crisIdle = getAction("crisIdle");
 
@@ -367,20 +500,17 @@ class CModel extends BaseComponent {
                 if (e.action !== crisWave) return;
                 this.mixer!.removeEventListener("finished", onWaveDone);
                 crisIdle.reset().play();
+                this.crisWaveFinished = true;
             };
             this.mixer.addEventListener("finished", onWaveDone);
         } else {
             crisIdle?.play();
+            this.crisWaveFinished = true;
         }
+
         getAction("awkningBookShop")?.play();
         getAction("awkningKiosk")?.play();
-        getAction("chickWalking")?.play();   // start walking immediately
-        getAction("bigTreeLeft")?.play();
-        getAction("rightTreeLeft")?.play();
-        getAction("leftTreeLeft")?.play();
-        // getAction("bigTreeRight")?.play();
-        // getAction("rightTreeRight")?.play();
-        // getAction("leftTreeRight")?.play();
+        getAction("chickWalking")?.play();
 
         /* RAYCASTER */
         this.raycaster  = new THREE.Raycaster();
@@ -401,7 +531,7 @@ class CModel extends BaseComponent {
         const farmBounds       = children.find((c: any) => c.name === "Farm_Bounds");
         const chickAnimal      = children.find((c: any) => c.name === "chick");
 
-        //For deleting visually the front part of the farm
+        // Front faces to hide on chick snap
         const frontNames = new Set(["Cylinder008", "Cylinder008_1", "Cylinder008_2", "Cylinder008_3"]);
         farm?.traverse((obj: any) => {
             if (obj instanceof THREE.Mesh && frontNames.has(obj.name)) {
@@ -413,9 +543,6 @@ class CModel extends BaseComponent {
             farmBounds.traverse((obj: any) => {
                 if (obj instanceof THREE.Mesh) this.farmMeshes.push(obj);
             });
-        }
-
-        if (farmBounds) {
             this.farmBox = new THREE.Box3().setFromObject(farmBounds);
         }
 
@@ -434,9 +561,29 @@ class CModel extends BaseComponent {
         reg(tree3,            writingsUrl);
         reg(newsLink,         articlesUrl);
         regC(contactButton);
-        // NOTE: chick is NOT added to clickableRoots — we handle it separately
 
-        /* HOVER ANIMATION MAP */
+        /* TREE SWAY CONTROLLERS
+         *
+         * Each controller gets the Left and Right actions for its tree.
+         * It sets timeScale=0 on both and drives .time manually every tick.
+         * We also register a "tree-sway" hover config so setHoveredRoot knows
+         * to call setHovered() on the right controller.
+         */
+        const makeSway = (root: any, leftName: string, rightName: string) => {
+            if (!root) return;
+            const left  = getAction(leftName);
+            const right = getAction(rightName);
+            if (!left || !right) return;
+            const ctrl = new TreeSwayController(left, right);
+            this.treeControllers.set(root, ctrl);
+            this.hoverAnimationMap.set(root, { name: leftName, mode: "tree-sway" });
+        };
+
+        makeSway(tree1, "bigTreeLeft",   "bigTreeRight");
+        makeSway(tree2, "rightTreeLeft", "rightTreeRight");
+        makeSway(tree3, "leftTreeLeft",  "leftTreeRight");
+
+        /* HOVER ANIMATION MAP — non-tree objects */
         if (contactButton)    this.hoverAnimationMap.set(contactButton,    { name: "mailbox",         mode: "loop-with-pause", pauseMs: 1000 });
         if (aboutMeLink)      this.hoverAnimationMap.set(aboutMeLink,      { name: "crisDance",       mode: "toggle-with-idle", idleName: "crisIdle" });
         if (newsLink)         this.hoverAnimationMap.set(newsLink,         { name: "awkningKiosk",    mode: "speed-up", speedScale: 6        });
@@ -444,12 +591,12 @@ class CModel extends BaseComponent {
 
         /* TAG HOVER -> SAME HOVER AS 3D OBJECTS */
         const tagRootMap = new Map<string, any>([
-            ["--about-me", aboutMeLink],
+            ["--about-me",     aboutMeLink],
             ["--translations", translationsLink],
-            ["--writings", tree1],
-            ["--articles", newsLink],
-            ["--contact", contactButton],
-            ["--chick", chickAnimal],
+            ["--writings",     tree1],
+            ["--articles",     newsLink],
+            ["--contact",      contactButton],
+            ["--chick",        chickAnimal],
         ]);
 
         this.tagHoverCleanup.forEach(fn => fn());
@@ -464,18 +611,28 @@ class CModel extends BaseComponent {
 
             el.addEventListener("mouseenter", onEnter);
             el.addEventListener("mouseleave", onLeave);
-            el.addEventListener("focusin", onEnter);
-            el.addEventListener("focusout", onLeave);
+            el.addEventListener("focusin",    onEnter);
+            el.addEventListener("focusout",   onLeave);
 
             this.tagHoverCleanup.push(() => {
                 el.removeEventListener("mouseenter", onEnter);
                 el.removeEventListener("mouseleave", onLeave);
-                el.removeEventListener("focusin", onEnter);
-                el.removeEventListener("focusout", onLeave);
+                el.removeEventListener("focusin",    onEnter);
+                el.removeEventListener("focusout",   onLeave);
             });
         }
 
-        /* BUILD INTERACTIVE MESHES */
+        /* BUILD INTERACTIVE MESHES + OCCLUDERS
+         *
+         * Tag occlusion fix: the occluderMeshes list only contains proxy boxes for
+         * objects with real visual bulk that can sit between the camera and a tag.
+         * We do NOT add occluders for translationsLink, newsLink, or farm because
+         * their bounding boxes were incorrectly hiding tags that should be visible.
+         *
+         * The heavyRoots proxies (cris, trees, mailbox) are the only true occluders
+         * in this scene — everything else is either flat or far enough from the tag
+         * positions that occlusion via a loose bounding-box proxy gives false negatives.
+         */
         const heavyRoots       = new Set([aboutMeLink, tree1, tree2, tree3, contactButton]);
         const interactiveRoots = [...this.clickableRoots.keys(), ...this.contactRoots];
 
@@ -484,28 +641,26 @@ class CModel extends BaseComponent {
 
             if (heavyRoots.has(root)) {
                 const proxy = this.buildProxy(root);
-                if (this.clickableRoots.has(root)) {
-                    this.clickableRoots.set(proxy, this.clickableRoots.get(root)!);
-                }
-                if (this.contactRoots.has(root)) {
-                    this.contactRoots.add(proxy);
-                }
-                if (this.hoverAnimationMap.has(root)) {
-                    this.hoverAnimationMap.set(proxy, this.hoverAnimationMap.get(root)!);
-                }
+                if (this.clickableRoots.has(root)) this.clickableRoots.set(proxy, this.clickableRoots.get(root)!);
+                if (this.contactRoots.has(root))   this.contactRoots.add(proxy);
+                if (this.hoverAnimationMap.has(root)) this.hoverAnimationMap.set(proxy, this.hoverAnimationMap.get(root)!);
+                // Also map tree proxies → their sway controller
+                if (this.treeControllers.has(root)) this.treeControllers.set(proxy, this.treeControllers.get(root)!);
                 this.interactiveMeshes.push(proxy);
+                // buildProxy already pushed into occluderMeshes
             } else {
                 root.traverse((obj: any) => {
                     if (obj instanceof THREE.Mesh) this.interactiveMeshes.push(obj);
                 });
+                // No occluder proxy for lightweight roots — their loose bounding
+                // boxes caused false tag-occlusion in the previous version
             }
         });
 
-        // ── NEW: register chick meshes for raycasting separately ───────────
+        // Register chick meshes
         if (chickAnimal) {
-            this.chickAnimal      = chickAnimal;
+            this.chickAnimal    = chickAnimal;
             this.chickClickRoot = chickAnimal;
-            // Seed an initial walk target so the chick moves from frame 1
             this.pickNewChickTarget();
 
             chickAnimal.traverse((obj: any) => {
@@ -530,7 +685,7 @@ class CModel extends BaseComponent {
         this.nodeInDOM.dispatchEvent(new CustomEvent("model:ready", { bubbles: true }));
     };
 
-    // ─── Proxy builder ─────────────────────────────────────────────────────
+    // ─── Proxy builder (interactive + occluder) ────────────────────────────
     private buildProxy(root: THREE.Object3D): THREE.Mesh {
         const box    = new THREE.Box3().setFromObject(root);
         const size   = new THREE.Vector3();
@@ -545,6 +700,7 @@ class CModel extends BaseComponent {
         proxy.position.copy(center);
         this.scene.add(proxy);
         this.proxyMeshes.push(proxy);
+        this.occluderMeshes.push(proxy);
         return proxy;
     }
 
@@ -560,6 +716,7 @@ class CModel extends BaseComponent {
     }
 
     private playHoverAnimation(config: HoverAnimConfig): void {
+        // tree-sway is handled directly in setHoveredRoot, never reaches here
         const action = this.animations.find(a => a.name === config.name)?.action;
         if (!action) return;
 
@@ -600,7 +757,6 @@ class CModel extends BaseComponent {
                 : null;
 
             idleAction?.stop();
-
             action.setLoop(THREE.LoopRepeat, Infinity);
             action.clampWhenFinished = false;
             action.reset().play();
@@ -624,7 +780,6 @@ class CModel extends BaseComponent {
 
         if (config.mode === "toggle-with-idle") {
             action.stop();
-
             const idleAction = config.idleName
                 ? this.animations.find(a => a.name === config.idleName)?.action
                 : null;
@@ -637,7 +792,6 @@ class CModel extends BaseComponent {
 
     // ─── Chick helpers ─────────────────────────────────────────────────────
 
-    /** Returns true if the given intersected object belongs to the chick root. */
     private isChick(obj: THREE.Object3D): boolean {
         if (!this.chickClickRoot) return false;
         let cur: any = obj;
@@ -648,38 +802,31 @@ class CModel extends BaseComponent {
         return false;
     }
 
-    /** Pick a random XZ position inside FARM bounds as the next walk target. */
     private pickNewChickTarget(): void {
-        const worldPos = new THREE.Vector3();
-        if (this.chickAnimal) this.chickAnimal.getWorldPosition(worldPos);
+        if (this.chickAnimal) this.chickAnimal.getWorldPosition(this._worldPosScratch);
 
         const WALK_DIST_MIN = 3;
         const WALK_DIST_MAX = 8;
 
-        // Pick a direction within ±60° of the current heading
-        // so the chick curves and meanders rather than spinning to face a random point
         const currentAngle = Math.atan2(this.chickDir.x, this.chickDir.z);
-        const spread       = (Math.PI / 3);   // ±60°
+        const spread       = (Math.PI / 3);
         const angle        = currentAngle + (Math.random() - 0.5) * 2 * spread;
         const dist         = WALK_DIST_MIN + Math.random() * (WALK_DIST_MAX - WALK_DIST_MIN);
 
-        let x = worldPos.x + Math.sin(angle) * dist;
-        let z = worldPos.z + Math.cos(angle) * dist;
+        let x = this._worldPosScratch.x + Math.sin(angle) * dist;
+        let z = this._worldPosScratch.z + Math.cos(angle) * dist;
 
-        // Clamp to farmBox so the picked target is always valid
         if (this.farmBox) {
-            const pad = 1.0; // stay this far from the wall edge
+            const pad = 1.0;
             x = Math.max(this.farmBox.min.x + pad, Math.min(this.farmBox.max.x - pad, x));
             z = Math.max(this.farmBox.min.z + pad, Math.min(this.farmBox.max.z - pad, z));
         }
 
-        this.chickTarget.set(x, worldPos.y, z);
+        this.chickTarget.set(x, this._worldPosScratch.y, z);
     }
 
-    /** Called when the user clicks the chick. Triggers eating for CHICK_EAT_DURATION ms. */
     private triggerChickEating(): void {
         if (this.chickIsEating) {
-            // Re-click while eating: just reset the timer
             this.chickEatUntil = performance.now() + CHICK_EAT_DURATION;
             return;
         }
@@ -697,33 +844,24 @@ class CModel extends BaseComponent {
             eating.reset().play();
         }
 
-        // Schedule return to walking
         if (this.chickEatTimeout !== null) clearTimeout(this.chickEatTimeout);
         this.chickEatTimeout = setTimeout(() => {
-            this.chickEatTimeout  = null;
-            this.chickIsEating    = false;
-
+            this.chickEatTimeout = null;
+            this.chickIsEating   = false;
             eating?.stop();
             walking?.reset().play();
-            this.pickNewChickTarget();   // head somewhere new after eating
+            this.pickNewChickTarget();
         }, CHICK_EAT_DURATION);
     }
 
-    /**
-     * Called every frame from tick().
-     * Moves the chick toward its current target and rotates it to face the direction of travel.
-     * Does nothing while the chick is eating or paused.
-     */
     private updateChick(deltaTime: number): void {
         if (!this.chickAnimal || this.chickIsEating) return;
 
         const now = performance.now();
         if (now < this.chickPauseUntil) return;
 
-        // ── World-space position ──────────────────────────────────────────────
-        // chickAnimal.position is LOCAL — we need world space for the raycaster
-        const worldPos = new THREE.Vector3();
-        this.chickAnimal.getWorldPosition(worldPos);
+        this.chickAnimal.getWorldPosition(this._worldPosScratch);
+        const worldPos = this._worldPosScratch;
 
         const target = this.chickTarget;
         const dx     = target.x - worldPos.x;
@@ -735,38 +873,31 @@ class CModel extends BaseComponent {
             return;
         }
 
-        // Desired direction toward target
         const desiredDirX = dx / dist;
         const desiredDirZ = dz / dist;
 
-        // ── Smooth steering — blend current heading toward desired ────────────
-        // This makes direction changes gradual rather than instant
-        const STEER_SPEED = 2.5; // how fast the heading turns (rad/s equivalent)
+        const STEER_SPEED = 2.5;
         const steerAmount = Math.min(STEER_SPEED * deltaTime, 1.0);
         this.chickDir.x += (desiredDirX - this.chickDir.x) * steerAmount;
         this.chickDir.z += (desiredDirZ - this.chickDir.z) * steerAmount;
 
-        // Re-normalise to prevent drift
         const dirLen = Math.sqrt(this.chickDir.x ** 2 + this.chickDir.z ** 2);
         if (dirLen < 0.001) return;
         const dirX = this.chickDir.x / dirLen;
         const dirZ = this.chickDir.z / dirLen;
 
-        // ── Wall collision in world space ─────────────────────────────────────
+        // Dedicated chickRaycaster — never disturbs the main one
         let wallAhead = false;
         if (this.farmMeshes.length > 0) {
-            const savedFar = this.raycaster.far;
-            const origin   = new THREE.Vector3(worldPos.x, worldPos.y + CHICK_PROBE_Y, worldPos.z);
-            const dir      = new THREE.Vector3(dirX, 0, dirZ);
-            this.raycaster.set(origin, dir);
-            this.raycaster.far = CHICK_LOOKAHEAD;
+            this._chickOrigin.set(worldPos.x, worldPos.y + CHICK_PROBE_Y, worldPos.z);
+            this._chickDirVec.set(dirX, 0, dirZ);
+            this.chickRaycaster.set(this._chickOrigin, this._chickDirVec);
+            this.chickRaycaster.far = CHICK_LOOKAHEAD;
 
-            wallAhead = this.raycaster.intersectObjects(this.farmMeshes, true).length > 0;
-            this.raycaster.far = savedFar;
+            wallAhead = this.chickRaycaster.intersectObjects(this.farmMeshes, true).length > 0;
         }
 
         if (wallAhead) {
-            // Rotate heading ~180° ± random spread and pick a new target inward
             const randomAngle = (Math.random() - 0.5) * Math.PI * 0.75;
             const cos = Math.cos(Math.PI + randomAngle);
             const sin = Math.sin(Math.PI + randomAngle);
@@ -782,28 +913,19 @@ class CModel extends BaseComponent {
             return;
         }
 
-        // ── Move (in local space — undo parent transform for position delta) ──
-        // Since we move in world XZ, and the chick's parent may have a transform,
-        // we apply the delta directly to local position using the world direction.
-        // For a flat scene (no parent rotation/scale), world delta == local delta.
         const step = CHICK_SPEED * deltaTime;
         this.chickAnimal.position.x += dirX * step;
         this.chickAnimal.position.z += dirZ * step;
 
-        // ── Natural rotation — face the actual movement direction smoothly ─────
-        // We rotate the model to face dirX/dirZ, but only nudge it each frame
-        // so it visually "leans into" the turn rather than spinning in place
         const targetAngle  = Math.atan2(dirX, dirZ);
         const currentAngle = this.chickAnimal.rotation.y;
 
-        // Shortest-path delta
         let angleDelta = targetAngle - currentAngle;
         while (angleDelta >  Math.PI) angleDelta -= Math.PI * 2;
         while (angleDelta < -Math.PI) angleDelta += Math.PI * 2;
 
-        // Ease toward target angle — faster when the turn is sharp
-        const turnEase = Math.min(Math.abs(angleDelta) / (Math.PI * 0.5), 1.0); // 0–1
-        const effectiveTurnSpeed = CHICK_TURN_SPEED * (0.4 + 0.6 * turnEase);   // slower on small corrections
+        const turnEase           = Math.min(Math.abs(angleDelta) / (Math.PI * 0.5), 1.0);
+        const effectiveTurnSpeed = CHICK_TURN_SPEED * (0.4 + 0.6 * turnEase);
         this.chickAnimal.rotation.y += Math.sign(angleDelta) * Math.min(Math.abs(angleDelta), effectiveTurnSpeed * deltaTime);
     }
 
@@ -880,15 +1002,13 @@ class CModel extends BaseComponent {
             return false;
         };
 
-        // ── NEW: chick-aware raycast result ───────────────────────────────
         const raycast = (): { isContact: boolean; isChick: boolean; href?: string; root?: any } | null => {
             if (!this.raycaster || !this.camera || !this.model) return null;
             this.raycaster.setFromCamera(this.pointerNdc, this.camera);
             const hits = this.raycaster.intersectObjects(this.interactiveMeshes, false);
             if (!hits.length) return null;
-            const obj  = hits[0].object;
+            const obj = hits[0].object;
 
-            // Check chick first (highest priority for click)
             if (this.isChick(obj)) return { isContact: false, isChick: true, root: obj };
 
             const href = findClickable(obj);
@@ -901,9 +1021,7 @@ class CModel extends BaseComponent {
             updateNdc(e);
             const hit = raycast();
             this.canvas!.style.cursor = hit ? "pointer" : "default";
-
-            const newRoot = hit?.root ?? null;
-            this.setHoveredRoot(newRoot);
+            this.setHoveredRoot(hit?.root ?? null);
         };
 
         this.onPointerDown = (e: PointerEvent) => {
@@ -919,12 +1037,7 @@ class CModel extends BaseComponent {
             const hit = raycast();
             if (!hit) return;
 
-            // ── NEW: chick click ───────────────────────────────────────────
-            if (hit.isChick) {
-                this.triggerChickEating();
-                return;
-            }
-
+            if (hit.isChick) { this.triggerChickEating(); return; }
             if (hit.isContact) { window.openContactModal?.(); return; }
             import("astro:transitions/client")
                 .then(({ navigate }) => navigate(hit.href!))
@@ -953,31 +1066,32 @@ class CModel extends BaseComponent {
         if (!this.renderer || !this.scene || !this.camera) return;
 
         const nowMs     = performance.now();
-        const deltaTime = this.previousTime == null ? 0 : (nowMs - this.previousTime) / 1000;
+        const deltaTime = this.previousTime == null ? 0 : Math.min((nowMs - this.previousTime) / 1000, 0.1);
         this.previousTime = nowMs;
 
-        // 1. Lerp camera
-        this.currentCamPos.lerp(this.targetCamPos, LERP_FACTOR);
-        this.currentLookAt.lerp(this.targetLookAt, LERP_FACTOR);
+        // Frame-rate-independent lerp
+        const lerpT = 1 - Math.pow(1 - LERP_FACTOR, deltaTime * 60);
+        this.currentCamPos.lerp(this.targetCamPos, lerpT);
+        this.currentLookAt.lerp(this.targetLookAt, lerpT);
         this.camera.position.copy(this.currentCamPos);
         this.camera.lookAt(this.currentLookAt);
 
-        // 2. Update tag screen positions
+        // Tag screen positions + occlusion
         this.frameCount++;
         const checkOcclusion = this.frameCount % 6 === 0;
 
         for (const tag of this.tagsPositions) {
             if (!tag.element) continue;
 
-            const screenPos = tag.position.clone();
-            screenPos.project(this.camera);
+            this._screenScratch.copy(tag.position);
+            this._screenScratch.project(this.camera);
 
             if (checkOcclusion) {
-                this.raycaster.setFromCamera(
-                    new THREE.Vector2(screenPos.x, screenPos.y),
-                    this.camera,
-                );
-                const intersects  = this.raycaster.intersectObjects(this.scene.children, true);
+                this._ndcScratch.set(this._screenScratch.x, this._screenScratch.y);
+                this.raycaster.setFromCamera(this._ndcScratch, this.camera);
+
+                // Cast only against cheap proxy boxes — not the full scene
+                const intersects  = this.raycaster.intersectObjects(this.occluderMeshes, false);
                 const tagDistance = tag.position.distanceTo(this.camera.position);
 
                 if (intersects.length === 0) {
@@ -987,18 +1101,23 @@ class CModel extends BaseComponent {
                 }
             }
 
-            const tx = screenPos.x *  this.sizes.width  * 0.5;
-            const ty = screenPos.y * -this.sizes.height  * 0.5;
+            const tx = this._screenScratch.x *  this.sizes.width  * 0.5;
+            const ty = this._screenScratch.y * -this.sizes.height  * 0.5;
             tag.element.style.transform = `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px))`;
         }
 
-        // 3. Update animations
+        // Mixer (handles cris, awknings, chick, mailbox)
         this.mixer?.update(deltaTime);
 
-        // 4. ── NEW: update chick movement ─────────────────────────────────
+        // Tree sway — driven manually outside the mixer
+        for (const ctrl of this.treeControllers.values()) {
+            ctrl.update(deltaTime);
+        }
+
+        // Chick movement
         this.updateChick(deltaTime);
 
-        // 5. Render
+        // Render
         this.renderer.render(this.scene, this.camera);
         this.frameId = requestAnimationFrame(this.tick);
     };
@@ -1018,7 +1137,6 @@ class CModel extends BaseComponent {
             this.hoverLoopTimeout = null;
         }
 
-        // ── NEW: clear chick timeout ───────────────────────────────────────
         if (this.chickEatTimeout !== null) {
             clearTimeout(this.chickEatTimeout);
             this.chickEatTimeout = null;
@@ -1048,8 +1166,11 @@ class CModel extends BaseComponent {
         this.hoverAnimationMap.clear();
         this.hoveredRoot = null;
 
-        // ── NEW: clear chick refs ──────────────────────────────────────────
-        this.chickAnimal      = null;
+        // Dispose tree sway controllers
+        for (const ctrl of this.treeControllers.values()) ctrl.dispose();
+        this.treeControllers.clear();
+
+        this.chickAnimal    = null;
         this.chickClickRoot = null;
 
         this.proxyMeshes.forEach(p => {
@@ -1059,6 +1180,7 @@ class CModel extends BaseComponent {
         });
         this.proxyMeshes       = [];
         this.interactiveMeshes = [];
+        this.occluderMeshes    = [];
 
         if (this.scene) {
             this.scene.traverse((obj: any) => {
