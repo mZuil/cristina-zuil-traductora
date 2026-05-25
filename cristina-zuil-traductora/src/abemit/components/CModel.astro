@@ -343,7 +343,6 @@ class CModel extends BaseComponent {
             { name: "mailbox",         action: this.mixer.clipAction(gltf.animations[4])  },
             { name: "bigTreeLeft",     action: this.mixer.clipAction(gltf.animations[5])  },
             { name: "bigTreeRight",    action: this.mixer.clipAction(gltf.animations[6])  },
-            { name: "bigTreeLeft2",    action: this.mixer.clipAction(gltf.animations[7])  },
             { name: "rightTreeLeft",   action: this.mixer.clipAction(gltf.animations[8])  },
             { name: "rightTreeRight",  action: this.mixer.clipAction(gltf.animations[9])  },
             { name: "leftTreeLeft",    action: this.mixer.clipAction(gltf.animations[10]) },
@@ -376,6 +375,12 @@ class CModel extends BaseComponent {
         getAction("awkningBookShop")?.play();
         getAction("awkningKiosk")?.play();
         getAction("chickWalking")?.play();   // start walking immediately
+        getAction("bigTreeLeft")?.play();
+        getAction("rightTreeLeft")?.play();
+        getAction("leftTreeLeft")?.play();
+        // getAction("bigTreeRight")?.play();
+        // getAction("rightTreeRight")?.play();
+        // getAction("leftTreeRight")?.play();
 
         /* RAYCASTER */
         this.raycaster  = new THREE.Raycaster();
@@ -471,7 +476,7 @@ class CModel extends BaseComponent {
         }
 
         /* BUILD INTERACTIVE MESHES */
-        const heavyRoots       = new Set([aboutMeLink, contactButton]);
+        const heavyRoots       = new Set([aboutMeLink, tree1, tree2, tree3, contactButton]);
         const interactiveRoots = [...this.clickableRoots.keys(), ...this.contactRoots];
 
         interactiveRoots.forEach(root => {

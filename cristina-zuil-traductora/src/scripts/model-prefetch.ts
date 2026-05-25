@@ -20,7 +20,7 @@ function makeLoader(): GLTFLoader {
 export function prefetchPlatformModel(): Promise<GLTF> {
   if (!platformModelPromise) {
     const loader = makeLoader();
-    platformModelPromise = loader.loadAsync("/models/platform4.glb");
+    platformModelPromise = loader.loadAsync("/models/platform.glb");
   }
   return platformModelPromise;
 }
