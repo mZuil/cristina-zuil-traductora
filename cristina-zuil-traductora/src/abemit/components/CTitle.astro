@@ -250,7 +250,7 @@ if (!title) {
         </div>
         <CustomContainer>
             <CustomColumn lg="12" md="8" sm="4" class="c-title__column">
-                <AText as="h1" size="display-1" html={titleText} class={`c-title__text ${hasPoem ? "--poem" : ""}`} aria-label={title} />
+                <AText as="h1" size="display-1" html={titleText} class={`c-title__text ${hasPoem ? "--poem" : ""} | js-title-text`} aria-label={title} />
             </CustomColumn>
         </CustomContainer>
     </div>
@@ -302,6 +302,7 @@ if (!title) {
 <script>
     import { gsap } from "gsap";
     import { ScrollTrigger } from "gsap/ScrollTrigger";
+    import { SplitText } from "gsap/SplitText";
     import { BaseComponent } from "../../helpers/base/BaseComponent";
 
     gsap.registerPlugin(ScrollTrigger);
@@ -309,6 +310,22 @@ if (!title) {
     class CTitle extends BaseComponent {
         private freezeScrollY = 0;
         private poemTrigger?: ScrollTrigger;
+        private poemTimeline?: gsap.core.Timeline;
+
+        private scrollFreezePlaceholder?: HTMLDivElement;
+        private scrollFreezeOnScroll?: () => void;
+
+        private poemUpdateImagePositions?: () => void;
+        private poemComputeMaxStanzaWidth?: () => void;
+        private poemOnResize?: () => void;
+
+        private titleSplit?: SplitText;
+        private titleTl?: gsap.core.Timeline;
+
+        private backgroundSvg?: SVGSVGElement;
+        private backgroundOriginalGroupCount?: number;
+
+        private onResize?: () => void;
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
@@ -320,9 +337,14 @@ if (!title) {
                 gsap.set(poemTrigger, { autoAlpha: 1 });
             }
 
+            this.initTitleAnimation();
+
             this.setupBackground();
             this.setupScrollFreeze();
             this.setupPoemScroll();
+
+            this.onResize = () => this.resize();
+            window.addEventListener("resize", this.onResize, { passive: true });
         }
 
         /**
@@ -345,6 +367,7 @@ if (!title) {
             // Create a placeholder element to maintain document height when element is frozen
             const placeholder = document.createElement("div");
             el.after(placeholder);
+            this.scrollFreezePlaceholder = placeholder;
 
             // Buffer zone (in pixels) user must scroll up before unfreezing
             const UNFREEZE_BUFFER = 100;
@@ -396,6 +419,7 @@ if (!title) {
 
             // Attach scroll listener with passive flag for better performance
             window.addEventListener("scroll", onScroll, { passive: true });
+            this.scrollFreezeOnScroll = onScroll;
         }
 
         private setupPoemScroll() {
@@ -412,6 +436,8 @@ if (!title) {
             gsap.set(images, { autoAlpha: 0, translateY: '70vh' });
 
             const scrollTimeline = gsap.timeline({ paused: true });
+            this.poemTimeline?.kill();
+            this.poemTimeline = scrollTimeline;
 
             //Make the mouse disappear when scrolling
             scrollTimeline.to(this.nodeInDOM.querySelector<HTMLElement>(".js-scroll-arrow"), { autoAlpha: 0, duration: 0.5 });
@@ -504,6 +530,9 @@ if (!title) {
                 });
             };
 
+            this.poemComputeMaxStanzaWidth = computeMaxStanzaWidth;
+            this.poemUpdateImagePositions = updateImagePositions;
+
             this.poemTrigger = ScrollTrigger.create({
                 trigger: poem,
                 animation: scrollTimeline,
@@ -524,12 +553,25 @@ if (!title) {
             // Ensure correct positioning on first paint
             updateImagePositions();
 
-            window.addEventListener("resize", updateImagePositions, { passive: true });
+            this.poemOnResize = () => updateImagePositions();
+            window.addEventListener("resize", this.poemOnResize, { passive: true });
         }
 
         private setupBackground() {
             const svg = this.nodeInDOM.querySelector<SVGSVGElement>('.js-background-svg');
             if (!svg) return;
+
+            this.backgroundSvg = svg;
+            if (typeof this.backgroundOriginalGroupCount !== "number") {
+                this.backgroundOriginalGroupCount = svg.querySelectorAll<SVGGElement>(":scope > g").length;
+            }
+
+            if (typeof this.backgroundOriginalGroupCount === "number") {
+                const groupsNow = Array.from(svg.querySelectorAll<SVGGElement>(":scope > g"));
+                if (groupsNow.length > this.backgroundOriginalGroupCount) {
+                    groupsNow.slice(this.backgroundOriginalGroupCount).forEach((g) => g.remove());
+                }
+            }
 
             const blueContainer = this.nodeInDOM.querySelector<HTMLElement>('.js-blue-container');
             const poem = this.nodeInDOM.querySelector<HTMLElement>('.js-poem');
@@ -554,10 +596,113 @@ if (!title) {
             svg.setAttribute('viewBox', `0 0 1440 ${repetitions * TILE_HEIGHT}`);
             svg.removeAttribute('height');
         }
+
+        private initTitleAnimation(){
+            const titleElem = this.nodeInDOM.querySelector<HTMLElement>(".js-title-text");
+            if (!titleElem) return;
+
+            this.titleTl?.kill();
+            this.titleTl = undefined;
+
+            if (this.titleSplit) {
+                this.titleSplit.revert();
+                this.titleSplit = undefined;
+            }
+
+            this.titleSplit = new SplitText(titleElem, { type: "chars" });
+
+            this.titleTl = gsap.timeline();
+            this.titleTl.fromTo(
+                this.titleSplit.chars,
+                { autoAlpha: 0, yPercent: 30 },
+                {
+                    autoAlpha: 1,
+                    yPercent: 0,
+                    duration: 1.2,
+                    delay: 0.3,
+                    ease: "power3.out",
+                    stagger: 0.02,
+                    overwrite: "auto",
+                },
+            );
+        }
+
+        resize(): void {
+            this.setupBackground();
+
+            const el = this.nodeInDOM;
+            el.classList.remove("--aling-bottom");
+            el.classList.remove("--aling-top");
+            if (el.getBoundingClientRect().height > window.innerHeight) {
+                el.classList.add("--aling-bottom");
+            } else {
+                el.classList.add("--aling-top");
+            }
+
+            if (el.classList.contains("is-frozen") && this.scrollFreezePlaceholder) {
+                this.scrollFreezePlaceholder.style.height = `${el.offsetHeight}px`;
+            }
+
+            this.poemComputeMaxStanzaWidth?.();
+            this.poemUpdateImagePositions?.();
+            this.poemTrigger?.refresh();
+
+            this.initTitleAnimation();
+
+            ScrollTrigger.refresh();
+        }
+
+        destroy(): void {
+            this.poemTrigger?.kill(true);
+            this.poemTrigger = undefined;
+
+            this.poemTimeline?.kill();
+            this.poemTimeline = undefined;
+
+            this.titleTl?.kill();
+            this.titleTl = undefined;
+
+            if (this.titleSplit) {
+                this.titleSplit.revert();
+                this.titleSplit = undefined;
+            }
+
+            if (this.scrollFreezeOnScroll) {
+                window.removeEventListener("scroll", this.scrollFreezeOnScroll);
+                this.scrollFreezeOnScroll = undefined;
+            }
+
+            if (this.poemOnResize) {
+                window.removeEventListener("resize", this.poemOnResize);
+                this.poemOnResize = undefined;
+            }
+
+            if (this.onResize) {
+                window.removeEventListener("resize", this.onResize);
+                this.onResize = undefined;
+            }
+
+            if (this.scrollFreezePlaceholder) {
+                this.scrollFreezePlaceholder.remove();
+                this.scrollFreezePlaceholder = undefined;
+            }
+
+            if (this.backgroundSvg && typeof this.backgroundOriginalGroupCount === "number") {
+                const groupsNow = Array.from(this.backgroundSvg.querySelectorAll<SVGGElement>(":scope > g"));
+                if (groupsNow.length > this.backgroundOriginalGroupCount) {
+                    groupsNow.slice(this.backgroundOriginalGroupCount).forEach((g) => g.remove());
+                }
+            }
+
+            this.poemUpdateImagePositions = undefined;
+            this.poemComputeMaxStanzaWidth = undefined;
+        }
     }
 
     function initTitle() {
-        BaseComponent.mountAll(".js-c-title", CTitle);
+        const instances = BaseComponent.mountAll(".js-c-title", CTitle);
+        const cleanup = () => instances.forEach((i) => (i as any).destroy?.());
+        document.addEventListener("astro:before-swap", cleanup, { once: true });
     }
     
     document.addEventListener("astro:page-load", initTitle);

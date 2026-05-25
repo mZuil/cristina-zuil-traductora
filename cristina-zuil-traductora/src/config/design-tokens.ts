@@ -55,16 +55,18 @@ export const designTokens = {
       'display-1': {
         sm: {
           fontFamily: 'primary',
-          fontSize: 'clamp(40px, 10vw, 50px)',
+          fontSize: 'clamp(40px, 10cvw, 50px)',
           fontWeight: 700,
           lineHeight: 1.05,
           letterSpacing: '0.03em',
           textTransform: 'uppercase',
         },
         md: {
-          fontSize: 'clamp(90px, 10.28vw, 180px)',
+          fontSize: 'clamp(60px, 8cqw, 120px)',
         },
-        lg: {},
+        lg: {
+          fontSize: 'clamp(90px, 10cqw, 170px)',
+        },
       },
 
       'headline-1': {
