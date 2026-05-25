@@ -38,24 +38,40 @@ const getStrapiImageFromLogo = (
 
         position: relative;
         overflow: hidden;
-        padding-bottom: 50px;
+        padding-bottom: 30px;
         background-color: var(--color-white);
         z-index: 1;
 
-        &__container {
-            margin-block: 50px 0px;
+        @include lg {
+            padding-bottom: 50px;
         }
 
-        //Fade edges
+        &__container {
+            margin-block: 30px 0;
+
+            @include lg {
+                margin-block: 50px 0;
+            }
+        }
+
+        //Fade edges — narrower on mobile so the visible track isn't all gradient
         &::before,
         &::after {
             content: "";
             position: absolute;
             top: 0;
             height: 100%;
-            width: 150px;
+            width: 50px;
             z-index: 2;
             pointer-events: none;
+
+            @include md {
+                width: 90px;
+            }
+
+            @include lg {
+                width: 150px;
+            }
         }
 
         &::before {
@@ -71,28 +87,47 @@ const getStrapiImageFromLogo = (
         &__track {
             display: flex;
             flex-direction: row;
-            gap: 52px;
+            gap: 28px;
             width: max-content;
             will-change: transform;
+
+            @include md {
+                gap: 40px;
+            }
+
+            @include lg {
+                gap: 52px;
+            }
         }
 
         &__item {
             display: inline-flex;
             flex-direction: column;
             align-items: center;
-            width: 156px;
+            width: 96px;
             text-decoration: none;
             flex-shrink: 0;
 
-            &:hover,
-            &:focus-visible {
-                :global(.c-logos__item-image)::after {
-                    opacity: 0;
-                }
+            @include md {
+                width: 128px;
+            }
 
-                #{$self}__item-text {
-                    opacity: 1;
-                    visibility: visible;
+            @include lg {
+                width: 156px;
+            }
+
+            // Hover-only enhancement: don't break touch devices
+            @media (hover: hover) and (pointer: fine) {
+                &:hover,
+                &:focus-visible {
+                    :global(.c-logos__item-image)::after {
+                        opacity: 0;
+                    }
+
+                    #{$self}__item-text {
+                        opacity: 1;
+                        visibility: visible;
+                    }
                 }
             }
         }
@@ -122,19 +157,39 @@ const getStrapiImageFromLogo = (
             text-align: center;
             text-decoration: none;
             font-weight: 700;
-            padding-top: 20px;
+            padding-top: 12px;
             color: var(--color-blue-dark);
             transition: opacity 200ms ease-in-out;
+
+            @include lg {
+                padding-top: 20px;
+            }
         }
     }
 
     .c-logos__item :global(img),
     .c-logos__item :global(.a-image) {
         width: auto;
-        height: 150px;
-        max-width: 156px;
+        height: 92px;
+        max-width: 96px;
         object-fit: contain;
         display: block;
+    }
+
+    @include md {
+        .c-logos__item :global(img),
+        .c-logos__item :global(.a-image) {
+            height: 124px;
+            max-width: 128px;
+        }
+    }
+
+    @include lg {
+        .c-logos__item :global(img),
+        .c-logos__item :global(.a-image) {
+            height: 150px;
+            max-width: 156px;
+        }
     }
 </style>
 

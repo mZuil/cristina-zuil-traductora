@@ -85,9 +85,17 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
 
     &__grid {
       display: grid;
-      grid-template-columns: repeat(3,  calc(var(--width-col) * 4 + var(--grid-gutter) * 3));
+      grid-template-columns: repeat(1,  calc(var(--width-col) * 4 + var(--grid-gutter) * 3));
       column-gap: var(--grid-gutter);
       row-gap: 57px;
+
+      @include md {
+        grid-template-columns: repeat(2,  calc(var(--width-col) * 4 + var(--grid-gutter) * 3));
+      }
+
+      @include lg {
+        grid-template-columns: repeat(3,  calc(var(--width-col) * 4 + var(--grid-gutter) * 3));
+      }
     }
 
     &__card {
