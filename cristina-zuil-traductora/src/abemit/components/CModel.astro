@@ -1000,10 +1000,12 @@ class CModel extends BaseComponent {
             const delta = isVertical ? e.deltaY : e.deltaX;
             if (Math.abs(delta) < SCROLL_THRESHOLD) return;
 
+            const isMobile = window.matchMedia("(max-width: 1190px)").matches;
+
             // Horizontal scroll direction is correct as-is.
-            // Vertical scroll should be inverted ("the other way around").
+            // Vertical scroll is inverted only on mobile.
             const dir = isVertical
-                ? (delta > 0 ? -1 : 1)
+                ? (isMobile ? (delta > 0 ? -1 : 1) : (delta > 0 ? 1 : -1))
                 : (delta > 0 ? 1 : -1);
 
             this.advanceSnap(dir);
