@@ -462,7 +462,7 @@ const getStrapiImageFromLogo = (
                     const t = this.tl.time();
                     const idx = Math.min(
                         items.length - 1,
-                        Math.floor(t + 1e-6),
+                        Math.floor(t + 0.5),
                     );
                     setActive(idx);
                 },
@@ -471,7 +471,7 @@ const getStrapiImageFromLogo = (
                     const t = this.tl.time();
                     const idx = Math.min(
                         items.length - 1,
-                        Math.floor(t + 1e-6),
+                        Math.floor(t + 0.5),
                     );
                     setActive(idx);
                 },
