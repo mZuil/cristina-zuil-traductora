@@ -154,7 +154,7 @@ if (!title) {
             height: clamp(175px, 68.75vw, 300px);
             top: calc(50% - clamp(87.5px, 34.375vw, 150px));
             left: calc(50% - clamp(70px, 27.5vw, 120px));
-            opacity: 0.35;
+            opacity: 0.5;
 
             @include lg {
                 // Desktop: positioned by JS at either side of the stanza
@@ -524,6 +524,11 @@ if (!title) {
                 const imageSpan = enterDur + holdDur + exitDur;
                 const stagger   = totalDuration / images.length;
 
+                // On mobile/tablet the CSS sets opacity to 0.5; cap the
+                // visible-phase autoAlpha so GSAP doesn't override it to 1.
+                const isDesktop = window.matchMedia("(min-width: 1190px)").matches;
+                const visibleAlpha = isDesktop ? 1 : 0.5;
+
                 images.forEach((img, i) => {
                     const startTime = i * stagger;
 
@@ -537,7 +542,7 @@ if (!title) {
                     scrollTimeline.fromTo(
                         img,
                         { autoAlpha: 0 },
-                        { autoAlpha: 1, duration: enterDur, ease: "power2.out" },
+                        { autoAlpha: visibleAlpha, duration: enterDur, ease: "power2.out" },
                         startTime
                     );
 
