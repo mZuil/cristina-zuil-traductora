@@ -205,6 +205,13 @@ const getStrapiImageFromLogo = (
         @include lg {
             min-height: 100lvh;
             padding-block: 0;
+            // The horizontal-scroll track (and its ScrollTrigger pin-spacer)
+            // is wider than the viewport. Clip the overflow at the section
+            // so it never bleeds white space to the right of the page.
+            // `clip` (not `hidden`) avoids creating a scroll container and
+            // does not establish a new containing block, so ScrollTrigger's
+            // position:fixed pin keeps working normally.
+            overflow-x: clip;
 
             &__current-publisher {
                 position: absolute;
