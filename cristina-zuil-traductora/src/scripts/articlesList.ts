@@ -138,6 +138,8 @@ export function initArticlesList(root: HTMLElement): void {
     const cards = Array.from(root.querySelectorAll<HTMLElement>('.js-article-card'));
     if (!cards.length) return;
 
+    const isMobileTrigger = window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches;
+
     gsap.set(cards, { autoAlpha: 0, y: 24 });
 
     const tween = gsap.to(cards, {
@@ -149,7 +151,7 @@ export function initArticlesList(root: HTMLElement): void {
       clearProps: 'transform',
       scrollTrigger: {
         trigger: grid,
-        start: 'top 90%',
+        start: isMobileTrigger ? 'top 80%' : 'top 90%',
         once: true,
       },
     });

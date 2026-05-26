@@ -272,9 +272,11 @@ const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
         }
       }
 
-      &:hover {
-        &::after {
-          background-color: color-mix(in srgb, var(--color-blue-default) 20%, transparent);
+      @media (hover: hover) and (pointer: fine) {
+        &:hover {
+          &::after {
+            background-color: color-mix(in srgb, var(--color-blue-default) 20%, transparent);
+          }
         }
       }
     }
@@ -301,5 +303,7 @@ const { locale = "es", bookCategory, pageSize = 12 } = Astro.props;
       initBooksList(root);
     });
   };
+  
+  initAll();
   document.addEventListener("astro:page-load", initAll);
 </script>

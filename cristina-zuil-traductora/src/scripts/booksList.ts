@@ -165,7 +165,11 @@ export function initBooksList(root: HTMLElement): void {
   const waitForCoversReady = async (cards: HTMLElement[], nonce: number): Promise<void> => {
     const imgs = cards
       .map((c) => c.querySelector<HTMLImageElement>('.c-books-list__book-cover img'))
-      .filter((img): img is HTMLImageElement => Boolean(img));
+      .filter((img): img is HTMLImageElement => Boolean(img))
+      // Skip lazy-loaded images: they only load when in viewport, so awaiting
+      // them on mobile would stall the reveal until the user scrolls to the
+      // bottom of the grid.
+      .filter((img) => img.loading !== 'lazy');
 
     const awaitImg = (img: HTMLImageElement): Promise<void> => new Promise((resolve) => {
       const done = async () => {
@@ -198,6 +202,8 @@ export function initBooksList(root: HTMLElement): void {
     const cards = Array.from(root.querySelectorAll<HTMLElement>('.c-books-list__book-container'));
     if (!cards.length) return;
 
+    const isMobileTrigger = window.matchMedia('(hover: none), (pointer: coarse), (max-width: 768px)').matches;
+
     const nonce = nextRenderNonce();
 
     // Keep hidden until content + cover are ready
@@ -217,8 +223,9 @@ export function initBooksList(root: HTMLElement): void {
       clearProps: 'transform',
       scrollTrigger: {
         trigger: grid,
-        start: 'top 90%',
+        start: isMobileTrigger ? 'top 80%' : 'top 90%',
         once: true,
+        // markers: true
       },
     });
 
@@ -500,9 +507,13 @@ export function initBooksList(root: HTMLElement): void {
   }
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────
-  const seed    = root.querySelector<HTMLScriptElement>('.c-books-list__initial');
-  const { total } = JSON.parse(seed?.textContent || '{"total":0}') as { total: number };
-  renderPagination(total);
+  // Only on first init for a given root. On view transitions the DOM is replaced
+  // so the new root has no dataset and isFirstInit becomes true again.
+  if (isFirstInit) {
+    const seed    = root.querySelector<HTMLScriptElement>('.c-books-list__initial');
+    const { total } = JSON.parse(seed?.textContent || '{"total":0}') as { total: number };
+    renderPagination(total);
 
-  void fetchAndRender();
+    void fetchAndRender();
+  }
 }

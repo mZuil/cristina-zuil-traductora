@@ -107,16 +107,18 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
       background-color: var(--color-white);
       border: none;
 
-      &:hover #{$self}__image-wrap::after {
-        background-color: var(--color-blue-light);
-      }
+      @media (hover: hover) and (pointer: fine) {
+        &:hover #{$self}__image-wrap::after {
+          background-color: var(--color-blue-light);
+        }
 
-      &:hover #{$self}__image {
-        transform: rotate(-2deg) scale(1.03);
-      }
+        &:hover #{$self}__image {
+          transform: rotate(-2deg) scale(1.03);
+        }
 
-      &:hover #{$self}__article-title {
-        color: var(--color-blue-default);
+        &:hover #{$self}__article-title {
+          color: var(--color-blue-default);
+        }
       }
     }
 
