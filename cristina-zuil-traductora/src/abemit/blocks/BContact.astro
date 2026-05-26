@@ -517,6 +517,7 @@ const instagramLink = contactInfo.instagramLink;
 
             document.dispatchEvent(new CustomEvent("articles-modal:open"));
             setLenisEnabled(false);
+            document.body.classList.add("is-overflow-hidden");
 
             const rightInnerDialog = getComputedStyle(document.documentElement)
                 .getPropertyValue("--dialog-inner-right");
@@ -664,6 +665,7 @@ const instagramLink = contactInfo.instagramLink;
                         gsap.set(dialogBackdrop, { autoAlpha: 0, clearProps: "all" });
                     }
                     setLenisEnabled(true);
+                    document.body.classList.remove("is-overflow-hidden");
                     document.dispatchEvent(new CustomEvent("articles-modal:close"));
                 },
             });
@@ -697,6 +699,7 @@ const instagramLink = contactInfo.instagramLink;
                 gsap.set(dialogBackdrop, { autoAlpha: 0, clearProps: "all" });
             }
             setLenisEnabled(true);
+            document.body.classList.remove("is-overflow-hidden");
             document.dispatchEvent(new CustomEvent("articles-modal:close"));
             stopRenderLoop();
         });

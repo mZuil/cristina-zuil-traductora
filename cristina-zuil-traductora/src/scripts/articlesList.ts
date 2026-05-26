@@ -44,6 +44,7 @@ export function initArticlesList(root: HTMLElement): void {
     dialog.showModal();
 
     document.dispatchEvent(new CustomEvent('articles-modal:open'));
+    document.body.classList.add('is-overflow-hidden');
 
     if (dialogModel) {
       gsap.killTweensOf(dialogModel);
@@ -86,6 +87,7 @@ export function initArticlesList(root: HTMLElement): void {
         gsap.set(dialogPanel, { clearProps: 'all' });
         if (dialogModel) gsap.set(dialogModel, { autoAlpha: 0, clearProps: 'all' });
         setLenisEnabled(true);
+        document.body.classList.remove('is-overflow-hidden');
 
         document.dispatchEvent(new CustomEvent('articles-modal:close'));
       },
@@ -192,6 +194,7 @@ export function initArticlesList(root: HTMLElement): void {
     dialog.addEventListener('close', () => {
       if (dialogModel) gsap.set(dialogModel, { autoAlpha: 0, clearProps: 'all' });
       setLenisEnabled(true);
+      document.body.classList.remove('is-overflow-hidden');
 
       document.dispatchEvent(new CustomEvent('articles-modal:close'));
     });
