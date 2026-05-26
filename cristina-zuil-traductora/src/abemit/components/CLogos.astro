@@ -49,8 +49,22 @@ const getStrapiImageFromLogo = (
         &__container {
             margin-block: 30px 0;
 
+            // Mobile / tablet: act as a swipeable horizontal slider
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+
+            &::-webkit-scrollbar {
+                display: none;
+            }
+
             @include lg {
                 margin-block: 50px 0;
+                // Desktop: marquee, no native scroll
+                overflow: hidden;
+                scroll-snap-type: none;
             }
         }
 
@@ -107,6 +121,7 @@ const getStrapiImageFromLogo = (
             width: 96px;
             text-decoration: none;
             flex-shrink: 0;
+            scroll-snap-align: center;
 
             @include md {
                 width: 128px;
@@ -114,6 +129,7 @@ const getStrapiImageFromLogo = (
 
             @include lg {
                 width: 156px;
+                scroll-snap-align: none;
             }
 
             // Hover-only enhancement: don't break touch devices
@@ -128,6 +144,18 @@ const getStrapiImageFromLogo = (
                         opacity: 1;
                         visibility: visible;
                     }
+                }
+            }
+
+            // Touch / no-hover devices: always show name and remove blue overlay
+            @media (hover: none) {
+                :global(.c-logos__item-image)::after {
+                    opacity: 0;
+                }
+
+                #{$self}__item-text {
+                    opacity: 1;
+                    visibility: visible;
                 }
             }
         }
@@ -145,15 +173,21 @@ const getStrapiImageFromLogo = (
                 background-color: var(--color-blue-dark);
                 mix-blend-mode: color;
                 pointer-events: none;
-                opacity: 1;
+                opacity: 0;
                 transition: opacity 200ms ease-in-out;
+            }
+
+            @include lg {
+                &::after {
+                    opacity: 1;
+                }
             }
         }
 
         &__item-text {
             width: 100%;
-            opacity: 0;
-            visibility: hidden;
+            opacity: 1;
+            visibility: visible;
             text-align: center;
             text-decoration: none;
             font-weight: 700;
@@ -163,6 +197,8 @@ const getStrapiImageFromLogo = (
 
             @include lg {
                 padding-top: 20px;
+                opacity: 0;
+                visibility: hidden;
             }
         }
     }
@@ -246,6 +282,12 @@ const getStrapiImageFromLogo = (
             super(nodeInDOM);
             this.track = this.nodeInDOM.querySelector<HTMLElement>(".js-logos-track")!;
             this.trackWrapper = this.nodeInDOM.querySelector<HTMLElement>(".js-track-wrapper")!;
+
+            // On mobile/tablet the track becomes a native horizontal slider
+            // (CSS handles overflow + scroll-snap). Skip the auto-scroll marquee.
+            const isDesktop = window.matchMedia("(min-width: 1190px)").matches;
+            if (!isDesktop) return;
+
             this.setupLogosSlider();
         }
 
