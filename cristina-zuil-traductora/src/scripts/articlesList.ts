@@ -5,6 +5,8 @@ let gsapPluginsRegistered = false;
 function ensureGsapPlugins(): void {
   if (gsapPluginsRegistered) return;
   gsap.registerPlugin(ScrollTrigger);
+  // Prevent layout jumps when the mobile URL bar shows/hides
+  ScrollTrigger.config({ ignoreMobileResize: true });
   gsapPluginsRegistered = true;
 }
 
@@ -247,6 +249,14 @@ export function initArticlesList(root: HTMLElement): void {
       openDialog();
     });
 
-    window.addEventListener('resize', () => scheduleScrollTriggerRefresh());
+    // Only refresh on width changes. On mobile, showing/hiding the URL bar
+    // fires a resize event where only the height changes; refreshing then
+    // causes visible layout jumps.
+    let lastWidth = window.innerWidth;
+    window.addEventListener('resize', () => {
+      if (window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
+      scheduleScrollTriggerRefresh();
+    });
   }
 }
