@@ -186,8 +186,7 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
       top: 50%;
       left: 50%;
       border-radius: 24px;
-      overflow: auto;
-      -webkit-overflow-scrolling: touch;
+      overflow: hidden;
 
       background-color: var(--color-white);
       z-index: 1;
@@ -202,6 +201,18 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
       @include lg {
         width: calc(var(--width-col) * 8 + var(--grid-gutter) * 7);
         max-width: none;
+        max-height: none;
+      }
+    }
+
+    &__dialog-scroll {
+      width: 100%;
+      max-height: inherit;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+
+      @include lg {
         max-height: none;
         overflow: hidden;
       }
@@ -325,18 +336,19 @@ const articles: ArticleViewModel[] = (Array.isArray(items) ? items : [])
       <AButton type="button" variant="primary" class="c-articles-list__dialog-close" data-dialog-close>
         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>
       </AButton>
-      <div class="c-articles-list__two-column-layout">
-        <div class="c-articles-list__dialog-media">
-          <img class="c-articles-list__dialog-image" data-dialog-image alt="" />
+      <div class="c-articles-list__dialog-scroll" data-lenis-prevent>
+        <div class="c-articles-list__two-column-layout">
+          <div class="c-articles-list__dialog-media">
+            <img class="c-articles-list__dialog-image" data-dialog-image alt="" />
+          </div>
+          <div class="c-articles-list__dialog-body">
+            <div class="c-articles-list__dialog-title" data-dialog-title></div>
+            <div class="c-articles-list__dialog-description" data-dialog-description></div>
+            <AButton as="a" href="#" target="_blank" size="menu-item" variant="primary" class="c-articles-list__dialog-link" data-dialog-link>
+              {uiT(locale, "readMore")}
+            </AButton>
+          </div>
         </div>
-        <div class="c-articles-list__dialog-body">
-          <div class="c-articles-list__dialog-title" data-dialog-title></div>
-          <div class="c-articles-list__dialog-description" data-dialog-description></div>
-          <AButton as="a" href="#" target="_blank" size="menu-item" variant="primary" class="c-articles-list__dialog-link" data-dialog-link>
-            {uiT(locale, "readMore")}
-          </AButton>
-        </div>
-      </div>
       </div>
     </div>
   </dialog>

@@ -88,13 +88,15 @@ export const designTokens = {
       'headline-2': {
         sm: {
           fontFamily: 'secondary',
-          fontSize: '28px',
+          fontSize: '22px',
           fontWeight: 700,
           lineHeight: 0.99,
           letterSpacing: '0',
         },
         md: {},
-        lg: {},
+        lg: {
+          fontSize: '28px',
+        },
       },
 
       'subheading-1': {
