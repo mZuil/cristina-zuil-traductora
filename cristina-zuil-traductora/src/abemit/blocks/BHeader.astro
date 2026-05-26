@@ -96,8 +96,10 @@ contactText = headerMenu.contactText;
 
             transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
 
-            &:hover {
-                background-color: var(--color-blue-lightest);
+            @media (hover: hover) and (pointer: fine) {
+                &:hover {
+                    background-color: var(--color-blue-lightest);
+                }
             }
 
             &.is-active {

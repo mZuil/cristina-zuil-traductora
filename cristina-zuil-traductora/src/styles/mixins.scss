@@ -7,20 +7,23 @@
   text-transform: var(--font-style-#{$name}-text-transform);
 }
 
+$breakpoint-md: 610px;
+$breakpoint-lg: 1190px;
+
 @mixin sm {
-  @media (min-width: 0px) {
+  @media (min-width: 0px) and (max-width: #{$breakpoint-md - 1px}) {
     @content;
   }
 }
 
 @mixin md {
-  @media (min-width: var(--breakpoint-md, 610px)) {
+  @media (min-width: $breakpoint-md) and (max-width: #{$breakpoint-lg - 1px}) {
     @content;
   }
 }
 
 @mixin lg {
-  @media (min-width: 1190px) {
+  @media (min-width: $breakpoint-lg) {
     @content;
   }
 }
