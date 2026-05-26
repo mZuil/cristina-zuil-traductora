@@ -45,6 +45,10 @@
 
 html, body {
   height: auto;
+  /* Prevent overscroll bounce on macOS/iOS (Safari) */
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
 }
 
 body {

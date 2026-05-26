@@ -477,7 +477,7 @@ if (!title) {
 
             //Set initial states
             gsap.set(stanzas, { autoAlpha: 0, scale: 0.8 });
-            gsap.set(images, { autoAlpha: 0, translateY: '70vh' });
+            gsap.set(images, { autoAlpha: 0, translateY: '70svh' });
 
             const scrollTimeline = gsap.timeline({ paused: true });
             this.poemTimeline?.kill();
@@ -521,8 +521,8 @@ if (!title) {
 
                     scrollTimeline.fromTo(
                         img,
-                        { translateY: '70vh' },
-                        { translateY: '-70vh', duration: imageSpan, ease: "none" },
+                        { translateY: '70svh' },
+                        { translateY: '-70svh', duration: imageSpan, ease: "none" },
                         startTime
                     );
 
