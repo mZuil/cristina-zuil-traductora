@@ -5,7 +5,6 @@ let gsapPluginsRegistered = false;
 function ensureGsapPlugins(): void {
   if (gsapPluginsRegistered) return;
   gsap.registerPlugin(ScrollTrigger);
-  // Prevent layout jumps when the mobile URL bar shows/hides
   ScrollTrigger.config({ ignoreMobileResize: true });
   gsapPluginsRegistered = true;
 }
