@@ -367,6 +367,7 @@ if (!title) {
         private backgroundOriginalGroupCount?: number;
 
         private onResize?: () => void;
+        private lastViewportWidth = 0;
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
@@ -384,7 +385,14 @@ if (!title) {
             this.setupScrollFreeze();
             this.setupPoemScroll();
 
-            this.onResize = () => this.resize();
+            this.lastViewportWidth = window.innerWidth;
+            this.onResize = () => {
+                // Ignore resizes caused only by the mobile URL bar showing/hiding
+                // (those change height but not width). Only react to real width changes.
+                if (window.innerWidth === this.lastViewportWidth) return;
+                this.lastViewportWidth = window.innerWidth;
+                this.resize();
+            };
             window.addEventListener("resize", this.onResize, { passive: true });
         }
 
@@ -609,7 +617,13 @@ if (!title) {
             // Ensure correct positioning on first paint
             updateImagePositions();
 
-            this.poemOnResize = () => updateImagePositions();
+            let poemLastWidth = window.innerWidth;
+            this.poemOnResize = () => {
+                // Ignore mobile URL-bar height-only resizes
+                if (window.innerWidth === poemLastWidth) return;
+                poemLastWidth = window.innerWidth;
+                updateImagePositions();
+            };
             window.addEventListener("resize", this.poemOnResize, { passive: true });
         }
 

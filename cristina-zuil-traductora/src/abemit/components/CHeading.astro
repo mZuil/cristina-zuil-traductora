@@ -30,7 +30,11 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true, hasContactBut
     }
 
     &.--has-contact-btn {
-      padding-block: 150px 60px;
+      padding-block: 80px 60px;
+
+      @include lg {
+        padding-block: 150px 60px;
+      }
     }
 
     &__heading {
@@ -69,8 +73,12 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true, hasContactBut
     }
     
     &__contact-button {
-      margin-top: 40px;
+      margin-top: 30px;
       margin-inline: auto;
+
+      @include lg {
+        margin-top: 40px;
+      }
     }
   }
 </style>
