@@ -72,15 +72,17 @@ export const designTokens = {
       'headline-1': {
         sm: {
           fontFamily: 'secondary',
-          fontSize: '34px',
+          fontSize: '30px',
           fontWeight: 700,
           lineHeight: 1.1,
           letterSpacing: '0',
         },
         md: {
+          fontSize: '34px',
+        },
+        lg: {
           fontSize: '40px',
         },
-        lg: {},
       },
 
       'headline-2': {

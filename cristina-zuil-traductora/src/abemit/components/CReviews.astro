@@ -70,10 +70,14 @@ const getStrapiImageFromLogo = (
             text-align: center;
             // Reserve space for up to 2 lines so single-line names don't
             // cause the logo below to jump around.
-            min-height: 2lh;
+            min-height: 3lh;
             display: flex;
             align-items: center;
             justify-content: center;
+
+            @include sm {
+                font-size: 24px;
+            }
         }
 
         &__publisher-logo {
@@ -321,6 +325,7 @@ const getStrapiImageFromLogo = (
         private publisherLogoTween: gsap.core.Tween | null = null;
         private mm?: ReturnType<typeof gsap.matchMedia>;
         private mobileIO?: IntersectionObserver;
+        private mobileOnResize?: () => void;
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
@@ -604,11 +609,34 @@ const getStrapiImageFromLogo = (
             this.activeIndex = -1;
             setActive(0);
 
+            // Track viewport size to ignore IO callbacks caused only by the
+            // mobile URL bar showing/hiding (height-only resizes). Without
+            // this, the reflow flips bestIdx between adjacent cards and the
+            // publisher name/logo flicker.
+            let lastWidth = window.innerWidth;
+            let lastHeight = window.innerHeight;
+            let suppressUntil = 0;
+
+            const onViewportResize = () => {
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                if (w === lastWidth && h !== lastHeight) {
+                    // Address-bar toggle: suppress IO updates for a short window
+                    suppressUntil = performance.now() + 400;
+                }
+                lastWidth = w;
+                lastHeight = h;
+            };
+            window.addEventListener("resize", onViewportResize, { passive: true });
+            this.mobileOnResize = onViewportResize;
+
             // Use an IntersectionObserver against the scroll container to pick
             // whichever card is most visible (>= 60% threshold).
             this.mobileIO?.disconnect();
             this.mobileIO = new IntersectionObserver(
                 (entries) => {
+                    if (performance.now() < suppressUntil) return;
+
                     let bestIdx = -1;
                     let bestRatio = 0;
                     entries.forEach((entry) => {
@@ -633,6 +661,10 @@ const getStrapiImageFromLogo = (
         private teardownMobile() {
             this.mobileIO?.disconnect();
             this.mobileIO = undefined;
+            if (this.mobileOnResize) {
+                window.removeEventListener("resize", this.mobileOnResize);
+                this.mobileOnResize = undefined;
+            }
         }
 
         destroy(): void {
