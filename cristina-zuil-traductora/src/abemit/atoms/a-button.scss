@@ -49,8 +49,10 @@
         transform: scale(0.955, 0.925);
       }
 
-      &:focus-visible .a-button__bg {
-        background-color: var(--color-blue-dark) !important;
+      @media (hover: hover) and (pointer: fine) {
+        &:focus-visible .a-button__bg {
+          background-color: var(--color-blue-dark) !important;
+        }
       }
 
       .a-button__bg-circle {
