@@ -10,7 +10,7 @@ export const i18nConfig = {
     en: 'English',
   },
   strapi: {
-    url: import.meta.env.STRAPI_URL || 'http://localhost:1337',
+    url: import.meta.env.PUBLIC_STRAPI_URL || 'http://localhost:1337',
   },
   homeSlug: '',
 };
