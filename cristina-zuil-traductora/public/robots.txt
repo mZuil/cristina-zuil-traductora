@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://cristina-zuil-traductora.es/sitemap-index.xml
