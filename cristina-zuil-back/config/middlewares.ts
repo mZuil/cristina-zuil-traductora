@@ -2,7 +2,16 @@ export default [
   'strapi::logger',
   'strapi::errors',
   'strapi::security',
-  'strapi::cors',
+  {
+    name: 'strapi::cors',
+    config: {
+      origin: [
+        'https://cristina-zuil-traductora.es',
+        'https://www.cristina-zuil-traductora.es',
+        'https://cce9a347.cristina-zuil-traductora.pages.dev',
+      ],
+    },
+  },
   'strapi::poweredBy',
   'strapi::query',
   'strapi::body',
