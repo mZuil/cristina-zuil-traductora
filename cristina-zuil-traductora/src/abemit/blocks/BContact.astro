@@ -197,6 +197,46 @@ const instagramLink = contactInfo.instagramLink;
             margin-bottom: -3px;
             color: var(--color-grey);
         }
+
+        &__toast {
+            @include use-font("small-text");
+
+            position: fixed;
+            left: 50%;
+            bottom: 32px;
+            z-index: 10;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 999px;
+            background-color: var(--color-blue-dark, #0d1b2a);
+            color: var(--color-white);
+            white-space: nowrap;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+            pointer-events: none;
+            opacity: 0;
+            transform: translate(-50%, 20px);
+            transition:
+                opacity 0.3s ease,
+                transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        &__toast.is-visible {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        &__toast svg {
+            flex: 0 0 auto;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            &__toast {
+                transition: opacity 0.2s ease;
+                transform: translate(-50%, 0);
+            }
+        }
     }
 </style>
 
@@ -242,6 +282,17 @@ const instagramLink = contactInfo.instagramLink;
                     </AButton>
                 </div>
             </div>
+        </div>
+        <div
+            class="b-contact__toast js-copy-toast"
+            role="status"
+            aria-live="polite"
+            data-text={uiT(Astro.currentLocale, "emailCopied")}
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 12.5l5 5L20 6.5"></path>
+            </svg>
+            <span class="b-contact__toast-text">{uiT(Astro.currentLocale, "emailCopied")}</span>
         </div>
     </dialog>
 </div>
@@ -876,6 +927,31 @@ const instagramLink = contactInfo.instagramLink;
                     goTo(STATES.idle);
                 });
 
+                const toast = nodeInDOM.querySelector<HTMLElement>(".js-copy-toast");
+                const toastTextEl = toast?.querySelector<HTMLElement>(".b-contact__toast-text");
+                const toastText = toast?.dataset.text ?? "";
+                let toastTimeout: number | null = null;
+
+                const showToast = (): void => {
+                    if (!toast || !toastTextEl) return;
+                    if (toastTimeout != null) {
+                        clearTimeout(toastTimeout);
+                        toastTimeout = null;
+                    }
+                    // Clear then re-set the text so screen readers re-announce
+                    // on rapid repeated clicks.
+                    toastTextEl.textContent = "";
+                    void toast.offsetWidth; // flush
+                    requestAnimationFrame(() => {
+                        toastTextEl.textContent = toastText;
+                        toast.classList.add("is-visible");
+                    });
+                    toastTimeout = window.setTimeout(() => {
+                        toastTimeout = null;
+                        toast.classList.remove("is-visible");
+                    }, 2200);
+                };
+
                 emailBtn.addEventListener("click", async () => {
                     const email = emailBtn.dataset.copyEmail ?? "";
                     if (!email) return;
@@ -893,6 +969,7 @@ const instagramLink = contactInfo.instagramLink;
                     }
 
                     goTo(STATES.copied, 0.35);
+                    showToast();
 
                     copiedTimeout = window.setTimeout(() => {
                         copiedTimeout = null;

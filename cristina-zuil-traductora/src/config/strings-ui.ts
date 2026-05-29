@@ -38,6 +38,7 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     contactEmail: 'Correo',
     linkedin: 'LinkedIn',
     instagram: 'Instagram',
+    emailCopied: '¡Correo copiado al portapapeles!',
 
     //URLs
     aboutMeUrl: '/sobre-mi',
@@ -81,6 +82,7 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     contactEmail: 'Email',
     linkedin: 'LinkedIn',
     instagram: 'Instagram',
+    emailCopied: 'Email copied to clipboard!',
     
     //URLs
     aboutMeUrl: '/about-me',
