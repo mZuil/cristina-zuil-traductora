@@ -37,16 +37,20 @@ const copyrightHtml = blocksToHtml(footer.copyrightTextBlock);
 
         :global(#{$selector}__text a) {
             color: var(--color-white);
-            text-decoration: none;
-            background-image: linear-gradient(currentColor, currentColor);
-            background-repeat: no-repeat;
-            background-position: 0 100%;
-            background-size: 0% 1px;
-            transition: background-size 0.3s ease;
+            text-decoration: underline;
 
-            &:hover,
-            &:focus-visible {
-                background-size: 100% 1px;
+            @include lg {
+                text-decoration: none;
+                background-image: linear-gradient(currentColor, currentColor);
+                background-repeat: no-repeat;
+                background-position: 0 100%;
+                background-size: 0% 1px;
+                transition: background-size 0.3s ease;
+
+                &:hover,
+                &:focus-visible {
+                    background-size: 100% 1px;
+                }
             }
         }
     }
