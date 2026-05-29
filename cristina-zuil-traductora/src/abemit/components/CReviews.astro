@@ -338,8 +338,6 @@ const getStrapiImageFromLogo = (
         private mobileIO?: IntersectionObserver;
         private mobileOnResize?: () => void;
 
-        private refreshTimeouts: number[] = [];
-
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
             this.entranceAnimation();
@@ -356,18 +354,6 @@ const getStrapiImageFromLogo = (
             this.mm.add("(max-width: 1189px)", () => {
                 this.initScrollCardsMobile();
                 return () => this.teardownMobile();
-            });
-
-            // On the deployed site, `astro:page-load` can fire before images
-            // above this section finish loading, so ScrollTrigger computes
-            // start positions against an under-tall page and the entrance/pin
-            // can fire too early. Force a few delayed refreshes so positions
-            // get recomputed once the final layout settles.
-            [100, 500, 1500].forEach((delay) => {
-                const id = window.setTimeout(() => {
-                    ScrollTrigger.refresh();
-                }, delay);
-                this.refreshTimeouts.push(id);
             });
         }
 
@@ -396,6 +382,7 @@ const getStrapiImageFromLogo = (
                     trigger: trigger,
                     start: "top 75%",
                     once: true,
+                    markers: true,
                 },
             });
 
@@ -693,9 +680,6 @@ const getStrapiImageFromLogo = (
         }
 
         destroy(): void {
-            this.refreshTimeouts.forEach((id) => clearTimeout(id));
-            this.refreshTimeouts = [];
-
             this.mm?.revert();
             this.mm = undefined;
 
