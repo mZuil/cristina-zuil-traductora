@@ -161,8 +161,12 @@ const { titleInDark, titleInBlue, subheading, hasSeparator = true, hasContactBut
     });
   };
 
-  document.addEventListener('articles-modal:open', disableSeparatorTriggers);
-  document.addEventListener('articles-modal:close', enableSeparatorTriggers);
+  const desktopMQ = window.matchMedia('(min-width: 1191px)');
+
+  if (desktopMQ.matches) {
+    document.addEventListener('articles-modal:open', disableSeparatorTriggers);
+    document.addEventListener('articles-modal:close', enableSeparatorTriggers);
+  }
 
   class CHeading extends BaseComponent {
     constructor(nodeInDOM: HTMLElement) {
