@@ -68,7 +68,7 @@ const getStrapiImageFromLogo = (
         &__publisher-name {
             text-wrap: balance;
             text-align: center;
-            // Reserve space for up to 2 lines so single-line names don't
+            // Reserve space for up to 3 lines so single-line names don't
             // cause the logo below to jump around.
             min-height: 3lh;
             display: flex;
@@ -86,7 +86,7 @@ const getStrapiImageFromLogo = (
 
         &__publisher-logo {
             position: relative;
-            margin-top: 20px;
+            margin-top: 14px;
             width: 140px;
             height: 70px;
         }
@@ -172,9 +172,13 @@ const getStrapiImageFromLogo = (
             position: absolute;
             inset: 0;
             width: 100%;
-            height: var(--card-height) !important;
+            height: 100%;
             object-fit: cover;
             border-radius: 30px;
+
+            @include lg {
+                height: var(--card-height) !important;
+            }
         }
 
         &__text {
