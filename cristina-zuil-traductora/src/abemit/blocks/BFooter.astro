@@ -1,13 +1,12 @@
 ---
 import AText from "../atoms/AText.astro";
 import { fetchFooter } from "../../utils/api/fetchers/blocks";
+import { blocksToHtml } from "../../utils/blocksToHtml";
 
 const locale = Astro.currentLocale ?? "es";
 
-let copyrightText = "";
-
 const footer = await fetchFooter(locale);
-copyrightText = footer.copyrightText;
+const copyrightHtml = blocksToHtml(footer.copyrightTextBlock);
 
 ---
 
@@ -16,6 +15,8 @@ copyrightText = footer.copyrightText;
 
     .b-footer {
         @include use-font(menu-item);
+
+        $selector: &;
 
         position: relative;
         background-color: var(--color-white);
@@ -33,9 +34,24 @@ copyrightText = footer.copyrightText;
                 padding-inline: 5px;
             }
         }
+
+        :global(#{$selector}__text a) {
+            color: var(--color-white);
+            text-decoration: none;
+            background-image: linear-gradient(currentColor, currentColor);
+            background-repeat: no-repeat;
+            background-position: 0 100%;
+            background-size: 0% 1px;
+            transition: background-size 0.3s ease;
+
+            &:hover,
+            &:focus-visible {
+                background-size: 100% 1px;
+            }
+        }
     }
 </style>
 
 <footer class="b-footer js-footer">
-    <AText as="p" size="small-text" class="b-footer__text">{copyrightText}</AText>
+    <AText as="div" size="small-text" class="b-footer__text" html={copyrightHtml} />
 </footer>

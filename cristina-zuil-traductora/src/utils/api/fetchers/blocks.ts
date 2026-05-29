@@ -34,7 +34,7 @@ export async function fetchHeaderMenu(locale: string): Promise<HeaderMenuRespons
 }
 
 export type FooterResponse = {
-  copyrightText: string;
+  copyrightTextBlock: any[];
 };
 
 export async function fetchFooter(locale: string): Promise<FooterResponse> {
@@ -46,18 +46,18 @@ export async function fetchFooter(locale: string): Promise<FooterResponse> {
     const res = await fetch(url);
     if (!res.ok) {
       console.error(`Failed to fetch footer: ${res.status} ${res.statusText}`);
-      return { copyrightText: '' };
+      return { copyrightTextBlock: [] };
     }
 
     const json = await res.json();
     const footer = json?.data;
 
     return {
-      copyrightText: footer?.copyrightText ?? '',
+      copyrightTextBlock: footer?.copyrightTextBlock ?? [],
     };
   } catch (err) {
     console.error('Failed to fetch footer:', err);
-    return { copyrightText: '' };
+    return { copyrightTextBlock: [] };
   }
 }
 

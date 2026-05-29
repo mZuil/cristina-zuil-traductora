@@ -15,8 +15,8 @@
     }
   },
   "attributes": {
-    "copyrightText": {
-      "type": "string",
+    "copyrightTextBlock": {
+      "type": "blocks",
       "pluginOptions": {
         "i18n": {
           "localized": true
