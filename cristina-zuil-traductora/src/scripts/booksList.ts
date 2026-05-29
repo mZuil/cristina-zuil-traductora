@@ -419,6 +419,15 @@ export function initBooksList(root: HTMLElement): void {
     });
   }
 
+  // ── Filter state ─────────────────────────────────────────────────────────
+  const hasActiveFilters = (): boolean => {
+    const params = new URLSearchParams(location.search);
+    const search = (params.get('search') || '').trim();
+    const genre = (params.get('genre') || params.get('genreSlug') || params.get('genreId') || '').trim();
+    const publisher = (params.get('publisher') || params.get('publisherSlug') || params.get('publisherId') || '').trim();
+    return Boolean(search || genre || publisher);
+  };
+
   // ── Render: pagination ───────────────────────────────────────────────────
   function renderPagination(total: number): void {
     if (results) results.textContent = String(total);
@@ -426,7 +435,13 @@ export function initBooksList(root: HTMLElement): void {
     const pageCount   = Math.max(1, Math.ceil(total / pageSize));
     const currentPage = getPage();
 
-    if(pageCount <= 1 && pages) return;
+    // Hide pagination entirely when filters are active, or when a single
+    // page is enough to show every result. Clearing innerHTML is important
+    // to avoid leaving stale buttons from a previous render.
+    if (hasActiveFilters() || pageCount <= 1) {
+      pages.innerHTML = '';
+      return;
+    }
 
     pages.innerHTML = Array.from({ length: pageCount }, (_, i) => {
       const p         = i + 1;
