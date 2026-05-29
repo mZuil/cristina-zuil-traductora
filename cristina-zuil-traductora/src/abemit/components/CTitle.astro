@@ -609,6 +609,12 @@ if (!title) {
                 end: () => `+=${stanzas.length * window.innerHeight}`,
                 pin: true,
                 scrub: 0.5,
+                // Refresh before any sibling ScrollTrigger so the pin-spacer
+                // (which adds stanzas.length * 100vh to the doc height) is
+                // already in place when later triggers (e.g. CReviews entrance
+                // and desktop pin) compute their start positions. Otherwise
+                // those triggers land inside the poem and fire too early.
+                refreshPriority: 1,
                 invalidateOnRefresh: true,
                 onUpdate: () => {
                     updateImagePositions();

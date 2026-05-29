@@ -337,6 +337,7 @@ const getStrapiImageFromLogo = (
         private mm?: ReturnType<typeof gsap.matchMedia>;
         private mobileIO?: IntersectionObserver;
         private mobileOnResize?: () => void;
+        private entranceIO?: IntersectionObserver;
 
         constructor(nodeInDOM: HTMLElement) {
             super(nodeInDOM);
@@ -370,45 +371,58 @@ const getStrapiImageFromLogo = (
         }
 
         entranceAnimation() {
-            const trigger = this.nodeInDOM;
             const cards = this.nodeInDOM.querySelectorAll<HTMLElement>(".js-review-item");
             if (!cards.length) return;
-            
+
             gsap.set(cards, { opacity: 0 });
 
-            this.entranceTl?.kill();
-            this.entranceTl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: trigger,
-                    start: "top 75%",
-                    once: true,
-                    markers: true,
-                },
-            });
+            const play = () => {
+                this.entranceTl?.kill();
+                this.entranceTl = gsap.timeline();
+                this.entranceTl.fromTo(
+                    cards,
+                    {
+                        opacity: 0,
+                        rotationY: -25,
+                        rotationX: 8,
+                        z: -200,
+                        skewY: 2,
+                        transformPerspective: 1000,
+                        transformOrigin: "left center",
+                    },
+                    {
+                        opacity: 1,
+                        rotationY: 0,
+                        rotationX: 0,
+                        z: 0,
+                        skewY: 0,
+                        duration: 0.8,
+                        ease: "power3.out",
+                        stagger: 0.15,
+                        overwrite: "auto",
+                    },
+                );
+            };
 
-            this.entranceTl.fromTo(
-                cards,
-                {
-                    opacity: 0,
-                    rotationY: -25,
-                    rotationX: 8,
-                    z: -200,
-                    skewY: 2,
-                    transformPerspective: 1000,
-                    transformOrigin: "left center",
+            // Use IntersectionObserver instead of a ScrollTrigger here: it
+            // reacts to the section's true viewport visibility and is immune
+            // to other ScrollTriggers (e.g. CTitle's poem pin) injecting
+            // pin-spacers that change the document height after mount.
+            this.entranceIO?.disconnect();
+            this.entranceIO = new IntersectionObserver(
+                (entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting) {
+                            this.entranceIO?.disconnect();
+                            this.entranceIO = undefined;
+                            play();
+                            break;
+                        }
+                    }
                 },
-                {
-                    opacity: 1,
-                    rotationY: 0,
-                    rotationX: 0,
-                    z: 0,
-                    skewY: 0,
-                    duration: 0.8,
-                    ease: "power3.out",
-                    stagger: 0.15,
-                    overwrite: "auto",
-                },
+                { rootMargin: "0px 0px -25% 0px", threshold: 0.01 },
             );
+            this.entranceIO.observe(this.nodeInDOM);
         }
 
         private buildSetActive(
@@ -697,6 +711,8 @@ const getStrapiImageFromLogo = (
             this.publisherLogoTween = null;
             this.mobileIO?.disconnect();
             this.mobileIO = undefined;
+            this.entranceIO?.disconnect();
+            this.entranceIO = undefined;
         }
     }
 
