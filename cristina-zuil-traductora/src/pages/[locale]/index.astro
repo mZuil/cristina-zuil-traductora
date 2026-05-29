@@ -3,6 +3,8 @@ import Layout from '../../layouts/Layout.astro';
 import { i18nConfig, getLocalizedUrl, fetchPagesByLocale, getNonDefaultLocales, isHomePage } from '../../config/i18n';
 import DefaultPage from '../../templates/DefaultPage.astro';
 
+export const prerender = true;
+
 export async function getStaticPaths() {
   const nonDefaultLocales = getNonDefaultLocales();
   const paths: Array<{

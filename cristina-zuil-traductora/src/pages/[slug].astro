@@ -13,6 +13,8 @@ import DefaultPage from '../templates/DefaultPage.astro';
 import ArchiveBooks from '../templates/archive/ArchiveBooks.astro';
 import ArchiveArticles from '../templates/archive/ArchiveArticles.astro';
 
+export const prerender = true;
+
 export async function getStaticPaths() {
   const pages = await fetchPagesByLocale(i18nConfig.defaultLocale);
   

@@ -8,6 +8,8 @@ import {
 } from "../config/i18n";
 import DefaultPage from "../templates/DefaultPage.astro";
 
+export const prerender = true;
+
 // Fetch pages and find the homepage (empty slug)
 const pages = await fetchPagesByLocale(i18nConfig.defaultLocale);
 const homePage = pages.find((page: any) => isHomePage(page));
