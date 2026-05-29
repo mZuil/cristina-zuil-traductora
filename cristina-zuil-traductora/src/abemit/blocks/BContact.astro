@@ -213,9 +213,10 @@ const instagramLink = contactInfo.instagramLink;
             <div class="b-contact__dialog-body">
                 <AText size="headline-1">{titleText}</AText>
                 <div class="b-contact__dialog-links">
-                    <AButton type="button" class="b-contact__dialog-link" data-copy-email={emailAddress}>
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor" class="b-contact__link-icon">
-                            <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z"></path>
+                    <AButton type="button" class="b-contact__dialog-link" data-copy-email={emailAddress} data-email-morph>
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" class="b-contact__link-icon b-contact__link-icon--stroke">
+                            <path d="M3 6h18v12H3z"></path>
+                            <path d="M3 7l9 7 9-7"></path>
                         </svg>
                         <AText size="headline-2">
                             {uiT(Astro.currentLocale, "contactEmail")}:<br class="b-contact__mobile-break" /> <span class="b-contact__link-text">{emailAddress}</span>
@@ -693,14 +694,32 @@ const instagramLink = contactInfo.instagramLink;
         window.openContactModal = openDialog;
 
         // ── Email copy to clipboard ───────────────────────────────────────────
+        const copyToClipboard = async (text: string): Promise<boolean> => {
+            try {
+                if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(text);
+                    return true;
+                }
+            } catch {
+                /* fall through to legacy path */
+            }
+            try {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                ta.setAttribute("readonly", "");
+                ta.style.position = "fixed";
+                ta.style.opacity = "0";
+                document.body.appendChild(ta);
+                ta.select();
+                const ok = document.execCommand("copy");
+                document.body.removeChild(ta);
+                return ok;
+            } catch {
+                return false;
+            }
+        };
+
         const emailBtn = nodeInDOM.querySelector<HTMLElement>("[data-copy-email]");
-        if (emailBtn) {
-            emailBtn.addEventListener("click", () => {
-                const email = emailBtn.dataset.copyEmail ?? "";
-                if (!email) return;
-                window.location.href = `mailto:${encodeURIComponent(email)}`;
-            });
-        }
 
         closeBtn?.addEventListener("click", () => closeDialog());
         dialogBackdrop?.addEventListener("click", () => closeDialog());
@@ -727,6 +746,9 @@ const instagramLink = contactInfo.instagramLink;
         const links = nodeInDOM.querySelectorAll<HTMLElement>(".b-contact__dialog-link");
 
         links.forEach((link) => {
+            // The email button has its own dedicated morph state machine below.
+            if (link.hasAttribute("data-email-morph")) return;
+
             const icon = link.querySelector<SVGElement>(".b-contact__link-icon");
             if (!icon) return;
 
@@ -776,6 +798,112 @@ const instagramLink = contactInfo.instagramLink;
                 }
             });
         });
+
+        // ── Email button: envelope ⇄ clipboard ⇄ check (on copy) ──────────────
+        if (emailBtn) {
+            const icon = emailBtn.querySelector<SVGElement>(".b-contact__link-icon");
+            const paths = icon
+                ? Array.from(icon.querySelectorAll<SVGPathElement>("path"))
+                : [];
+
+            // Requires exactly two paths in the source SVG; bail out gracefully otherwise.
+            if (paths.length >= 2) {
+                const [p0, p1] = paths;
+
+                type IconState = {
+                    p0: string;
+                    p1: string;
+                    p0Opacity: number;
+                    p1Opacity: number;
+                };
+
+                const STATES: Record<"idle" | "hover" | "copied", IconState> = {
+                    idle: {
+                        p0: "M3 6h18v12H3z",
+                        p1: "M3 7l9 7 9-7",
+                        p0Opacity: 1,
+                        p1Opacity: 1,
+                    },
+                    hover: {
+                        p0: "M16 3H17.5L19 4.5V19.5L17.5 21H6.5L5 19.5V4.5L6.5 3H8",
+                        p1: "M16 2H8V5H16V2Z",
+                        p0Opacity: 1,
+                        p1Opacity: 1,
+                    },
+                    copied: {
+                        p0: "M4 11.5L10 17.5L21 6.5",
+                        p1: "M4 11.5L10 17.5L21 6.5",
+                        p0Opacity: 1,
+                        p1Opacity: 0,
+                    },
+                };
+
+                let emailMorph: gsap.core.Timeline | null = null;
+                let copiedTimeout: number | null = null;
+
+                const goTo = (state: IconState, duration = 0.4): void => {
+                    emailMorph?.kill();
+                    emailMorph = gsap.timeline();
+                    emailMorph.to(
+                        p0,
+                        {
+                            morphSVG: state.p0,
+                            opacity: state.p0Opacity,
+                            duration,
+                            ease: "power2.inOut",
+                        },
+                        0,
+                    );
+                    emailMorph.to(
+                        p1,
+                        {
+                            morphSVG: state.p1,
+                            opacity: state.p1Opacity,
+                            duration,
+                            ease: "power2.inOut",
+                        },
+                        0,
+                    );
+                };
+
+                emailBtn.addEventListener("mouseenter", () => {
+                    if (copiedTimeout != null) return; // copied state takes priority
+                    goTo(STATES.hover);
+                });
+
+                emailBtn.addEventListener("mouseleave", () => {
+                    if (copiedTimeout != null) return;
+                    goTo(STATES.idle);
+                });
+
+                emailBtn.addEventListener("click", async () => {
+                    const email = emailBtn.dataset.copyEmail ?? "";
+                    if (!email) return;
+
+                    const ok = await copyToClipboard(email);
+                    if (!ok) {
+                        // Fallback: open the user's mail client if clipboard is unavailable
+                        window.location.href = `mailto:${encodeURIComponent(email)}`;
+                        return;
+                    }
+
+                    if (copiedTimeout != null) {
+                        clearTimeout(copiedTimeout);
+                        copiedTimeout = null;
+                    }
+
+                    goTo(STATES.copied, 0.35);
+
+                    copiedTimeout = window.setTimeout(() => {
+                        copiedTimeout = null;
+                        // After the "copied" feedback, return to hover or idle
+                        // depending on where the cursor currently is.
+                        const isHovering = emailBtn.matches(":hover");
+                        goTo(isHovering ? STATES.hover : STATES.idle);
+                    }, 1800);
+                });
+            }
+        }
     };
 
     initAll();
