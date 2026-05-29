@@ -150,18 +150,18 @@ if (!title) {
             // Mobile / tablet: small image centered behind the stanza.
             // Use calc-based centering (not transform) so GSAP translateY animations
             // don't clobber the centering.
-            width: clamp(140px, 55vw, 240px);
-            height: clamp(175px, 68.75vw, 300px);
-            top: calc(50% - clamp(87.5px, 34.375vw, 150px));
-            left: calc(50% - clamp(70px, 27.5vw, 120px));
+            width: clamp(140px, 55vw, 240px) !important;
+            height: clamp(175px, 68.75vw, 300px) !important;
+            top: calc(50% - clamp(87.5px, 34.375vw, 150px)) !important;
+            left: calc(50% - clamp(70px, 27.5vw, 120px)) !important;
             opacity: 0.5;
 
             @include lg {
                 // Desktop: positioned by JS at either side of the stanza
-                width: clamp(150px, 13.89vw, 400px);
-                height: clamp(187.5px, 17.36vw, 500px);
-                top: calc(50% - clamp(93.75px, 8.68vw, 250px));
-                left: 0;
+                width: clamp(150px, 13.89vw, 400px) !important;
+                height: clamp(187.5px, 17.36vw, 500px) !important;
+                top: calc(50% - clamp(93.75px, 8.68vw, 250px)) !important;
+                left: 0 !important;
                 opacity: 1;
             }
         }
