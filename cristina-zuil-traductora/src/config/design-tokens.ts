@@ -88,7 +88,7 @@ export const designTokens = {
       'headline-2': {
         sm: {
           fontFamily: 'secondary',
-          fontSize: '22px',
+          fontSize: '20px',
           fontWeight: 700,
           lineHeight: 0.99,
           letterSpacing: '0',
