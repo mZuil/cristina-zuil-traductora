@@ -553,7 +553,9 @@ const instagramLink = contactInfo.instagramLink;
         };
 
         // Clean up before Astro swaps the page (View Transitions)
-        document.addEventListener("astro:before-swap", destroyThree);
+        if (window.matchMedia("(min-width: 1024px)").matches) {
+            document.addEventListener("astro:before-swap", destroyThree);
+        }
 
         // ── Click animation on the model panel ───────────────────────────────
         dialogModel?.addEventListener("click", () => {
@@ -575,6 +577,7 @@ const instagramLink = contactInfo.instagramLink;
         // ── Dialog open / close ───────────────────────────────────────────────
         let dialogTween: gsap.core.Tween | null = null;
         let modelTween: gsap.core.Tween | null = null;
+        let openedByPointerDown = false;
         const killDialogTween = (): void => {
             dialogTween?.kill();
             dialogTween = null;
@@ -628,10 +631,16 @@ const instagramLink = contactInfo.instagramLink;
                 ease: "back.out(1.7)",
             });
 
+            openedByPointerDown = true;
+
             // Double rAF ensures the dialog is painted and has real dimensions
             // before Three.js reads getBoundingClientRect
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
+                    openedByPointerDown = false;
+                    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+                    if (!isDesktop) return;
+
                     initThreeOnce()
                         .then(() => {
                             stopRenderLoop();
@@ -774,8 +783,13 @@ const instagramLink = contactInfo.instagramLink;
         const emailBtn = nodeInDOM.querySelector<HTMLElement>("[data-copy-email]");
 
         closeBtn?.addEventListener("click", () => closeDialog());
-        dialogBackdrop?.addEventListener("click", () => closeDialog());
+        dialogBackdrop?.addEventListener("click", () => {
+            if (!openedByPointerDown) {
+                closeDialog();
+            }
+        });
         dialog.addEventListener("click", (e) => {
+            if (openedByPointerDown) return;
             if (e.target === dialog) closeDialog();
         });
         dialog.addEventListener("keydown", (e) => {
@@ -798,6 +812,9 @@ const instagramLink = contactInfo.instagramLink;
         const links = nodeInDOM.querySelectorAll<HTMLElement>(".b-contact__dialog-link");
 
         links.forEach((link) => {
+
+
+
             // The email button has its own dedicated morph state machine below.
             if (link.hasAttribute("data-email-morph")) return;
 
