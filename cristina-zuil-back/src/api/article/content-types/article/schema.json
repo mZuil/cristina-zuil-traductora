@@ -35,12 +35,6 @@
         "videos",
         "audios"
       ]
-    },
-    "seo": {
-      "type": "component",
-      "component": "seo.seo",
-      "repeatable": false,
-      "required": false
     }
   }
 }
