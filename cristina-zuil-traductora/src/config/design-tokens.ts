@@ -46,7 +46,7 @@ export const designTokens = {
     // Font families - reference the font names defined in fonts.css
     families: {
       primary: 'MuseoModerno, serif',
-      secondary: 'Google Sans, sans-serif',
+      secondary: 'GoogleSans, sans-serif',
     },
 
     // Typography styles with responsive variants

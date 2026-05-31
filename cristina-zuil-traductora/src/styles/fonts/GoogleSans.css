@@ -1,0 +1,29 @@
+/**
+ * YourFontName Font Definition
+ * Place font files in: /public/fonts/YourFontName/
+ * 
+ * File structure:
+ * /public/fonts/YourFontName/
+ *   - YourFontName-Regular.woff2
+ *   - YourFontName-Regular.woff
+ *   - YourFontName-Bold.woff2
+ *   - YourFontName-Bold.woff
+ *   - YourFontName-Light.woff2
+ *   - YourFontName-Light.woff
+ */
+
+@font-face {
+  font-family: 'GoogleSans';
+  src: url('/fonts/GoogleSans/google-sans-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'GoogleSans';
+  src: url('/fonts/GoogleSans/google-sans-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
