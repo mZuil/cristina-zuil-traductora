@@ -78,7 +78,7 @@ body:has(main.is-home) {
       color: var(--color-white);
 
       & a {
-        color: var(--color-white);
+        color: var(--color-white) !important;
       }
     }
   }
