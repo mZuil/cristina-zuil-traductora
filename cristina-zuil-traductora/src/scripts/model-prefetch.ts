@@ -28,7 +28,9 @@ function getLoader(): Promise<GLTFLoaderT> {
             THREE.Cache.enabled = true;
 
             const dracoLoader = new dracoMod.DRACOLoader();
-            dracoLoader.setDecoderPath("/draco/");
+            // Use the smaller, gltf-optimized Draco decoder
+            // (~94 KB smaller wasm + faster decode than the generic one).
+            dracoLoader.setDecoderPath("/draco/gltf/");
 
             const loader = new gltfMod.GLTFLoader();
             loader.setDRACOLoader(dracoLoader);

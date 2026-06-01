@@ -482,7 +482,8 @@ const instagramLink = contactInfo.instagramLink;
             scene.add(ambient, key);
 
             const dracoLoader = new DRACOLoader();
-            dracoLoader.setDecoderPath("/draco/");
+            // Use the smaller, gltf-optimized Draco decoder (smaller wasm + faster decode)
+            dracoLoader.setDecoderPath("/draco/gltf/");
 
             const loader = new GLTFLoader();
             loader.setDRACOLoader(dracoLoader);
