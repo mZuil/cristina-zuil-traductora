@@ -107,10 +107,12 @@ import { uiT } from "../../config/strings-ui";
 import gsap from "gsap";
 
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { getPlatformModel } from "../../scripts/model-prefetch";
+// NOTE: DRACOLoader/GLTFLoader are intentionally NOT imported here.
+// They are dynamically imported inside model-prefetch.ts so the CModel
+// chunk no longer pulls DRACOLoader (and draco_decoder.wasm) into the
+// LCP critical request chain.
 
 declare global {
     interface Window {
@@ -482,11 +484,11 @@ class CModel extends BaseComponent {
         ];
 
         /* MODEL */
-        const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath("/draco/");
-        const loader = new GLTFLoader();
-        loader.setDRACOLoader(dracoLoader);
-
+        // Note: GLTFLoader + DRACOLoader are created lazily inside
+        // model-prefetch.ts via dynamic import. We deliberately do NOT
+        // instantiate them here, so this chunk does not statically depend
+        // on DRACOLoader (which would put draco_decoder.wasm on the LCP
+        // critical request chain).
         const gltf = await getPlatformModel();
         this.model = gltf.scene;
         this.scene.add(this.model);
