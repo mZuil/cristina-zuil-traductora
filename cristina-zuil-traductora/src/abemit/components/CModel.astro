@@ -1341,5 +1341,34 @@ function initModel() {
     BaseComponent.mountAll(".js-c-model", CModel);
 }
 
-document.addEventListener("astro:page-load", initModel);
+// Defer mounting CModel until AFTER the page has finished loading (i.e. after
+// LCP has been recorded) and the browser is idle. Mounting eagerly on
+// `astro:page-load` triggers the dynamic DRACOLoader + draco_decoder.wasm
+// downloads early enough that Lighthouse still classifies them as part of
+// the critical request chain. Deferring with requestIdleCallback pushes the
+// whole 3D-asset chain off the LCP critical path — the BLoader overlay
+// already covers the user experience during model loading.
+function scheduleInitModel() {
+    const start = () => {
+        // Skip if there is no model section on this route.
+        if (!document.querySelector(".js-c-model")) return;
+        initModel();
+    };
+    const ric = (window as any).requestIdleCallback as
+        | ((cb: () => void, opts?: { timeout: number }) => number)
+        | undefined;
+    if (typeof ric === "function") {
+        ric(start, { timeout: 1500 });
+    } else {
+        setTimeout(start, 200);
+    }
+}
+
+document.addEventListener("astro:page-load", () => {
+    if (document.readyState === "complete") {
+        scheduleInitModel();
+    } else {
+        window.addEventListener("load", scheduleInitModel, { once: true });
+    }
+});
 </script>
