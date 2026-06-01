@@ -74,11 +74,34 @@ const structuredData = getStructuredData(content, contentType, locale, Astro);
 
 <script>
   import '../scripts/lenis.ts';
-  import { prefetchPlatformModel } from '../scripts/model-prefetch';
   import '../scripts/page-transition.ts';
-  
+
+  // Defer the 3D model prefetch (which pulls in DRACOLoader + draco_decoder.wasm)
+  // out of the critical request chain. Using a dynamic import means the Layout
+  // chunk no longer statically depends on DRACOLoader, so the wasm download
+  // happens after the page is idle instead of blocking LCP.
+  const schedulePrefetch = () => {
+    const run = () => {
+      import('../scripts/model-prefetch')
+        .then((m) => m.prefetchPlatformModel().catch(() => {}))
+        .catch(() => {});
+    };
+    const ric = (window as any).requestIdleCallback as
+      | ((cb: () => void, opts?: { timeout: number }) => number)
+      | undefined;
+    if (typeof ric === 'function') {
+      ric(run, { timeout: 2000 });
+    } else {
+      setTimeout(run, 200);
+    }
+  };
+
   document.addEventListener("astro:page-load", () => {
-    prefetchPlatformModel().catch(() => {});
+    if (document.readyState === 'complete') {
+      schedulePrefetch();
+    } else {
+      window.addEventListener('load', schedulePrefetch, { once: true });
+    }
   });
 
   document.addEventListener("resize", () => ScrollTrigger.refresh());
