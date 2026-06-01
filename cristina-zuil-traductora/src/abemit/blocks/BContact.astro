@@ -301,12 +301,41 @@ const instagramLink = contactInfo.instagramLink;
 <script>
     import { gsap } from "gsap";
     import { MorphSVGPlugin } from "gsap/MorphSVGPlugin";
-    import * as THREE from "three";
-    import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-    import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
-    import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+    import type * as THREE_NS from "three";
+    import type { GLTFLoader as GLTFLoaderT } from "three/examples/jsm/loaders/GLTFLoader.js";
+    import type { DRACOLoader as DRACOLoaderT } from "three/examples/jsm/loaders/DRACOLoader.js";
+    import type { RoomEnvironment as RoomEnvironmentT } from "three/examples/jsm/environments/RoomEnvironment.js";
 
     gsap.registerPlugin(MorphSVGPlugin);
+
+    // ── Lazy Three.js loader ──────────────────────────────────────────────
+    // Three + GLTF/DRACO/RoomEnvironment are only needed once the contact
+    // dialog actually opens. Keeping them as DYNAMIC imports means the
+    // BContact script chunk no longer pulls DRACOLoader (155 KiB) and
+    // draco_decoder.wasm (82 KiB) into the LCP critical request chain.
+    interface ThreeLibs {
+        THREE: typeof THREE_NS;
+        GLTFLoader: typeof GLTFLoaderT;
+        DRACOLoader: typeof DRACOLoaderT;
+        RoomEnvironment: typeof RoomEnvironmentT;
+    }
+    let threeLibsPromise: Promise<ThreeLibs> | null = null;
+    const loadThreeLibs = (): Promise<ThreeLibs> => {
+        if (!threeLibsPromise) {
+            threeLibsPromise = Promise.all([
+                import("three"),
+                import("three/examples/jsm/loaders/GLTFLoader.js"),
+                import("three/examples/jsm/loaders/DRACOLoader.js"),
+                import("three/examples/jsm/environments/RoomEnvironment.js"),
+            ]).then(([THREE, gltf, draco, room]) => ({
+                THREE: THREE as unknown as typeof THREE_NS,
+                GLTFLoader: gltf.GLTFLoader,
+                DRACOLoader: draco.DRACOLoader,
+                RoomEnvironment: room.RoomEnvironment,
+            }));
+        }
+        return threeLibsPromise;
+    };
 
     declare global {
         interface Window {
@@ -361,8 +390,12 @@ const instagramLink = contactInfo.instagramLink;
         let onWindowPointerMove: ((e: PointerEvent) => void) | null = null;
         let onWindowPointerReset: (() => void) | null = null;
         let onWindowResize: (() => void) | null = null;
-        const basePivotRot = new THREE.Vector2(0, 0);
-        const targetPivotRot = new THREE.Vector2(0, 0);
+        // Plain {x,y} structs — kept here so we don't have to load THREE for
+        // module evaluation. Replaced new THREE.Vector2() since only .x/.y are read.
+        const basePivotRot: { x: number; y: number } = { x: 0, y: 0 };
+        const targetPivotRot: { x: number; y: number } = { x: 0, y: 0 };
+        // Cached THREE namespace once loadThreeLibs() resolves — used by destroyThree.
+        let THREE: typeof THREE_NS | null = null;
 
         const stopRenderLoop = (): void => {
             if (frameId != null) {
@@ -420,6 +453,10 @@ const instagramLink = contactInfo.instagramLink;
             if (!dialogModel || !dialogCanvas) return;
             threeInit = true;
 
+            const libs = await loadThreeLibs();
+            THREE = libs.THREE;
+            const { GLTFLoader, DRACOLoader, RoomEnvironment } = libs;
+
             renderer = new THREE.WebGLRenderer({
                 canvas: dialogCanvas,
                 antialias: true,
@@ -462,8 +499,10 @@ const instagramLink = contactInfo.instagramLink;
             mailboxPivot.add(mailbox);
             scene.add(mailboxPivot);
 
-            basePivotRot.set(mailboxPivot.rotation.x, mailboxPivot.rotation.y);
-            targetPivotRot.set(mailboxPivot.rotation.x, mailboxPivot.rotation.y);
+            basePivotRot.x = mailboxPivot.rotation.x;
+            basePivotRot.y = mailboxPivot.rotation.y;
+            targetPivotRot.x = mailboxPivot.rotation.x;
+            targetPivotRot.y = mailboxPivot.rotation.y;
 
             camera.lookAt(0, 1, 0);
 
@@ -530,9 +569,10 @@ const instagramLink = contactInfo.instagramLink;
             onWindowPointerMove = null;
             onWindowPointerReset = null;
 
-            if (scene) {
+            if (scene && THREE) {
+                const ThreeNs = THREE;
                 scene.traverse((obj: any) => {
-                    if (obj instanceof THREE.Mesh) {
+                    if (obj instanceof ThreeNs.Mesh) {
                         obj.geometry.dispose();
                         const mats = Array.isArray(obj.material)
                             ? obj.material
