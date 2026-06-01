@@ -76,6 +76,10 @@ body:has(main.is-home) {
 
     &__text {
       color: var(--color-white);
+
+      a {
+        color: var(--color-white);
+      }
     }
   }
 }
