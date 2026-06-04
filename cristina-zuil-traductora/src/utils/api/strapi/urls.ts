@@ -34,7 +34,7 @@ export function buildBooksUrl(params: {
   upstreamUrl.searchParams.set('populate', '*');
   upstreamUrl.searchParams.set('pagination[page]', String(params.page));
   upstreamUrl.searchParams.set('pagination[pageSize]', String(params.pageSize));
-  upstreamUrl.searchParams.set('sort[0]', 'id:desc');
+  upstreamUrl.searchParams.set('sort[0]', 'createdAt:desc');
 
   if (params.bookCategory) {
     upstreamUrl.searchParams.set('filters[bookCategory][$eq]', params.bookCategory);
