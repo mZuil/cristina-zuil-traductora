@@ -429,11 +429,28 @@ export function initBooksList(root: HTMLElement): void {
   };
 
   // ── Render: pagination ───────────────────────────────────────────────────
+  // Layout: always show pages 1, 2, 3, ellipsis, last. Clicking the
+  // ellipsis opens a dropdown listing every page in between, so the user
+  // can jump directly to any of them.
+  const goToPage = (page: number): void => {
+    pushParams({ page: String(page) });
+    scrollToTop();
+    void fetchAndRender();
+  };
+
+  const closeMoreDropdown = (): void => {
+    const more = pages.querySelector<HTMLElement>('.c-books-list__pagination-more.is-open');
+    if (!more) return;
+    more.classList.remove('is-open');
+    const trigger = more.querySelector<HTMLButtonElement>('.c-books-list__pagination-ellipsis-btn');
+    trigger?.setAttribute('aria-expanded', 'false');
+  };
+
   function renderPagination(total: number): void {
     if (results) results.textContent = String(total);
 
     const pageCount   = Math.max(1, Math.ceil(total / pageSize));
-    const currentPage = getPage();
+    const currentPage = Math.min(getPage(), pageCount);
 
     // Hide pagination entirely when filters are active, or when a single
     // page is enough to show every result. Clearing innerHTML is important
@@ -443,22 +460,79 @@ export function initBooksList(root: HTMLElement): void {
       return;
     }
 
-    pages.innerHTML = Array.from({ length: pageCount }, (_, i) => {
-      const p         = i + 1;
+    const pageBtn = (p: number): string => {
       const isCurrent = p === currentPage;
       return `<button type="button" class="c-books-list__pagination-btn${isCurrent ? ' is-current' : ''} v-font-subheading-1" data-page="${p}" ${isCurrent ? 'disabled aria-current="page"' : ''}>${p}</button>`;
-    }).join('');
+    };
+
+    // Up to 4 pages fit comfortably without an ellipsis.
+    if (pageCount <= 4) {
+      pages.innerHTML = Array.from({ length: pageCount }, (_, i) => pageBtn(i + 1)).join('');
+    } else {
+      const hiddenPages: number[] = [];
+      for (let p = 4; p <= pageCount - 1; p++) hiddenPages.push(p);
+      const isHiddenCurrent = currentPage >= 4 && currentPage <= pageCount - 1;
+
+      const optionsHtml = hiddenPages
+        .map((p) => {
+          const selected = p === currentPage;
+          return `<button type="button" role="option" class="c-books-list__pagination-option" data-page="${p}" aria-selected="${selected ? 'true' : 'false'}">${p}</button>`;
+        })
+        .join('');
+
+      const ellipsisLabel = isHiddenCurrent ? String(currentPage) : '…';
+      const moreAriaLabel = uiT(locale, 'morePages');
+
+      pages.innerHTML = [
+        pageBtn(1),
+        pageBtn(2),
+        pageBtn(3),
+        `<div class="c-books-list__pagination-more">
+          <button type="button"
+            class="c-books-list__pagination-btn c-books-list__pagination-ellipsis-btn${isHiddenCurrent ? ' is-current' : ''} v-font-subheading-1"
+            aria-haspopup="listbox"
+            aria-expanded="false"
+            aria-label="${moreAriaLabel}"
+            ${isHiddenCurrent ? 'aria-current="page"' : ''}>${ellipsisLabel}</button>
+          <div class="c-books-list__pagination-dropdown" role="listbox" aria-label="${moreAriaLabel}">
+            <div class="c-books-list__pagination-dropdown-inner" data-lenis-prevent>
+              ${optionsHtml}
+            </div>
+          </div>
+        </div>`,
+        pageBtn(pageCount),
+      ].join('');
+    }
 
     pages.onclick = (e) => {
-      const el   = (e.target as HTMLElement).closest<HTMLElement>('[data-page]');
+      const target = e.target as HTMLElement;
+
+      // Toggle the "more pages" dropdown.
+      const trigger = target.closest<HTMLButtonElement>('.c-books-list__pagination-ellipsis-btn');
+      if (trigger) {
+        const more = trigger.closest<HTMLElement>('.c-books-list__pagination-more');
+        if (!more) return;
+        const willOpen = !more.classList.contains('is-open');
+        closeMoreDropdown();
+        if (willOpen) {
+          more.classList.add('is-open');
+          trigger.setAttribute('aria-expanded', 'true');
+
+          // Scroll the currently selected option into view.
+          const selected = more.querySelector<HTMLElement>('.c-books-list__pagination-option[aria-selected="true"]');
+          selected?.scrollIntoView({ block: 'nearest' });
+        }
+        return;
+      }
+
+      // Click on a page number (regular button or dropdown option).
+      const el   = target.closest<HTMLElement>('[data-page]');
       const page = el?.getAttribute('data-page') || '';
       if (!page) return;
       if (el instanceof HTMLButtonElement && el.disabled) return;
-      pushParams({ page });
 
-      scrollToTop();
-
-      void fetchAndRender();
+      closeMoreDropdown();
+      goToPage(Number(page));
     };
   }
 
@@ -507,6 +581,16 @@ export function initBooksList(root: HTMLElement): void {
     });
 
     window.addEventListener('popstate', () => void fetchAndRender());
+
+    // Close the "more pages" dropdown on outside click or Escape.
+    document.addEventListener('click', (e) => {
+      const target = e.target as Node | null;
+      if (target && pages.contains(target)) return;
+      closeMoreDropdown();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeMoreDropdown();
+    });
   }
 
   // ── Bootstrap ─────────────────────────────────────────────────────────────

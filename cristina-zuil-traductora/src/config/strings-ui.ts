@@ -18,6 +18,7 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     allOption: 'Todos',
     noResults: 'No hay resultados',
     pagination: 'Paginación',
+    morePages: 'Más páginas',
 
     //For books list
     translation: 'Traducción',
@@ -62,6 +63,7 @@ const UI_STRINGS: Record<UiLocale, Record<string, string>> = {
     allOption: 'All',
     noResults: 'No results',
     pagination: 'Pagination',
+    morePages: 'More pages',
     
     //For books list
     translation: 'Translation',
