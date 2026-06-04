@@ -69,21 +69,16 @@ const getStrapiImageFromLogo = (
         }
 
         //Fade edges — narrower on mobile so the visible track isn't all gradient
-        &::before,
-        &::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            height: 100%;
-            width: 50px;
-            z-index: 2;
-            pointer-events: none;
-
-            @include md {
-                width: 90px;
-            }
-
-            @include lg {
+        @include lg {
+            &::before,
+            &::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                height: 100%;
+                width: 50px;
+                z-index: 2;
+                pointer-events: none;
                 width: 150px;
             }
         }
@@ -99,10 +94,11 @@ const getStrapiImageFromLogo = (
         }
 
         &__track {
+            width: max-content;
             display: flex;
             flex-direction: row;
             gap: 28px;
-            width: max-content;
+            margin-inline: var(--container-padding);
             will-change: transform;
 
             @include md {
@@ -110,6 +106,7 @@ const getStrapiImageFromLogo = (
             }
 
             @include lg {
+                margin-inline: 0;
                 gap: 52px;
             }
         }
