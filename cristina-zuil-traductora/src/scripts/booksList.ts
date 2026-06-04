@@ -429,20 +429,20 @@ export function initBooksList(root: HTMLElement): void {
   };
 
   // ── Render: pagination ───────────────────────────────────────────────────
-  // Layout: always show pages 1, 2, 3, ellipsis, last. Clicking the
-  // ellipsis opens a dropdown listing every page in between, so the user
-  // can jump directly to any of them.
+  // Layout: [‹ prev] [Page X of Y ▾] [next ›]
+  // The middle element is a dropdown (styled after ASelect) that lists every
+  // page so the user can jump directly to any of them.
   const goToPage = (page: number): void => {
     pushParams({ page: String(page) });
     scrollToTop();
     void fetchAndRender();
   };
 
-  const closeMoreDropdown = (): void => {
-    const more = pages.querySelector<HTMLElement>('.c-books-list__pagination-more.is-open');
-    if (!more) return;
-    more.classList.remove('is-open');
-    const trigger = more.querySelector<HTMLButtonElement>('.c-books-list__pagination-ellipsis-btn');
+  const closePageSelector = (): void => {
+    const sel = pages.querySelector<HTMLElement>('.c-books-list__pagination-selector.is-open');
+    if (!sel) return;
+    sel.classList.remove('is-open');
+    const trigger = sel.querySelector<HTMLButtonElement>('.c-books-list__pagination-selector-trigger');
     trigger?.setAttribute('aria-expanded', 'false');
   };
 
@@ -460,78 +460,87 @@ export function initBooksList(root: HTMLElement): void {
       return;
     }
 
-    const pageBtn = (p: number): string => {
-      const isCurrent = p === currentPage;
-      return `<button type="button" class="c-books-list__pagination-btn${isCurrent ? ' is-current' : ''} v-font-subheading-1" data-page="${p}" ${isCurrent ? 'disabled aria-current="page"' : ''}>${p}</button>`;
-    };
+    const prevDisabled = currentPage <= 1;
+    const nextDisabled = currentPage >= pageCount;
+    const prevLabel    = uiT(locale, 'prevPage');
+    const nextLabel    = uiT(locale, 'nextPage');
+    const selectorText = uiT(locale, 'pageOf')
+      .replace('{current}', String(currentPage))
+      .replace('{total}',   String(pageCount));
 
-    // Up to 4 pages fit comfortably without an ellipsis.
-    if (pageCount <= 4) {
-      pages.innerHTML = Array.from({ length: pageCount }, (_, i) => pageBtn(i + 1)).join('');
-    } else {
-      const hiddenPages: number[] = [];
-      for (let p = 4; p <= pageCount - 1; p++) hiddenPages.push(p);
-      const isHiddenCurrent = currentPage >= 4 && currentPage <= pageCount - 1;
+    const optionsHtml = Array.from({ length: pageCount }, (_, i) => {
+      const p        = i + 1;
+      const selected = p === currentPage;
+      return `<button type="button" role="option" class="c-books-list__pagination-option" data-page="${p}" aria-selected="${selected ? 'true' : 'false'}">${p}</button>`;
+    }).join('');
 
-      const optionsHtml = hiddenPages
-        .map((p) => {
-          const selected = p === currentPage;
-          return `<button type="button" role="option" class="c-books-list__pagination-option" data-page="${p}" aria-selected="${selected ? 'true' : 'false'}">${p}</button>`;
-        })
-        .join('');
+    pages.innerHTML = `
+      <button type="button"
+        class="c-books-list__pagination-arrow c-books-list__pagination-arrow--prev"
+        data-page="${Math.max(1, currentPage - 1)}"
+        ${prevDisabled ? 'disabled' : ''}
+        aria-label="${prevLabel}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 12 12" aria-hidden="true">
+          <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M8 2L4 6l4 4"/>
+        </svg>
+      </button>
 
-      const ellipsisLabel = isHiddenCurrent ? String(currentPage) : '…';
-      const moreAriaLabel = uiT(locale, 'morePages');
-
-      pages.innerHTML = [
-        pageBtn(1),
-        pageBtn(2),
-        pageBtn(3),
-        `<div class="c-books-list__pagination-more">
-          <button type="button"
-            class="c-books-list__pagination-btn c-books-list__pagination-ellipsis-btn${isHiddenCurrent ? ' is-current' : ''} v-font-subheading-1"
-            aria-haspopup="listbox"
-            aria-expanded="false"
-            aria-label="${moreAriaLabel}"
-            ${isHiddenCurrent ? 'aria-current="page"' : ''}>${ellipsisLabel}</button>
-          <div class="c-books-list__pagination-dropdown" role="listbox" aria-label="${moreAriaLabel}">
-            <div class="c-books-list__pagination-dropdown-inner" data-lenis-prevent>
-              ${optionsHtml}
-            </div>
+      <div class="c-books-list__pagination-selector">
+        <button type="button"
+          class="c-books-list__pagination-selector-trigger"
+          aria-haspopup="listbox"
+          aria-expanded="false"
+          aria-label="${uiT(locale, 'pagination')}">
+          <span class="c-books-list__pagination-selector-text">${selectorText}</span>
+          <svg class="c-books-list__pagination-selector-chevron" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
+            <path fill="none" stroke="currentColor" stroke-width="1.5" d="M2 4l4 4 4-4"/>
+          </svg>
+        </button>
+        <div class="c-books-list__pagination-dropdown" role="listbox" aria-label="${uiT(locale, 'pagination')}">
+          <div class="c-books-list__pagination-dropdown-inner" data-lenis-prevent>
+            ${optionsHtml}
           </div>
-        </div>`,
-        pageBtn(pageCount),
-      ].join('');
-    }
+        </div>
+      </div>
+
+      <button type="button"
+        class="c-books-list__pagination-arrow c-books-list__pagination-arrow--next"
+        data-page="${Math.min(pageCount, currentPage + 1)}"
+        ${nextDisabled ? 'disabled' : ''}
+        aria-label="${nextLabel}">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 12 12" aria-hidden="true">
+          <path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M4 2l4 4-4 4"/>
+        </svg>
+      </button>
+    `;
 
     pages.onclick = (e) => {
       const target = e.target as HTMLElement;
 
-      // Toggle the "more pages" dropdown.
-      const trigger = target.closest<HTMLButtonElement>('.c-books-list__pagination-ellipsis-btn');
+      // Toggle the page selector dropdown.
+      const trigger = target.closest<HTMLElement>('.c-books-list__pagination-selector-trigger');
       if (trigger) {
-        const more = trigger.closest<HTMLElement>('.c-books-list__pagination-more');
-        if (!more) return;
-        const willOpen = !more.classList.contains('is-open');
-        closeMoreDropdown();
+        const sel = trigger.closest<HTMLElement>('.c-books-list__pagination-selector');
+        if (!sel) return;
+        const willOpen = !sel.classList.contains('is-open');
+        closePageSelector();
         if (willOpen) {
-          more.classList.add('is-open');
+          sel.classList.add('is-open');
           trigger.setAttribute('aria-expanded', 'true');
-
-          // Scroll the currently selected option into view.
-          const selected = more.querySelector<HTMLElement>('.c-books-list__pagination-option[aria-selected="true"]');
+          const selected = sel.querySelector<HTMLElement>('.c-books-list__pagination-option[aria-selected="true"]');
           selected?.scrollIntoView({ block: 'nearest' });
         }
         return;
       }
 
-      // Click on a page number (regular button or dropdown option).
+      // Click on a page number (arrow or dropdown option).
       const el   = target.closest<HTMLElement>('[data-page]');
       const page = el?.getAttribute('data-page') || '';
       if (!page) return;
       if (el instanceof HTMLButtonElement && el.disabled) return;
+      if (Number(page) === currentPage) return;
 
-      closeMoreDropdown();
+      closePageSelector();
       goToPage(Number(page));
     };
   }
@@ -582,14 +591,14 @@ export function initBooksList(root: HTMLElement): void {
 
     window.addEventListener('popstate', () => void fetchAndRender());
 
-    // Close the "more pages" dropdown on outside click or Escape.
+    // Close the page selector dropdown on outside click or Escape.
     document.addEventListener('click', (e) => {
       const target = e.target as Node | null;
       if (target && pages.contains(target)) return;
-      closeMoreDropdown();
+      closePageSelector();
     });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeMoreDropdown();
+      if (e.key === 'Escape') closePageSelector();
     });
   }
 
