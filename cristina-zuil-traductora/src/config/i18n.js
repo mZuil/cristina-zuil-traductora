@@ -81,7 +81,7 @@ export async function fetchPagesByLocale(locale) {
  * Fetch books from Strapi for a specific locale and optional category
  */
 export async function fetchBooksByLocale(locale, category = null, page = 1, pageSize = 12) {
-  let url = `${i18nConfig.strapi.url}/api/books?locale=${locale}&populate=*&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
+  let url = `${i18nConfig.strapi.url}/api/books?locale=${locale}&populate=*&sort=id:asc&pagination[page]=${page}&pagination[pageSize]=${pageSize}`;
   
   if (category) {
     url += `&filters[bookCategory][$eq]=${category}`;
