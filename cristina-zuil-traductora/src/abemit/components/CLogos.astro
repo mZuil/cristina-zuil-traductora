@@ -301,14 +301,17 @@ const getStrapiImageFromLogo = (
             if (!this.track.dataset.cloned) {
                 let totalWidth = this.track.scrollWidth;
                 const containerWidth = window.innerWidth;
+                const minCopies = 2;
+                let copies = 1;
 
-                while (totalWidth < containerWidth * 2) {
+                while (copies < minCopies || totalWidth < containerWidth * 2) {
                     originalItems.forEach((item) => {
                         const clone = item.cloneNode(true) as HTMLElement;
                         clone.setAttribute("aria-hidden", "true");
                         this.track.appendChild(clone);
                     });
                     totalWidth = this.track.scrollWidth;
+                    copies++;
                 }
 
                 this.track.dataset.cloned = "true";
