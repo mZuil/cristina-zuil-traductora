@@ -455,7 +455,7 @@ export function initBooksList(root: HTMLElement): void {
     // Hide pagination entirely when filters are active, or when a single
     // page is enough to show every result. Clearing innerHTML is important
     // to avoid leaving stale buttons from a previous render.
-    if (hasActiveFilters() || pageCount <= 1) {
+    if (pageCount <= 1) {
       pages.innerHTML = '';
       return;
     }
