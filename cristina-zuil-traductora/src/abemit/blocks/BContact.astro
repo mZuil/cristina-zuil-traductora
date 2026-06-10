@@ -368,7 +368,20 @@ const instagramLink = contactInfo.instagramLink;
         const closeBtn = dialog.querySelector<HTMLElement>("[data-dialog-close]");
         const dialogModel = dialog.querySelector<HTMLElement>(".js-dialog-model");
         const dialogCanvas = dialog.querySelector<HTMLCanvasElement>(".js-dialog-canvas");
+
         if (!dialogPanel) return;
+
+        let dialogOpenedAt = 0;
+        let onDialogPanelClick: ((e: Event) => void) | null = null;
+
+        onDialogPanelClick = (e: Event) => {
+            const isTouch = (e as PointerEvent).pointerType === "touch";
+            if (isTouch && Date.now() - dialogOpenedAt < 400) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+        };
+        dialogPanel.addEventListener("click", onDialogPanelClick, true);
 
         // ── Three.js state ────────────────────────────────────────────────────
         let threeInit = false;
@@ -390,6 +403,7 @@ const instagramLink = contactInfo.instagramLink;
         let onWindowPointerMove: ((e: PointerEvent) => void) | null = null;
         let onWindowPointerReset: (() => void) | null = null;
         let onWindowResize: (() => void) | null = null;
+
         // Plain {x,y} structs — kept here so we don't have to load THREE for
         // module evaluation. Replaced new THREE.Vector2() since only .x/.y are read.
         const basePivotRot: { x: number; y: number } = { x: 0, y: 0 };
@@ -570,6 +584,11 @@ const instagramLink = contactInfo.instagramLink;
             onWindowPointerMove = null;
             onWindowPointerReset = null;
 
+            if (onDialogPanelClick) {
+                dialogPanel?.removeEventListener("click", onDialogPanelClick, true);
+                onDialogPanelClick = null;
+            }
+
             if (scene && THREE) {
                 const ThreeNs = THREE;
                 scene.traverse((obj: any) => {
@@ -630,6 +649,7 @@ const instagramLink = contactInfo.instagramLink;
             killDialogTween();
             if (dialog.open) dialog.close();
             dialog.showModal();
+            dialogOpenedAt = Date.now();
 
             document.dispatchEvent(new CustomEvent("articles-modal:open"));
             setLenisEnabled(false);
